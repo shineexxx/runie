@@ -99,6 +99,8 @@ extension PermissionCategory {
         case .internet: "globe"
         case .automation: "wand.and.stars"
         case .install: "shippingbox"
+        case .sharing: "paperplane"
+        case .contacts: "person.crop.circle"
         case .services: "puzzlepiece.extension"
         case .otherCommands: "terminal"
         }

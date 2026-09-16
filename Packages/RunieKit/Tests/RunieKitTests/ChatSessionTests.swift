@@ -24,6 +24,13 @@ final class FakeBackend: AgentBackend, @unchecked Sendable {
         private var _controlIDs: [String] = []
         var controlIDs: [String] { lock.withLock { _controlIDs } }
 
+        private var _mcpReplies: [MCPReply] = []
+        var mcpReplies: [MCPReply] { lock.withLock { _mcpReplies } }
+
+        func respondToMCP(_ reply: MCPReply) throws {
+            lock.withLock { _mcpReplies.append(reply) }
+        }
+
         func send(_ request: ControlRequest, requestID: String) throws {
             lock.withLock {
                 _controls.append(request)

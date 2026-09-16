@@ -189,6 +189,13 @@ public struct AgentEventNormalizer: Sendable {
     /// Запрос от CLI к приложению. Пока понимаем только вопрос о разрешении: другие
     /// запросы приходят, лишь когда хост сам их заказал, а Runie их не заказывает.
     private func normalizeControlRequest(_ payload: JSONValue) -> AgentEvent? {
+        if let requestID = payload["request_id"]?.stringValue,
+           let request = payload["request"],
+           request["subtype"]?.stringValue == "mcp_message",
+           let server = request["server_name"]?.stringValue,
+           let message = request["message"] {
+            return .mcpMessage(MCPMessage(requestID: requestID, serverName: server, message: message))
+        }
         guard let requestID = payload["request_id"]?.stringValue,
               let request = payload["request"],
               request["subtype"]?.stringValue == "can_use_tool",

@@ -58,6 +58,9 @@ public enum ToolDescriber {
             return Description(title: "Обновляет план", detail: nil)
 
         default:
+            if let runie = describeRunie(name, input: input) {
+                return runie
+            }
             if let mcp = describeMCP(name) {
                 return mcp
             }
@@ -78,6 +81,42 @@ public enum ToolDescriber {
         }
         let name = (path as NSString).lastPathComponent
         return Description(title: "\(verb) \(name)", detail: clip(abbreviateHome(path)))
+    }
+
+    /// Встроенные инструменты Runie — своими словами.
+    private static func describeRunie(_ name: String, input: JSONValue) -> Description? {
+        guard name.hasPrefix("mcp__runie__") else { return nil }
+        let tool = String(name.dropFirst("mcp__runie__".count))
+        let paths = input["paths"]?.arrayValue?.compactMap(\.stringValue) ?? []
+        let filesDetail = paths.isEmpty ? nil
+            : clip(paths.prefix(3).map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
+                   + (paths.count > 3 ? " и ещё \(paths.count - 3)" : ""))
+
+        switch tool {
+        case "find_files":
+            let query = input["query"]?.stringValue.flatMap { $0.isEmpty ? nil : $0 }
+            return Description(title: query.map { "Ищет «\($0)»" } ?? "Ищет файлы", detail: nil)
+        case "reveal_in_finder":
+            return Description(title: "Показывает в Finder", detail: filesDetail)
+        case "open_files":
+            return Description(title: "Открывает файлы", detail: filesDetail)
+        case "compress_images":
+            return Description(title: "Сжимает картинки (\(paths.count))", detail: filesDetail)
+        case "zip_files":
+            return Description(title: "Упаковывает в архив", detail: filesDetail)
+        case "share_files":
+            let via = switch input["via"]?.stringValue {
+            case "mail": "Почту"
+            case "messages": "Сообщения"
+            case "airdrop": "AirDrop"
+            default: "меню «Поделиться»"
+            }
+            return Description(title: "Готовит отправку через \(via)", detail: filesDetail)
+        case "find_contact":
+            return Description(title: "Ищет контакт «\(input["name"]?.stringValue ?? "")»", detail: nil)
+        default:
+            return nil
+        }
     }
 
     /// `mcp__server__tool_name` → «server: tool name».

@@ -39,6 +39,9 @@ public final class ChatSession {
     @ObservationIgnored public var onModelsUpdate: (([AgentModel]) -> Void)?
     @ObservationIgnored private var initializeRequestID: String?
 
+    /// Встроенные инструменты приложения (MCP-сервер в процессе Runie).
+    @ObservationIgnored public var hostTools: HostToolServer?
+
     /// Правила из настроек: какие группы действий разрешать без вопроса.
     @ObservationIgnored public var policy = PermissionPolicy()
 
@@ -87,7 +90,11 @@ public final class ChatSession {
         consume(handle.stream)
         let requestID = UUID().uuidString
         initializeRequestID = requestID
-        try handle.connection.send(.initialize, requestID: requestID)
+        if let hostTools {
+            try handle.connection.send(.initializeWithHostServers([hostTools.name]), requestID: requestID)
+        } else {
+            try handle.connection.send(.initialize, requestID: requestID)
+        }
         if let selectedModel {
             try handle.connection.send(.setModel(selectedModel), requestID: UUID().uuidString)
         }
@@ -214,6 +221,18 @@ public final class ChatSession {
                 if !models.isEmpty, models != availableModels {
                     availableModels = models
                     onModelsUpdate?(models)
+                }
+            }
+            if case .mcpMessage(let message) = event, let hostTools, message.serverName == hostTools.name,
+               let connection {
+                // Инструмент может работать долго — не держим поток событий.
+                Task {
+                    let response = await hostTools.handle(message.message)
+                    do {
+                        try connection.respondToMCP(MCPReply(requestID: message.requestID, response: response))
+                    } catch {
+                        self.diagnostics.append("mcp reply: \(error.localizedDescription)")
+                    }
                 }
             }
             if case .permissionRequested(let request) = event {

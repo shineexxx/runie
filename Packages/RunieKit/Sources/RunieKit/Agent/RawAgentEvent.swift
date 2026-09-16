@@ -80,6 +80,31 @@ public struct PermissionResponse: Sendable, Equatable {
     }
 }
 
+/// Ответ встроенного MCP-сервера на `mcp_message`.
+public struct MCPReply: Sendable, Equatable {
+    public let requestID: String
+    public let response: JSONValue
+
+    public init(requestID: String, response: JSONValue) {
+        self.requestID = requestID
+        self.response = response
+    }
+
+    public func ndjsonLine() throws -> Data {
+        let payload: JSONValue = .object([
+            "type": .string("control_response"),
+            "response": .object([
+                "subtype": .string("success"),
+                "request_id": .string(requestID),
+                "response": .object(["mcp_response": response])
+            ])
+        ])
+        var data = try JSONEncoder().encode(payload)
+        data.append(UInt8(ascii: "\n"))
+        return data
+    }
+}
+
 /// Картинка, которая уходит агенту внутри сообщения — модель видит её сама.
 public struct MessageImage: Sendable, Equatable {
     /// `image/png`, `image/jpeg`, `image/gif`, `image/webp`.

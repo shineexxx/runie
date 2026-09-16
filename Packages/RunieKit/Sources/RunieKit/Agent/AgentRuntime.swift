@@ -212,6 +212,11 @@ public final class AgentRuntime: @unchecked Sendable {
         try write(try request.ndjsonLine(requestID: requestID))
     }
 
+    /// Отправляет ответ встроенного MCP-сервера в stdin.
+    public func send(_ reply: MCPReply) throws {
+        try write(try reply.ndjsonLine())
+    }
+
     /// Отправляет ответ на запрос разрешения в stdin.
     public func send(_ response: PermissionResponse) throws {
         try write(try response.ndjsonLine())

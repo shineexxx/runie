@@ -26,6 +26,8 @@
 	<string>Runie управляет приложениями от вашего имени, чтобы выполнять задачи, о которых вы просите. Каждое необратимое действие требует подтверждения.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Runie смотрит ваши встречи на сегодня, чтобы подсказать, чем помочь, и работает с календарём, когда вы об этом просите.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Runie находит в Контактах почту или телефон человека, когда вы просите что-то ему отправить.</string>
 	<key>NSDesktopFolderUsageDescription</key>
 	<string>Runie работает с файлами на рабочем столе, когда вы просите его найти, изменить или отправить их.</string>
 	<key>NSDocumentsFolderUsageDescription</key>

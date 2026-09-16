@@ -17,6 +17,8 @@ public protocol AgentConnection: AnyObject, Sendable {
     func respond(to request: PermissionRequest, with decision: PermissionDecision) throws
     /// Управляющий запрос. Ответ придёт событием `controlResponse` с тем же идентификатором.
     func send(_ request: ControlRequest, requestID: String) throws
+    /// Ответ встроенного MCP-сервера на `mcpMessage`.
+    func respondToMCP(_ reply: MCPReply) throws
     func stop()
 }
 
@@ -115,6 +117,10 @@ final class ClaudeCodeConnection: AgentConnection {
 
     func send(_ request: ControlRequest, requestID: String) throws {
         try runtime.send(request, requestID: requestID)
+    }
+
+    func respondToMCP(_ reply: MCPReply) throws {
+        try runtime.send(reply)
     }
 
     func stop() {

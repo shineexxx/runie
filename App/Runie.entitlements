@@ -14,6 +14,9 @@
 	     сегодня нужны подсказкам и просьбам про календарь. -->
 	<key>com.apple.security.personal-information.calendars</key>
 	<true/>
+	<!-- Контакты: найти почту или телефон, когда человек просит что-то отправить. -->
+	<key>com.apple.security.personal-information.addressbook</key>
+	<true/>
 	<!-- Hardened Runtime: Runie запускает сторонний исполняемый файл (claude),
 	     подписанный не нами. -->
 	<key>com.apple.security.cs.disable-library-validation</key>

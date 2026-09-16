@@ -12,6 +12,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case internet
     case automation
     case install
+    case sharing
+    case contacts
     case services
     case otherCommands
 
@@ -28,6 +30,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .internet: "Интернет"
         case .automation: "Управление другими приложениями"
         case .install: "Установка программ"
+        case .sharing: "Отправка файлов"
+        case .contacts: "Контакты"
         case .services: "Подключённые сервисы"
         case .otherCommands: "Прочие команды"
         }
@@ -44,6 +48,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .internet: "Открыть страницу, поискать в интернете, скачать файл."
         case .automation: "Выполнить действие в другом приложении через AppleScript или Быстрые команды."
         case .install: "Поставить или обновить программу через Homebrew, npm, pip."
+        case .sharing: "Подготовить письмо, сообщение или AirDrop с файлами. Отправляете вы сами — кнопкой в открывшемся окне."
+        case .contacts: "Найти человека в Контактах, чтобы узнать почту или телефон."
         case .services: "Обратиться к подключённому сервису: Notion, Slack, календарю и другим."
         case .otherCommands: "Любая команда, которая не попала в группы выше."
         }
@@ -84,6 +90,10 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
             [("действие в другом приложении", "osascript"), ("запустить быструю команду", "shortcuts")]
         case .install:
             [("поставить программу", "brew, npm, pip")]
+        case .sharing:
+            [("письмо с вложением", "Почта"), ("сообщение с файлом", "Сообщения"), ("передать рядом", "AirDrop")]
+        case .contacts:
+            [("найти почту или телефон", "Контакты")]
         case .services:
             [("действие в подключённом сервисе", "mcp__…")]
         case .otherCommands:
@@ -111,7 +121,13 @@ public enum PermissionClassifier {
         case "Write", "Edit", "MultiEdit", "NotebookEdit": return [.editFiles]
         case "WebFetch", "WebSearch": return [.internet]
         case "Bash": return shellCategories(input["command"]?.stringValue ?? "")
+        case "mcp__runie__find_files": return [.browseFolders]
+        case "mcp__runie__reveal_in_finder", "mcp__runie__open_files": return [.openApps]
+        case "mcp__runie__compress_images", "mcp__runie__zip_files": return [.editFiles]
+        case "mcp__runie__share_files": return [.sharing]
+        case "mcp__runie__find_contact": return [.contacts]
         default:
+            if toolName.hasPrefix("mcp__runie__") { return [.otherCommands] }
             return toolName.hasPrefix("mcp__") ? [.services] : [.otherCommands]
         }
     }

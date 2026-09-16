@@ -117,3 +117,23 @@ struct PermissionPolicyTests {
         #expect(session.pendingPermission == nil)
     }
 }
+
+@Suite("Инструменты Runie")
+struct RunieToolDescriptionTests {
+
+    @Test("свои инструменты — по-русски и в своих группах разрешений")
+    func describedAndClassified() {
+        let paths: JSONValue = .object(["paths": .array([.string("/a/1.png"), .string("/a/2.png")]), "via": .string("mail")])
+        #expect(ToolDescriber.describe(name: "mcp__runie__compress_images", input: paths).title == "Сжимает картинки (2)")
+        #expect(ToolDescriber.describe(name: "mcp__runie__share_files", input: paths).title == "Готовит отправку через Почту")
+        #expect(ToolDescriber.describe(name: "mcp__runie__find_files", input: .object(["query": .string("отчёт")])).title == "Ищет «отчёт»")
+        #expect(ToolDescriber.describe(name: "mcp__runie__compress_images", input: paths).detail == "1.png, 2.png")
+
+        #expect(PermissionClassifier.categories(toolName: "mcp__runie__find_files", input: paths) == [.browseFolders])
+        #expect(PermissionClassifier.categories(toolName: "mcp__runie__zip_files", input: paths) == [.editFiles])
+        #expect(PermissionClassifier.categories(toolName: "mcp__runie__share_files", input: paths) == [.sharing])
+        #expect(PermissionClassifier.categories(toolName: "mcp__runie__find_contact", input: paths) == [.contacts])
+        #expect(PermissionClassifier.categories(toolName: "mcp__runie__unknown", input: paths) == [.otherCommands])
+        #expect(PermissionClassifier.categories(toolName: "mcp__notion__search", input: paths) == [.services])
+    }
+}

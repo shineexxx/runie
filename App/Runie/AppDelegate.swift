@@ -17,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         session = ChatSession(backend: Self.makeBackend())
+        // Встроенные инструменты для файлов: поиск, Finder, сжатие, архив, отправка.
+        session.hostTools = RunieTools.server
         let store = ChatHistoryStore.standard()
         session.store = store
         settings = AppSettings()
@@ -84,6 +86,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if UserDefaults.standard.bool(forKey: "RunieOpenModelMenu"), autoOpen > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1.5) {
                 NotificationCenter.default.post(name: .runieDebugOpenModelMenu, object: nil)
+            }
+        }
+        // `-RunieRunTool '{"name":"zip_files","arguments":{…}}'` вызывает встроенный
+        // инструмент напрямую и пишет ответ в `-RunieToolOutput` — проверка без агента.
+        if let spec = UserDefaults.standard.string(forKey: "RunieRunTool"),
+           let output = UserDefaults.standard.string(forKey: "RunieToolOutput") {
+            Task {
+                // Префикс «@» — иначе macOS разбирает «{…}» в аргументах как словарь plist.
+                let call = (try? JSONValue.decode(Data(spec.dropFirst(spec.hasPrefix("@") ? 1 : 0).utf8))) ?? .object([:])
+                let response = await RunieTools.server.handle(.object([
+                    "jsonrpc": .string("2.0"), "id": .int(1), "method": .string("tools/call"),
+                    "params": .object(["name": call["name"] ?? .string(""), "arguments": call["arguments"] ?? .object([:])])
+                ]))
+                try? response.jsonString().write(toFile: output, atomically: true, encoding: .utf8)
             }
         }
         // `-RunieOpenWindow permissions` открывает окно Runie на нужном разделе.
@@ -185,10 +201,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let executable = try ClaudeCodeLocator().locate()
             // Агент работает от домашней папки: пользователь просит про свои файлы,
             // а не про какой-то проект.
+            var arguments = ClaudeCodeArguments(appendSystemPrompt: runiePrompt)
+            arguments.hostToolServers = [RunieTools.server.name]
             return ClaudeCodeBackend(
                 executable: executable,
                 workingDirectory: FileManager.default.homeDirectoryForCurrentUser,
-                arguments: ClaudeCodeArguments(appendSystemPrompt: runiePrompt)
+                arguments: arguments
             )
         } catch {
             return UnavailableBackend()
@@ -208,7 +226,13 @@ private let runiePrompt = """
 по этому описанию пользователь решает, разрешить ли действие. \
 Чтобы показать пользователю картинку, вставь её в ответ как ![описание](полный путь или https-ссылка) — \
 она появится прямо в чате. Чтобы отдать файл, дай ссылку [имя файла](полный путь). \
-Пути пиши полностью, начиная с /.
+Пути пиши полностью, начиная с /. \
+Для файлов у тебя есть свои инструменты Runie (mcp__runie__…): find_files ищет через Spotlight \
+(вчерашние скриншоты: kind=screenshot, modified=yesterday), compress_images сжимает картинки, \
+zip_files упаковывает, reveal_in_finder показывает в Finder, find_contact находит почту и телефон, \
+share_files готовит письмо, сообщение или AirDrop. Предпочитай их командам оболочки. share_files сам \
+ничего не отправляет — человек нажимает «Отправить» в открывшемся окне; так и скажи. \
+После сжатия или архивации дай ссылки на получившиеся файлы.
 """
 
 /// Бэкенд на случай, когда Claude Code не установлен. Приложение при этом

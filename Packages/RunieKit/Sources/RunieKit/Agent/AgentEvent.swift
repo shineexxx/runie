@@ -34,6 +34,9 @@ public enum AgentEvent: Sendable, Equatable {
     case permissionRequestCancelled(requestID: String)
     /// CLI ответил на управляющий запрос приложения.
     case controlResponse(ControlResponse)
+    /// Сообщение MCP для сервера, который живёт в самом приложении: CLI спрашивает
+    /// список инструментов или вызывает инструмент. Ответ — `respondToMCP`.
+    case mcpMessage(MCPMessage)
     /// Короткое описание того, чем агент занят прямо сейчас.
     case progress(String)
     /// Остаток подписки.
@@ -131,6 +134,19 @@ public struct ControlResponse: Sendable, Equatable {
     }
 }
 
+public struct MCPMessage: Sendable, Equatable {
+    public let requestID: String
+    public let serverName: String
+    /// JSON-RPC сообщение MCP как есть.
+    public let message: JSONValue
+
+    public init(requestID: String, serverName: String, message: JSONValue) {
+        self.requestID = requestID
+        self.serverName = serverName
+        self.message = message
+    }
+}
+
 /// Модель, которую предлагает Claude Code. Список приходит из самого CLI, поэтому
 /// новые модели появляются в Runie без его обновления.
 public struct AgentModel: Sendable, Equatable, Codable, Identifiable {
@@ -168,6 +184,8 @@ public struct AgentModel: Sendable, Equatable, Codable, Identifiable {
 public enum ControlRequest: Sendable, Equatable {
     /// Знакомство: в ответе — модели, команды, учётная запись.
     case initialize
+    /// То же, плюс MCP-серверы, которые живут в приложении (тип `sdk`).
+    case initializeWithHostServers([String])
     /// Сменить модель для следующих ответов, не перезапуская сессию.
     case setModel(String)
 
@@ -175,6 +193,8 @@ public enum ControlRequest: Sendable, Equatable {
         let request: JSONValue = switch self {
         case .initialize:
             .object(["subtype": .string("initialize")])
+        case .initializeWithHostServers(let names):
+            .object(["subtype": .string("initialize"), "sdkMcpServers": .array(names.map(JSONValue.string))])
         case .setModel(let model):
             .object(["subtype": .string("set_model"), "model": .string(model)])
         }

@@ -33,6 +33,9 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
     public var appendSystemPrompt: String?
     /// Пути к JSON-конфигурациям MCP-серверов.
     public var mcpConfigPaths: [String]
+    /// MCP-серверы, которые живут в самом приложении: CLI обращается к ним через
+    /// управляющий протокол. Серверы пользователя из настроек Claude Code остаются.
+    public var hostToolServers: [String] = []
     /// Брать MCP только из переданных конфигураций, игнорируя пользовательские.
     public var strictMCPConfig: Bool
     /// Отдавать текст ответа кусками по мере написания, а не целым блоком.
@@ -90,6 +93,13 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
         }
         if let appendSystemPrompt {
             arguments += ["--append-system-prompt", appendSystemPrompt]
+        }
+        if !hostToolServers.isEmpty {
+            var servers: [String: JSONValue] = [:]
+            for name in hostToolServers {
+                servers[name] = .object(["type": .string("sdk"), "name": .string(name)])
+            }
+            arguments += ["--mcp-config", JSONValue.object(["mcpServers": .object(servers)]).jsonString()]
         }
         for path in mcpConfigPaths {
             arguments += ["--mcp-config", path]
