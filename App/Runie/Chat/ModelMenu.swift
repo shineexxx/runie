@@ -360,7 +360,8 @@ enum ModelNames {
 
     /// Строка меню: «По умолчанию» или «Sonnet 5». Коротко, чтобы меню было узким.
     static func title(_ model: AgentModel) -> String {
-        model.value == "default" ? "По умолчанию" : baseName(model)
+        // У «По умолчанию» в скобках — какая модель за ним сейчас стоит.
+        model.value == "default" ? "По умолчанию (\(baseName(model)))" : baseName(model)
     }
 
     static func detail(_ model: AgentModel) -> String {
