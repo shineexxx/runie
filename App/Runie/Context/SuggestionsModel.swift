@@ -2,7 +2,7 @@ import AppKit
 import Observation
 import RunieKit
 
-/// Подсказки под полем ввода, которые придумывает ИИ.
+/// Приветствие и подсказки под полем ввода, которые придумывает ИИ.
 ///
 /// Чат их никогда не ждёт: при открытии сразу стоят последние подсказки для этого
 /// приложения (или обычные), а новые придумываются в фоне и плавно подменяют старые.
@@ -12,22 +12,40 @@ import RunieKit
 final class SuggestionsModel {
 
     private(set) var current: [Suggestion] = []
+    /// Приветствие в пустом чате вместо «Чем помочь?».
+    private(set) var greeting: String
     private(set) var isGenerating = false
 
     @ObservationIgnored private let generator: ClaudeSuggestionGenerator?
     @ObservationIgnored private let store: ChatHistoryStore
-    @ObservationIgnored private var cache: [String: (date: Date, suggestions: [Suggestion])] = [:]
+    @ObservationIgnored private var cache: [String: Generated] = [:]
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// Последнее придуманное — в том числе из прошлого запуска.
+    @ObservationIgnored private var last: Generated?
+
+    private struct Generated: Codable {
+        let date: Date
+        let set: SuggestionSet
+    }
 
     private static let refreshInterval: TimeInterval = 20 * 60
-    private static let lastKey = "suggestions.last"
+    private static let lastKey = "suggestions.lastSet"
 
     init(store: ChatHistoryStore) {
         self.store = store
         generator = (try? ClaudeCodeLocator().locate()).map { ClaudeSuggestionGenerator(executable: $0) }
         let saved = UserDefaults.standard.data(forKey: Self.lastKey)
-            .flatMap { try? JSONDecoder().decode([Suggestion].self, from: $0) }
-        current = saved ?? Suggestion.fixed(ContextSuggestions.fallback)
+            .flatMap { try? JSONDecoder().decode(Generated.self, from: $0) }
+        last = saved
+        current = saved?.set.suggestions ?? Suggestion.fixed(ContextSuggestions.fallback)
+        greeting = saved.flatMap { Self.stillFits($0) ? $0.set.greeting : nil }
+            ?? SuggestionSet.fallbackGreeting()
+    }
+
+    /// Приветствие «Доброе утро» вечером неуместно: придуманное в другое время суток
+    /// не показывается.
+    private static func stillFits(_ generated: Generated, now: Date = Date()) -> Bool {
+        SuggestionContext.partOfDay(at: generated.date) == SuggestionContext.partOfDay(at: now)
     }
 
     /// Вызывается при открытии чата.
@@ -35,32 +53,48 @@ final class SuggestionsModel {
         let key = app?.bundleIdentifier ?? "none"
 
         if let cached = cache[key] {
-            current = cached.suggestions
-            if Date().timeIntervalSince(cached.date) < Self.refreshInterval { return }
-        } else if let app {
-            // Пока ИИ думает — подсказки под семейство приложения.
-            current = Suggestion.fixed(app.suggestions)
+            current = cached.set.suggestions
+            greeting = (Self.stillFits(cached) ? cached.set.greeting : nil) ?? SuggestionSet.fallbackGreeting()
+            if Date().timeIntervalSince(cached.date) < Self.refreshInterval, Self.stillFits(cached) { return }
+        } else {
+            if let app {
+                // Пока ИИ думает — подсказки под семейство приложения.
+                current = Suggestion.fixed(app.suggestions)
+            }
+            // Последнее придуманное приветствие лучше шаблонного, если время суток то же.
+            greeting = last.flatMap { Self.stillFits($0) ? $0.set.greeting : nil }
+                ?? SuggestionSet.fallbackGreeting()
         }
 
         guard let generator, task == nil else { return }
-        let context = SuggestionContext(
-            date: Date(),
-            appName: app?.name,
-            recentFiles: Self.recentFiles(),
-            recentConversations: store.list().prefix(5).map(\.title),
-            previousSuggestions: current.map(\.label)
-        )
+        let appName = app?.name
+        let previous = current.map(\.label)
+        let store = store
         isGenerating = true
         task = Task { [weak self] in
+            // Файлы и история — не в главном потоке: первый доступ к Загрузкам
+            // вызывает системный запрос, и чат не должен его ждать.
+            let context = await Task.detached(priority: .utility) {
+                SuggestionContext(
+                    date: Date(),
+                    appName: appName,
+                    recentFiles: SuggestionsModel.recentFiles(),
+                    recentConversations: store.list().prefix(5).map(\.title),
+                    previousSuggestions: previous
+                )
+            }.value
             let result = try? await generator.generate(context)
             guard let self else { return }
             self.task = nil
             self.isGenerating = false
-            guard let result, result.count >= 2 else { return }
-            let suggestions = Array(result.prefix(2))
-            self.cache[key] = (Date(), suggestions)
-            self.current = suggestions
-            UserDefaults.standard.set(try? JSONEncoder().encode(suggestions), forKey: Self.lastKey)
+            guard let result, result.suggestions.count >= 2 else { return }
+            let set = SuggestionSet(greeting: result.greeting, suggestions: Array(result.suggestions.prefix(2)))
+            let generated = Generated(date: Date(), set: set)
+            self.cache[key] = generated
+            self.last = generated
+            self.current = set.suggestions
+            if let greeting = set.greeting { self.greeting = greeting }
+            UserDefaults.standard.set(try? JSONEncoder().encode(generated), forKey: Self.lastKey)
         }
     }
 
@@ -68,7 +102,7 @@ final class SuggestionsModel {
 
     /// Имена файлов, изменённых за двое суток в Загрузках и на Рабочем столе.
     /// Только верхний уровень папок и только имена — содержимое не читается.
-    private static func recentFiles(now: Date = Date()) -> [SuggestionContext.RecentFile] {
+    nonisolated private static func recentFiles(now: Date = Date()) -> [SuggestionContext.RecentFile] {
         let fileManager = FileManager.default
         let folders: [(FileManager.SearchPathDirectory, String)] = [
             (.downloadsDirectory, "Загрузки"),

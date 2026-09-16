@@ -19,6 +19,37 @@ struct SuggestionTests {
         #expect(suggestions[0].prompt == "Кратко перескажи свежие PDF из Загрузок")
     }
 
+    @Test("приветствие и подсказки разбираются одним ответом")
+    func parsesSet() {
+        let text = """
+        ```json
+        {"greeting": "Добрый вечер! Разберём Загрузки?",
+         "suggestions": [{"label": "Пересказать PDF", "prompt": "Перескажи свежие PDF"},
+                         {"label": "Очистить Загрузки", "prompt": "Удали старые .dmg из Загрузок"}]}
+        ```
+        """
+        let set = SuggestionParser.parseSet(text)
+        #expect(set.greeting == "Добрый вечер! Разберём Загрузки?")
+        #expect(set.suggestions.map(\.label) == ["Пересказать PDF", "Очистить Загрузки"])
+
+        let legacy = SuggestionParser.parseSet(#"[{"label": "Раз", "prompt": "Раз"}]"#)
+        #expect(legacy.greeting == nil)
+        #expect(legacy.suggestions.count == 1)
+    }
+
+    @Test("приветствие без ИИ зависит от времени суток")
+    func fallbackGreeting() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
+        func at(_ hour: Int) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: hour)))
+        }
+        #expect(SuggestionSet.fallbackGreeting(at: try at(8), calendar: calendar).hasPrefix("Доброе утро"))
+        #expect(SuggestionSet.fallbackGreeting(at: try at(14), calendar: calendar).hasPrefix("Добрый день"))
+        #expect(SuggestionSet.fallbackGreeting(at: try at(20), calendar: calendar).hasPrefix("Добрый вечер"))
+        #expect(SuggestionSet.fallbackGreeting(at: try at(3), calendar: calendar).hasPrefix("Не спится"))
+    }
+
     @Test("негодные подсказки отбрасываются")
     func dropsBad() {
         let text = """
@@ -44,7 +75,8 @@ struct SuggestionTests {
             previousSuggestions: ["Календарь на сегодня"]
         )
         let prompt = context.prompt(calendar: calendar)
-        #expect(prompt.contains("вечер, среда"))
+        #expect(prompt.contains("вечер, среда, 20:00"))
+        #expect(prompt.contains("greeting"))
         #expect(prompt.contains("«Telegram»"))
         #expect(prompt.contains("отчёт.pdf (Загрузки, только что)"))
         #expect(prompt.contains("«Сколько файлов в Загрузках?»"))

@@ -61,7 +61,7 @@ struct ChatView: View {
                 VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
                     Spacer(minLength: 0)
 
-                    CompactFeed(session: session, alignment: horizontalAlignment)
+                    CompactFeed(session: session, greeting: suggestions.greeting, alignment: horizontalAlignment)
                         .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
 
                     // Агент стоит и ждёт ответа — вопрос прямо над полем ввода.
@@ -303,6 +303,7 @@ private struct CurrentTurn {
 
 private struct CompactFeed: View {
     let session: ChatSession
+    let greeting: String
     let alignment: HorizontalAlignment
 
     var body: some View {
@@ -337,7 +338,12 @@ private struct CompactFeed: View {
                     }
                 }
             } else if timeline.items.isEmpty {
-                Bubble(tail: tailEdge) { Text("Чем помочь?") }
+                Bubble(tail: tailEdge) {
+                    Text(greeting)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contentTransition(.opacity)
+                        .animation(.easeInOut(duration: 0.35), value: greeting)
+                }
             } else if let notice = turn.lastNotice {
                 Bubble(tail: tailEdge) { Text(notice.text).foregroundStyle(.secondary) }
             }

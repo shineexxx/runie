@@ -38,26 +38,26 @@ public struct ClaudeSuggestionGenerator: Sendable {
         ]
     }
 
-    public func generate(_ context: SuggestionContext) async throws -> [Suggestion] {
+    public func generate(_ context: SuggestionContext) async throws -> SuggestionSet {
         let arguments = arguments(for: context)
         let executable = executable
         let timeout = timeout
 
-        return try await withThrowingTaskGroup(of: [Suggestion].self) { group in
+        return try await withThrowingTaskGroup(of: SuggestionSet.self) { group in
             group.addTask {
                 let output = try await Self.run(executable: executable, arguments: arguments)
                 // Итог хода — в поле result; если JSON вокруг не разобрался, пробуем весь вывод.
                 let result = (try? JSONValue.decode(Data(output.utf8)))?["result"]?.stringValue ?? output
-                let suggestions = SuggestionParser.parse(result)
-                guard !suggestions.isEmpty else { throw Failure.emptyAnswer }
-                return suggestions
+                let set = SuggestionParser.parseSet(result)
+                guard !set.suggestions.isEmpty else { throw Failure.emptyAnswer }
+                return set
             }
             group.addTask {
                 try await Task.sleep(for: timeout)
                 throw Failure.timedOut
             }
             defer { group.cancelAll() }
-            return try await group.next() ?? []
+            return try await group.next() ?? SuggestionSet(greeting: nil, suggestions: [])
         }
     }
 

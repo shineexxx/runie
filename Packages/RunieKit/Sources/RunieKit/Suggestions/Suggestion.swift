@@ -19,6 +19,27 @@ public struct Suggestion: Codable, Sendable, Hashable, Identifiable {
     }
 }
 
+/// Приветствие в пустом чате и подсказки к нему — придумываются одним запросом.
+public struct SuggestionSet: Codable, Sendable, Equatable {
+    public let greeting: String?
+    public let suggestions: [Suggestion]
+
+    public init(greeting: String?, suggestions: [Suggestion]) {
+        self.greeting = greeting
+        self.suggestions = suggestions
+    }
+
+    /// Приветствие без ИИ — по времени суток.
+    public static func fallbackGreeting(at date: Date = Date(), calendar: Calendar = .current) -> String {
+        switch SuggestionContext.partOfDay(at: date, calendar: calendar) {
+        case .morning: "Доброе утро! Чем помочь?"
+        case .day: "Добрый день! Чем помочь?"
+        case .evening: "Добрый вечер! Чем помочь?"
+        case .night: "Не спится? Чем помочь?"
+        }
+    }
+}
+
 /// Что известно о человеке прямо сейчас — из этого ИИ придумывает подсказки.
 ///
 /// Только то, что Руни и так может узнать без лишних разрешений: время, приложение
@@ -63,18 +84,38 @@ public struct SuggestionContext: Sendable, Equatable {
     /// Максимум символов в надписи: в ряд под полем помещаются две кнопки.
     public static let labelLimit = 24
 
+    public enum PartOfDay: String, Sendable {
+        case morning, day, evening, night
+
+        var russian: String {
+            switch self {
+            case .morning: "утро"
+            case .day: "день"
+            case .evening: "вечер"
+            case .night: "ночь"
+            }
+        }
+    }
+
+    public static func partOfDay(at date: Date, calendar: Calendar = .current) -> PartOfDay {
+        switch calendar.component(.hour, from: date) {
+        case 5..<12: .morning
+        case 12..<18: .day
+        case 18..<23: .evening
+        default: .night
+        }
+    }
+
+    /// Максимум символов в приветствии: оно помещается в одно облачко.
+    public static let greetingLimit = 60
+
     public func prompt(calendar: Calendar = .current) -> String {
         var lines: [String] = []
         let hour = calendar.component(.hour, from: date)
-        let partOfDay = switch hour {
-        case 5..<12: "утро"
-        case 12..<18: "день"
-        case 18..<23: "вечер"
-        default: "ночь"
-        }
+        let partOfDay = Self.partOfDay(at: date, calendar: calendar).russian
         let weekday = calendar.component(.weekday, from: date)
         let weekdays = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"]
-        lines.append("Сейчас: \(partOfDay), \(weekdays[(weekday - 1) % 7]).")
+        lines.append("Сейчас: \(partOfDay), \(weekdays[(weekday - 1) % 7]), \(hour):00.")
 
         if let appName {
             lines.append("Человек сейчас в приложении «\(appName)».")
@@ -98,11 +139,14 @@ public struct SuggestionContext: Sendable, Equatable {
 
         \(lines.joined(separator: "\n"))
 
-        Придумай 2 подсказки: что человеку было бы полезно попросить у Руни прямо сейчас, \
-        с учётом данных выше. Конкретные и разные, без общих слов.
-        Ответь только JSON-массивом из двух объектов, без пояснений:
-        [{"label": "надпись на кнопке, до \(Self.labelLimit) символов, по-русски", \
-        "prompt": "полная просьба к Руни от первого лица человека, по-русски"}]
+        Придумай:
+        1. Приветствие от Руни в пустом чате — тёплое, с учётом времени суток и данных выше, \
+        заканчивается вопросом, до \(Self.greetingLimit) символов, по-русски, на «ты».
+        2. Две подсказки: что человеку было бы полезно попросить у Руни прямо сейчас. \
+        Конкретные и разные, без общих слов.
+        Ответь только JSON, без пояснений:
+        {"greeting": "приветствие", "suggestions": [{"label": "надпись на кнопке, до \(Self.labelLimit) символов", \
+        "prompt": "полная просьба к Руни от первого лица человека"}]}
         """
     }
 
@@ -121,12 +165,30 @@ public struct SuggestionContext: Sendable, Equatable {
 /// пояснения — разбор это переживает, а негодные подсказки отбрасывает.
 public enum SuggestionParser {
 
+    /// Приветствие и подсказки. Годится и старый ответ — голый массив подсказок.
+    public static func parseSet(_ text: String) -> SuggestionSet {
+        if let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), start < end,
+           let data = String(text[start...end]).data(using: .utf8),
+           let object = try? JSONDecoder().decode(RawSet.self, from: data),
+           object.suggestions != nil || object.greeting != nil {
+            let greeting = object.greeting?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return SuggestionSet(
+                greeting: greeting.flatMap { $0.isEmpty || $0.count > SuggestionContext.greetingLimit + 20 ? nil : $0 },
+                suggestions: clean(object.suggestions ?? [])
+            )
+        }
+        return SuggestionSet(greeting: nil, suggestions: parse(text))
+    }
+
     public static func parse(_ text: String) -> [Suggestion] {
         guard let start = text.firstIndex(of: "["), let end = text.lastIndex(of: "]"), start < end,
               let data = String(text[start...end]).data(using: .utf8),
               let raw = try? JSONDecoder().decode([Raw].self, from: data)
         else { return [] }
+        return clean(raw)
+    }
 
+    private static func clean(_ raw: [Raw]) -> [Suggestion] {
         var seen = Set<String>()
         return raw.compactMap { item in
             let label = item.label?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -136,6 +198,11 @@ public enum SuggestionParser {
             else { return nil }
             return Suggestion(label: label, prompt: prompt.isEmpty ? label : prompt)
         }
+    }
+
+    private struct RawSet: Decodable {
+        let greeting: String?
+        let suggestions: [Raw]?
     }
 
     private struct Raw: Decodable {
