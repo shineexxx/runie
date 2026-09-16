@@ -20,6 +20,11 @@ struct EdgeButtonView: View {
                     // Оторвавшийся от края орб горб не тащит: иначе вместе с панелью
                     // на экран выезжает его часть, спрятанная за кромкой.
                     .opacity(state.isAttached ? 1 : 0)
+
+                // Спрятанный орб светится из-за горбика: видно, что Руни рядом.
+                EdgeGlow(edge: dock, energy: mood.energy)
+                    .opacity(state.isAttached && state.isRetracted ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.35), value: state.isRetracted)
             }
 
             RunieOrb(
@@ -131,5 +136,37 @@ struct OrbTether: Shape, @preconcurrency Animatable {
 
         guard edge == .left else { return path }
         return path.applying(CGAffineTransform(translationX: rect.maxX + rect.minX, y: 0).scaledBy(x: -1, y: 1))
+    }
+}
+
+/// Лёгкое бирюзовое свечение у горбика спрятанного орба. Медленно дышит, а когда
+/// агент работает, светит ярче.
+private struct EdgeGlow: View {
+    let edge: EdgeButtonState.Edge
+    let energy: Double
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+            let breath = reduceMotion ? 0.5 : (sin(time * 1.3) + 1) / 2
+            let strength = (0.32 + 0.18 * breath) * (1 + 0.6 * energy)
+
+            ZStack {
+                Ellipse()
+                    .fill(OrbPalette.cyan.opacity(strength))
+                    .frame(width: 26, height: 64)
+                    .blur(radius: 12)
+                Ellipse()
+                    .fill(OrbPalette.mint.opacity(strength * 0.8))
+                    .frame(width: 8, height: 26)
+                    .blur(radius: 5)
+            }
+            .blendMode(.plusLighter)
+            // У вершины горбика: он выступает из кромки примерно до центра панели.
+            .offset(x: edge == .right ? 2 : -2)
+        }
+        .allowsHitTesting(false)
     }
 }
