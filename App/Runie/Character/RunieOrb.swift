@@ -35,9 +35,8 @@ enum RunieMood: String, CaseIterable, Sendable {
 /// Значок на тёмном ядре, когда свет из орба ушёл в чат.
 enum OrbGlyph: Equatable, Sendable {
     case none
-    /// Стрелка отправки. Тусклая, пока отправлять нечего.
-    case send(enabled: Bool)
-    case stop
+    /// Крестик: клик по сжавшемуся ядру закрывает чат.
+    case close
 }
 
 /// Орб Руни: тёмное стеклянное ядро и живая бирюзовая масса света в нём.
@@ -47,11 +46,13 @@ enum OrbGlyph: Equatable, Sendable {
 /// настроение меняет только амплитуду и яркость, поэтому ничего не прыгает.
 ///
 /// Когда открывается чат, масса света уходит в его сторону — из неё вытекает
-/// интерфейс, — а ядро остаётся на месте и становится кнопкой со стрелкой.
+/// интерфейс, — а тёмное ядро остаётся на месте, сжимается вдвое и закрывает чат.
 struct RunieOrb: View {
 
     let mood: RunieMood
     var size: CGFloat = 48
+    /// 0 — ядро в полный размер, 1 — сжалось вдвое, пока открыт чат.
+    var collapse: Double = 0
     /// 0 — свет в шаре, 1 — свет ушёл в чат.
     var release: Double = 0
     /// Куда уходит свет: −1 влево, +1 вправо.
@@ -68,14 +69,16 @@ struct RunieOrb: View {
             energy: mood.energy,
             speaking: mood == .responding ? 1 : 0,
             release: release,
+            collapse: collapse,
             releaseDirection: releaseDirection,
             size: size
         )
-        .overlay { GlyphView(glyph: glyph, size: size) }
+        .overlay { GlyphView(glyph: glyph, size: size * EdgeButtonController.openScale) }
         .scaleEffect(mood == .carried ? 1.08 : 1)
         .animation(.easeInOut(duration: 0.7), value: mood)
         // Тот же ход пружины, что у поля ввода: свет уходит, пока поле вытекает.
         .animation(.spring(response: 0.46, dampingFraction: 0.8), value: release)
+        .animation(.spring(response: 0.42, dampingFraction: 0.72), value: collapse)
         .accessibilityHidden(true)
     }
 }
@@ -98,18 +101,20 @@ private struct OrbFluid: View, @preconcurrency Animatable {
     var energy: Double
     var speaking: Double
     var release: Double
+    var collapse: Double
     let releaseDirection: Double
     let size: CGFloat
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Энергия, «речь» и уход света интерполируются анимацией, а не прыгают.
-    var animatableData: AnimatablePair<AnimatablePair<Double, Double>, Double> {
-        get { AnimatablePair(AnimatablePair(energy, speaking), release) }
+    var animatableData: AnimatablePair<AnimatablePair<Double, Double>, AnimatablePair<Double, Double>> {
+        get { AnimatablePair(AnimatablePair(energy, speaking), AnimatablePair(release, collapse)) }
         set {
             energy = newValue.first.first
             speaking = newValue.first.second
-            release = newValue.second
+            release = newValue.second.first
+            collapse = newValue.second.second
         }
     }
 
@@ -145,17 +150,19 @@ private struct OrbFluid: View, @preconcurrency Animatable {
         // и край холста ничего не срезает.
         let remaining = (1 - release) * (1 - release)
         let drift = CGSize(width: releaseDirection * release * Double(size) * 0.4, height: 0)
+        // Размер ядра сейчас: сжимается, пока открыт чат.
+        let core = size * (1 - (1 - EdgeButtonController.openScale) * CGFloat(collapse))
 
         return ZStack {
             // Свет, выплёскивающийся за край: те же пятна без обрезки, сильнее
             // размытые и вынесенные дальше от центра.
             Canvas { context, canvasSize in
-                context.addFilter(.blur(radius: size * 0.14))
+                context.addFilter(.blur(radius: core * 0.14))
                 context.blendMode = .plusLighter
                 drawBlobs(
                     in: &context,
                     center: CGPoint(x: canvasSize.width / 2 + drift.width, y: canvasSize.height / 2),
-                    side: size,
+                    side: core,
                     reach: 1.35 + release * 0.8,
                     intensity: (0.45 + 0.35 * energy) * remaining,
                     time: time
@@ -181,7 +188,7 @@ private struct OrbFluid: View, @preconcurrency Animatable {
                 )
             }
             .clipShape(outline)
-            .frame(width: size, height: size)
+            .frame(width: core, height: core)
             .glassEffect(.regular.tint(OrbPalette.teal.opacity(0.16)).interactive(), in: outline)
         }
         .frame(width: canvasSide, height: canvasSide)
@@ -226,29 +233,14 @@ private struct GlyphView: View {
     let size: CGFloat
 
     var body: some View {
-        ZStack {
-            Image(systemName: "arrow.up")
-                .font(.system(size: size * 0.38, weight: .bold))
-                .foregroundStyle(.white)
-                .opacity(sendOpacity)
-                .scaleEffect(sendOpacity > 0 ? 1 : 0.6)
-
-            Image(systemName: "stop.fill")
-                .font(.system(size: size * 0.3, weight: .bold))
-                .foregroundStyle(.white)
-                .opacity(glyph == .stop ? 0.95 : 0)
-                .scaleEffect(glyph == .stop ? 1 : 0.6)
-        }
-        .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: glyph)
-        .allowsHitTesting(false)
-    }
-
-    private var sendOpacity: Double {
-        switch glyph {
-        case .send(let enabled): enabled ? 1 : 0.45
-        default: 0
-        }
+        Image(systemName: "xmark")
+            .font(.system(size: size * 0.36, weight: .bold))
+            .foregroundStyle(.white.opacity(0.9))
+            .opacity(glyph == .close ? 1 : 0)
+            .scaleEffect(glyph == .close ? 1 : 0.5)
+            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: glyph)
+            .allowsHitTesting(false)
     }
 }
 

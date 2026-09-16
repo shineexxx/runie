@@ -78,6 +78,7 @@ struct ChatView: View {
                         session: session,
                         layout: layout,
                         onSubmitDraft: submitDraft,
+                        onStop: { session.stop() },
                         onToggleExpanded: toggleExpanded
                     )
                     .frame(height: ChatPanelController.inputHeight)
@@ -116,11 +117,9 @@ struct ChatView: View {
 
     // MARK: Геометрия света
 
-    /// Центр орба в координатах окна: он лежит в конце поля ввода.
+    /// Центр орба в координатах окна: он стоит за ближним концом поля ввода.
     private func orbPoint(in size: CGSize) -> CGPoint {
-        let fromEdge = ChatPanelController.shadowMargin
-            + ChatPanelController.pillBeyondOrb
-            + EdgeButtonController.orbDiameter / 2
+        let fromEdge = ChatPanelController.shadowMargin - ChatPanelController.orbGap
         let x = layout.orbSide == .trailing ? size.width - fromEdge : fromEdge
         return CGPoint(x: x, y: size.height - inputCenterFromBottom)
     }
@@ -421,6 +420,7 @@ private struct InputRow: View {
     let session: ChatSession
     @Bindable var layout: ChatLayout
     let onSubmitDraft: () -> Void
+    let onStop: () -> Void
     let onToggleExpanded: () -> Void
 
     @FocusState private var isFocused: Bool
@@ -436,11 +436,10 @@ private struct InputRow: View {
         .onChange(of: layout.focusGeneration) { isFocused = true }
     }
 
-    /// Поле заканчивается за орбом: сам орб — отдельное окно поверх, а здесь для
-    /// него оставлено пустое место, чтобы текст не уходил под шар.
+    /// Кнопка отправки — у ближнего к орбу конца поля, откуда пришёл свет.
     private var inputPill: some View {
         HStack(spacing: 10) {
-            if layout.orbSide == .leading { orbSlot }
+            if layout.orbSide == .leading { sendButton }
 
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -449,23 +448,38 @@ private struct InputRow: View {
                 .focused($isFocused)
                 .onSubmit(onSubmitDraft)
 
-            if layout.orbSide == .trailing { orbSlot }
+            if layout.orbSide == .trailing { sendButton }
         }
-        .padding(.leading, layout.orbSide == .trailing ? 22 : ChatPanelController.pillBeyondOrb)
-        .padding(.trailing, layout.orbSide == .trailing ? ChatPanelController.pillBeyondOrb : 22)
+        .padding(.leading, layout.orbSide == .trailing ? 22 : 7)
+        .padding(.trailing, layout.orbSide == .trailing ? 7 : 22)
         .frame(maxWidth: .infinity)
         .frame(height: ChatPanelController.inputHeight)
         .readableSurface(Capsule(), interactive: true)
     }
 
-    private var orbSlot: some View {
-        Color.clear
-            .frame(width: EdgeButtonController.orbDiameter, height: EdgeButtonController.orbDiameter)
-            .accessibilityHidden(true)
+    /// Стрелка отправки, пока Руни свободен, и «стоп», пока работает.
+    private var sendButton: some View {
+        let busy = session.isBusy
+        let enabled = busy || layout.hasDraft
+        return Button(action: busy ? onStop : onSubmitDraft) {
+            Image(systemName: busy ? "stop.fill" : "arrow.up")
+                .font(.system(size: busy ? 13 : 16, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(Circle().fill(OrbPalette.deep.gradient))
+                .opacity(enabled ? 1 : 0.35)
+                .contentShape(.circle)
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .animation(.easeOut(duration: 0.15), value: enabled)
+        .help(busy ? "Остановить" : "Отправить")
+        .accessibilityLabel(busy ? "Остановить" : "Отправить")
     }
 
     private var placeholder: String {
-        session.isBusy ? "Руни работает — нажмите на орб, чтобы остановить" : "Опишите задачу…"
+        session.isBusy ? "Руни работает…" : "Опишите задачу…"
     }
 
     private var expandButton: some View {

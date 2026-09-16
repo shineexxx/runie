@@ -17,6 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tracker = FrontmostAppTracker()
         chat = ChatPanelController(session: session, tracker: tracker)
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
+        chat.onHide = { [weak self] in
+            self?.button.reattach()
+        }
 
         button.onClick = { [weak self] in
             self?.orbClicked()
@@ -42,19 +45,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #endif
     }
 
-    /// Орб лежит в конце поля ввода и отвечает за всё сразу: открыть чат,
-    /// отправить черновик, остановить агента, закрыть пустой чат.
+    /// Орб открывает и закрывает чат. Прицепленный к краю сначала отходит от кромки,
+    /// чтобы чату было куда открыться, и только потом выпускает свет.
     private func orbClicked() {
-        guard chat.isVisible else {
-            chat.show(anchor: button.panel.frame)
-            return
-        }
-        if session.isBusy {
-            session.stop()
-        } else if chat.layout.hasDraft {
-            chat.submitDraft()
-        } else {
+        if chat.isVisible {
             chat.hide()
+        } else {
+            openChat()
+        }
+    }
+
+    private func openChat() {
+        button.detach { [weak self] in
+            guard let self else { return }
+            chat.show(anchor: button.panel.frame)
         }
     }
 
@@ -75,20 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             })
         } else {
             menu.addItem(ClosureMenuItem("Открыть чат", symbol: "bubble.left") { [weak self] in
-                guard let self else { return }
-                if button.isTucked { button.setTucked(false) }
-                chat.show(anchor: button.panel.frame)
-            })
-        }
-
-        if button.isTucked {
-            menu.addItem(ClosureMenuItem("Выдвинуть кнопку", symbol: "arrow.left.and.right") { [weak self] in
-                self?.button.setTucked(false)
-            })
-        } else {
-            menu.addItem(ClosureMenuItem("Спрятать к краю", symbol: "arrow.right.to.line") { [weak self] in
-                self?.chat.hide()
-                self?.button.setTucked(true)
+                self?.openChat()
             })
         }
 
