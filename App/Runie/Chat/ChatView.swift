@@ -694,37 +694,52 @@ private struct ChipsRow: View {
     let onSend: (String) -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                    session.startOver()
-                }
-            } label: {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 32, height: 32)
-                    .contentShape(.circle)
-            }
-            .buttonStyle(.plain)
-            .readableSurface(Circle(), interactive: true)
-            .disabled(session.timeline.items.isEmpty)
-            .opacity(session.timeline.items.isEmpty ? 0.45 : 1)
-            .help("Новый разговор")
-            .accessibilityLabel("Новый разговор")
-
+        Group {
             if session.timeline.items.isEmpty {
                 // Подсказки от ИИ бывают длинными. Не влезают две — показываем одну:
                 // иначе ряд распирает столбец блоков, и поле ввода съезжает на орб.
+                // ViewThatFits — на весь ряд: внутри HStack он получает неверную ширину.
                 ViewThatFits(in: .horizontal) {
-                    chips(suggestions)
-                    chips(Array(suggestions.prefix(1)))
+                    row { chips(suggestions) }
+                    row { chips(Array(suggestions.prefix(1))) }
                 }
-            } else if let usage = session.timeline.usage {
-                UsageChip(usage: usage)
+            } else {
+                row {
+                    if let usage = session.timeline.usage {
+                        UsageChip(usage: usage)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: alignment)
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: suggestions)
+    }
+
+    private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 8) {
+            startOverButton
+            content()
+        }
+        .fixedSize()
+    }
+
+    private var startOverButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                session.startOver()
+            }
+        } label: {
+            Image(systemName: "arrow.counterclockwise")
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 32, height: 32)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .readableSurface(Circle(), interactive: true)
+        .disabled(session.timeline.items.isEmpty)
+        .opacity(session.timeline.items.isEmpty ? 0.45 : 1)
+        .help("Новый разговор")
+        .accessibilityLabel("Новый разговор")
     }
 
     private func chips(_ items: [Suggestion]) -> some View {
@@ -746,10 +761,10 @@ private struct Chip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12.5, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
                 .fixedSize()
-                .padding(.horizontal, 13)
+                .padding(.horizontal, 11)
                 .frame(height: 32)
                 .contentShape(.capsule)
         }

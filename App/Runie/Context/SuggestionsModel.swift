@@ -1,4 +1,5 @@
 import AppKit
+import EventKit
 import Observation
 import RunieKit
 
@@ -71,16 +72,20 @@ final class SuggestionsModel {
 
         guard let generator, task == nil else { return }
         let appName = app?.name
+        let running = Self.runningApps(excluding: app?.bundleIdentifier)
         let previous = current.map(\.label)
         let store = store
         isGenerating = true
         task = Task { [weak self] in
             // Файлы и история — не в главном потоке: первый доступ к Загрузкам
             // вызывает системный запрос, и чат не должен его ждать.
+            let events = await Self.todayEvents()
             let context = await Task.detached(priority: .utility) {
                 SuggestionContext(
                     date: Date(),
                     appName: appName,
+                    runningApps: running,
+                    events: events,
                     recentFiles: SuggestionsModel.recentFiles(),
                     recentConversations: store.list().prefix(5).map(\.title),
                     previousSuggestions: previous
@@ -102,6 +107,40 @@ final class SuggestionsModel {
     }
 
     // MARK: - Данные
+
+    /// Открытые программы с окнами — без фоновых служб, самого Runie и той, что впереди.
+    private static func runningApps(excluding frontmost: String?) -> [String] {
+        let own = Bundle.main.bundleIdentifier
+        return NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .filter { $0.bundleIdentifier != own && $0.bundleIdentifier != frontmost }
+            .compactMap(\.localizedName)
+    }
+
+    private static let eventStore = EKEventStore()
+
+    /// Встречи на сегодня, которые ещё не закончились. Доступ к Календарю
+    /// спрашивается один раз; без него подсказки строятся без встреч.
+    private static func todayEvents(now: Date = Date()) async -> [SuggestionContext.Event] {
+        let store = eventStore
+        switch EKEventStore.authorizationStatus(for: .event) {
+        case .fullAccess:
+            break
+        case .notDetermined:
+            guard (try? await store.requestFullAccessToEvents()) == true else { return [] }
+        default:
+            return []
+        }
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: now)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
+        return store.events(matching: predicate)
+            .filter { $0.endDate > now }
+            .sorted { $0.startDate < $1.startDate }
+            .prefix(6)
+            .map { SuggestionContext.Event(title: $0.title ?? "Событие", start: $0.startDate, isAllDay: $0.isAllDay) }
+    }
 
     /// Имена файлов, изменённых за двое суток в Загрузках и на Рабочем столе.
     /// Только верхний уровень папок и только имена — содержимое не читается.

@@ -18,19 +18,21 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>LSUIElement</key>
-	<true/>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>MIT License. Copyright (c) 2026 Runie contributors.</string>
+	<key>LSUIElement</key>
+	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Runie управляет приложениями от вашего имени, чтобы выполнять задачи, о которых вы просите. Каждое необратимое действие требует подтверждения.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Runie смотрит ваши встречи на сегодня, чтобы подсказать, чем помочь, и работает с календарём, когда вы об этом просите.</string>
 	<key>NSDesktopFolderUsageDescription</key>
 	<string>Runie работает с файлами на рабочем столе, когда вы просите его найти, изменить или отправить их.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Runie работает с файлами в Документах, когда вы просите его найти, изменить или отправить их.</string>
 	<key>NSDownloadsFolderUsageDescription</key>
 	<string>Runie работает с файлами в Загрузках, когда вы просите его найти, изменить или отправить их.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>MIT License. Copyright (c) 2026 Runie contributors.</string>
 </dict>
 </plist>

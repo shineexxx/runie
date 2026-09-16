@@ -10,6 +10,10 @@
 	<!-- Управление другими приложениями через Apple Events. -->
 	<key>com.apple.security.automation.apple-events</key>
 	<true/>
+	<!-- Hardened Runtime пускает к Календарю только с этим правом: встречи на
+	     сегодня нужны подсказкам и просьбам про календарь. -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
 	<!-- Hardened Runtime: Runie запускает сторонний исполняемый файл (claude),
 	     подписанный не нами. -->
 	<key>com.apple.security.cs.disable-library-validation</key>

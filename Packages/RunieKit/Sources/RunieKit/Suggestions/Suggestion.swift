@@ -60,8 +60,24 @@ public struct SuggestionContext: Sendable, Equatable {
         }
     }
 
+    public struct Event: Sendable, Equatable {
+        public let title: String
+        public let start: Date
+        public let isAllDay: Bool
+
+        public init(title: String, start: Date, isAllDay: Bool = false) {
+            self.title = title
+            self.start = start
+            self.isAllDay = isAllDay
+        }
+    }
+
     public var date: Date
     public var appName: String?
+    /// Открытые программы, кроме той, что впереди.
+    public var runningApps: [String]
+    /// Встречи на сегодня, ещё не закончившиеся.
+    public var events: [Event]
     public var recentFiles: [RecentFile]
     public var recentConversations: [String]
     /// Что уже предлагали — чтобы не повторяться.
@@ -70,12 +86,16 @@ public struct SuggestionContext: Sendable, Equatable {
     public init(
         date: Date = Date(),
         appName: String? = nil,
+        runningApps: [String] = [],
+        events: [Event] = [],
         recentFiles: [RecentFile] = [],
         recentConversations: [String] = [],
         previousSuggestions: [String] = []
     ) {
         self.date = date
         self.appName = appName
+        self.runningApps = runningApps
+        self.events = events
         self.recentFiles = recentFiles
         self.recentConversations = recentConversations
         self.previousSuggestions = previousSuggestions
@@ -119,6 +139,19 @@ public struct SuggestionContext: Sendable, Equatable {
 
         if let appName {
             lines.append("Человек сейчас в приложении «\(appName)».")
+        }
+        if !runningApps.isEmpty {
+            lines.append("Также открыты: " + runningApps.prefix(10).joined(separator: ", ") + ".")
+        }
+        if !events.isEmpty {
+            let formatter = DateFormatter()
+            formatter.calendar = calendar
+            formatter.timeZone = calendar.timeZone
+            formatter.dateFormat = "HH:mm"
+            let items = events.prefix(6).map { event in
+                event.isAllDay ? "\(event.title) (весь день)" : "\(formatter.string(from: event.start)) \(event.title)"
+            }
+            lines.append("В календаре сегодня: " + items.joined(separator: "; ") + ".")
         }
         if !recentFiles.isEmpty {
             let files = recentFiles.prefix(8).map { file in

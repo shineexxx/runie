@@ -70,6 +70,8 @@ struct SuggestionTests {
         let context = SuggestionContext(
             date: date,
             appName: "Telegram",
+            runningApps: ["Safari", "Музыка"],
+            events: [.init(title: "Созвон с командой", start: date.addingTimeInterval(3600))],
             recentFiles: [.init(name: "отчёт.pdf", folder: "Загрузки", modified: date.addingTimeInterval(-600))],
             recentConversations: ["Сколько файлов в Загрузках?"],
             previousSuggestions: ["Календарь на сегодня"]
@@ -78,6 +80,8 @@ struct SuggestionTests {
         #expect(prompt.contains("вечер, среда, 20:00"))
         #expect(prompt.contains("greeting"))
         #expect(prompt.contains("«Telegram»"))
+        #expect(prompt.contains("Также открыты: Safari, Музыка."))
+        #expect(prompt.contains("В календаре сегодня: 21:00 Созвон с командой."))
         #expect(prompt.contains("отчёт.pdf (Загрузки, только что)"))
         #expect(prompt.contains("«Сколько файлов в Загрузках?»"))
         #expect(prompt.contains("Не повторяй эти подсказки: «Календарь на сегодня»"))
