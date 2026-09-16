@@ -8,6 +8,7 @@ final class FakeBackend: AgentBackend, @unchecked Sendable {
     final class Connection: AgentConnection, @unchecked Sendable {
         private let lock = NSLock()
         private var _sent: [String] = []
+        private var _responses: [(PermissionRequest, PermissionDecision)] = []
         private(set) var stopped = false
         let continuation: AsyncStream<AgentStreamItem>.Continuation
 
@@ -16,6 +17,11 @@ final class FakeBackend: AgentBackend, @unchecked Sendable {
         }
 
         var sent: [String] { lock.withLock { _sent } }
+        var responses: [(PermissionRequest, PermissionDecision)] { lock.withLock { _responses } }
+
+        func respond(to request: PermissionRequest, with decision: PermissionDecision) throws {
+            lock.withLock { _responses.append((request, decision)) }
+        }
 
         func send(_ text: String) throws {
             lock.withLock { _sent.append(text) }

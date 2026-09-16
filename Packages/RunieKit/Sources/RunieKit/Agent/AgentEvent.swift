@@ -27,6 +27,11 @@ public enum AgentEvent: Sendable, Equatable {
     case toolResult(ToolResult)
     /// CLI сам отказал в разрешении на вызов инструмента.
     case permissionDenied(PermissionDenial)
+    /// CLI спрашивает, можно ли вызвать инструмент, и ждёт ответа приложения.
+    /// Пока ответа нет, агент стоит.
+    case permissionRequested(PermissionRequest)
+    /// Вопрос о разрешении снят самим CLI: ответ больше не нужен.
+    case permissionRequestCancelled(requestID: String)
     /// Короткое описание того, чем агент занят прямо сейчас.
     case progress(String)
     /// Остаток подписки.
@@ -85,6 +90,33 @@ public struct PermissionDenial: Sendable, Equatable {
     public let toolUseID: String
     public let toolName: String
     public let message: String
+}
+
+public struct PermissionRequest: Sendable, Equatable, Identifiable {
+    /// Идентификатор запроса. На него ссылается ответ.
+    public let requestID: String
+    /// Вызов инструмента, о котором спрашивают. Совпадает с `ToolUse.id`.
+    public let toolUseID: String?
+    public let toolName: String
+    public let input: JSONValue
+    /// Почему CLI спрашивает, если он объяснил.
+    public let reason: String?
+
+    public var id: String { requestID }
+
+    public init(requestID: String, toolUseID: String?, toolName: String, input: JSONValue, reason: String?) {
+        self.requestID = requestID
+        self.toolUseID = toolUseID
+        self.toolName = toolName
+        self.input = input
+        self.reason = reason
+    }
+}
+
+/// Ответ приложения на запрос разрешения.
+public enum PermissionDecision: Sendable, Equatable {
+    case allow
+    case deny(message: String)
 }
 
 public struct SubscriptionUsage: Sendable, Equatable {

@@ -18,6 +18,11 @@ public final class ChatSession {
     @ObservationIgnored private let backend: any AgentBackend
     @ObservationIgnored private var connection: (any AgentConnection)?
     @ObservationIgnored private var pump: Task<Void, Never>?
+    /// Что человек разрешил «всегда» в этом разговоре. Такие запросы не показываются.
+    @ObservationIgnored private var standingGrants: Set<String> = []
+
+    /// Агент ждёт разрешения. Приложение, например, открывает чат, если он закрыт.
+    @ObservationIgnored public var onPermissionRequest: (() -> Void)?
 
     private static let diagnosticsLimit = 200
 
@@ -26,6 +31,27 @@ public final class ChatSession {
     }
 
     public var isBusy: Bool { timeline.isBusy }
+
+    /// Вопрос о разрешении, который показывать сейчас.
+    public var pendingPermission: PermissionRequest? { timeline.pendingPermissions.first }
+
+    /// Отвечает на вопрос о разрешении. `remember` — больше не спрашивать о таком
+    /// же действии до конца разговора.
+    public func answer(_ request: PermissionRequest, allow: Bool, remember: Bool = false) {
+        guard timeline.pendingPermissions.contains(request) else { return }
+        if allow, remember {
+            standingGrants.insert(PermissionGrant.key(for: request))
+        }
+        timeline.resolvePermission(request, allowed: allow)
+        do {
+            try connection?.respond(
+                to: request,
+                with: allow ? .allow : .deny(message: "Пользователь не разрешил это действие.")
+            )
+        } catch {
+            diagnostics.append("permission response: \(error.localizedDescription)")
+        }
+    }
 
     /// Отправляет сообщение. Пустые и повторные во время работы — игнорируются.
     ///
@@ -64,6 +90,7 @@ public final class ChatSession {
         connection = nil
         timeline = ChatTimeline()
         diagnostics.removeAll()
+        standingGrants.removeAll()
     }
 
     private func consume(_ stream: AsyncStream<AgentStreamItem>) {
@@ -80,6 +107,13 @@ public final class ChatSession {
         switch item {
         case .event(let event):
             timeline.apply(event)
+            if case .permissionRequested(let request) = event {
+                if standingGrants.contains(PermissionGrant.key(for: request)) {
+                    answer(request, allow: true)
+                } else {
+                    onPermissionRequest?()
+                }
+            }
 
         case .diagnostic(let line):
             diagnostics.append(line)

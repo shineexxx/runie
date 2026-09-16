@@ -5,7 +5,7 @@ import Testing
 /// Загрузка фикстур, снятых с настоящего CLI и очищенных scripts/sanitize-fixture.py.
 enum FixtureLoader {
 
-    static let names = ["tool-use", "permission", "resume-missing", "bash-readonly", "thinking", "partial"]
+    static let names = ["tool-use", "permission", "resume-missing", "bash-readonly", "thinking", "partial", "permission-request"]
 
     static func rawEvents(_ name: String) throws -> [RawAgentEvent] {
         let url = try #require(

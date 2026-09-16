@@ -64,6 +64,11 @@ for await output in stream {
                 print("результат  \(result.isError ? "ошибка" : "ок"): \(result.text.prefix(80))")
             case .permissionDenied(let denial):
                 print("отказано   \(denial.toolName)")
+            case .permissionRequested(let request):
+                // stdin уже закрыт, ответить нечем — CLI сочтёт это отказом.
+                print("спрашивает \(request.toolName): \(request.input.jsonString().prefix(80))")
+            case .permissionRequestCancelled(let requestID):
+                print("снят       \(requestID)")
             case .progress(let detail):
                 print("занят      \(detail)")
             case .subscriptionUsage(let usage):

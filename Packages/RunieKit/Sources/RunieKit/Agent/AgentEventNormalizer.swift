@@ -22,7 +22,9 @@ public struct AgentEventNormalizer: Sendable {
         "post_turn_summary",
         // «requesting» — запрос к модели ушёл. Лента узнаёт об этом раньше,
         // в момент отправки сообщения.
-        "status"
+        "status",
+        // Счётчик токенов размышления. Сам факт размышления приходит блоком thinking.
+        "thinking_tokens"
     ]
 
     public init() {}
@@ -43,6 +45,11 @@ public struct AgentEventNormalizer: Sendable {
             return [normalizeResult(event)]
         case "stream_event":
             return normalizeStreamEvent(payload) ?? [.unknown(event)]
+        case "control_request":
+            return normalizeControlRequest(payload).map { [$0] } ?? [.unknown(event)]
+        case "control_cancel_request":
+            guard let requestID = payload["request_id"]?.stringValue else { return [.unknown(event)] }
+            return [.permissionRequestCancelled(requestID: requestID)]
         default:
             return [.unknown(event)]
         }
@@ -165,6 +172,25 @@ public struct AgentEventNormalizer: Sendable {
         default:
             return ""
         }
+    }
+
+    // MARK: - control_request
+
+    /// Запрос от CLI к приложению. Пока понимаем только вопрос о разрешении: другие
+    /// запросы приходят, лишь когда хост сам их заказал, а Runie их не заказывает.
+    private func normalizeControlRequest(_ payload: JSONValue) -> AgentEvent? {
+        guard let requestID = payload["request_id"]?.stringValue,
+              let request = payload["request"],
+              request["subtype"]?.stringValue == "can_use_tool",
+              let toolName = request["tool_name"]?.stringValue
+        else { return nil }
+        return .permissionRequested(PermissionRequest(
+            requestID: requestID,
+            toolUseID: request["tool_use_id"]?.stringValue,
+            toolName: toolName,
+            input: request["input"] ?? .object([:]),
+            reason: request["decision_reason"]?.stringValue
+        ))
     }
 
     // MARK: - stream_event

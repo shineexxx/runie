@@ -17,6 +17,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tracker = FrontmostAppTracker()
         chat = ChatPanelController(session: session, tracker: tracker)
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
+        // Агент стоит, пока человек не ответит: вопрос должен быть на виду.
+        session.onPermissionRequest = { [weak self] in
+            guard let self, !chat.isVisible else { return }
+            openChat()
+        }
         chat.onHide = { [weak self] in
             self?.button.reattach()
         }
@@ -40,6 +45,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if autoOpen > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen) { [weak self] in
                 self?.orbClicked()
+            }
+        }
+        // `-RunieAutoSend "текст"` вместе с `-RunieAutoOpen` отправляет сообщение после
+        // открытия — чтобы проверять живые ходы агента без мыши.
+        if let text = UserDefaults.standard.string(forKey: "RunieAutoSend"), autoOpen > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1) { [weak self] in
+                self?.chat.send(text)
             }
         }
         #endif
@@ -106,13 +118,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // а не про какой-то проект.
             return ClaudeCodeBackend(
                 executable: executable,
-                workingDirectory: FileManager.default.homeDirectoryForCurrentUser
+                workingDirectory: FileManager.default.homeDirectoryForCurrentUser,
+                arguments: ClaudeCodeArguments(appendSystemPrompt: runiePrompt)
             )
         } catch {
             return UnavailableBackend()
         }
     }
 }
+
+/// Дописывается к системному промпту Claude Code.
+///
+/// Описание вызова инструмента человек видит в «руках» и в вопросе о разрешении —
+/// по нему он решает, пускать ли агента. Поэтому описание по-русски и по-человечески.
+private let runiePrompt = """
+Ты работаешь внутри Runie — помощника на Mac. Пользователь не обязательно программист \
+и видит не твои команды, а их краткие описания. Отвечай на языке пользователя. \
+Поле description у инструментов (например, у Bash) пиши кратко по-русски, с глаголом \
+в настоящем времени, например «Узнаёт версию macOS» или «Ищет файлы с отчётами»: \
+по этому описанию пользователь решает, разрешить ли действие.
+"""
 
 /// Бэкенд на случай, когда Claude Code не установлен. Приложение при этом
 /// запускается нормально и объясняет, что делать, при первой же попытке написать.

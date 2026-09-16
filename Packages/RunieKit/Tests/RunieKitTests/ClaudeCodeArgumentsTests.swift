@@ -52,9 +52,10 @@ struct ClaudeCodeArgumentsTests {
         #expect(value(after: "--permission-mode", in: arguments) == "manual")
     }
 
-    @Test("инструмент разрешений добавляется только когда задан")
+    @Test("вопросы о разрешении по умолчанию приходят в поток, их можно отключить")
     func permissionPromptToolIsOptional() {
-        #expect(ClaudeCodeArguments().build().contains("--permission-prompt-tool") == false)
+        #expect(value(after: "--permission-prompt-tool", in: ClaudeCodeArguments().build()) == "stdio")
+        #expect(ClaudeCodeArguments(permissionPromptTool: nil).build().contains("--permission-prompt-tool") == false)
 
         let withTool = ClaudeCodeArguments(permissionPromptTool: "mcp__runie__approve").build()
         #expect(value(after: "--permission-prompt-tool", in: withTool) == "mcp__runie__approve")

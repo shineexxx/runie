@@ -204,7 +204,15 @@ public final class AgentRuntime: @unchecked Sendable {
 
     /// Отправляет сообщение пользователя в stdin.
     public func send(_ message: UserMessage) throws {
-        let line = try message.ndjsonLine()
+        try write(try message.ndjsonLine())
+    }
+
+    /// Отправляет ответ на запрос разрешения в stdin.
+    public func send(_ response: PermissionResponse) throws {
+        try write(try response.ndjsonLine())
+    }
+
+    private func write(_ line: Data) throws {
         try queue.sync {
             guard let handle = stdinHandle, process?.isRunning == true else {
                 throw Failure.notRunning

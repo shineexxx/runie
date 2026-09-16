@@ -68,6 +68,13 @@ struct ChatView: View {
                     }
                     .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
 
+                    // Агент стоит и ждёт ответа — вопрос прямо над полем ввода.
+                    if let request = session.pendingPermission {
+                        PermissionCard(request: request, session: session)
+                            .id(request.requestID)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
+                    }
+
                     if let current = tracker.current {
                         ContextChip(current: current, layout: layout)
                             .frame(maxWidth: .infinity, alignment: farAlignment)
@@ -320,8 +327,11 @@ private struct CompactFeed: View {
         let timeline = session.timeline
         let turn = CurrentTurn(timeline.items)
 
+        // Пока висит вопрос о разрешении, всё про текущее действие уже в карточке.
+        let asking = session.pendingPermission != nil
+
         VStack(alignment: alignment, spacing: 8) {
-            if let action = turn.lastAction, showsAction(action) {
+            if let action = turn.lastAction, showsAction(action), !asking {
                 ActionCapsule(action: action)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
@@ -330,7 +340,7 @@ private struct CompactFeed: View {
                 Bubble { Text(notice.text).foregroundStyle(.red) }
             } else if let text = turn.lastAssistantText {
                 Bubble { AssistantText(text: text) }
-            } else if timeline.isBusy {
+            } else if timeline.isBusy, !asking {
                 Bubble {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
@@ -411,6 +421,87 @@ private struct ActionCapsule: View {
         .frame(maxWidth: 320)
         .fixedSize(horizontal: true, vertical: false)
         .readableSurface(Capsule())
+    }
+}
+
+// MARK: - Разрешение
+
+/// Вопрос «можно?» перед действием, которое CLI сам не выполняет: команда, запись
+/// файла, страница в интернете. Человек видит, что именно сделает Руни, и решает.
+private struct PermissionCard: View {
+    let request: PermissionRequest
+    let session: ChatSession
+
+    var body: some View {
+        let description = ToolDescriber.describe(name: request.toolName, input: request.input)
+
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Руни просит разрешения", systemImage: "hand.raised.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(OrbPalette.teal)
+
+            Text(description.title)
+                .font(.system(size: 14, weight: .semibold))
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let detail = description.detail {
+                Text(detail)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(4)
+                    .textSelection(.enabled)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+            }
+
+            HStack(spacing: 8) {
+                Button("Отклонить") { session.answer(request, allow: false) }
+                    .buttonStyle(PermissionButtonStyle(kind: .plain))
+                Spacer(minLength: 0)
+                Button("Всегда") { session.answer(request, allow: true, remember: true) }
+                    .buttonStyle(PermissionButtonStyle(kind: .secondary))
+                    .help(alwaysHelp)
+                Button("Разрешить") { session.answer(request, allow: true) }
+                    .buttonStyle(PermissionButtonStyle(kind: .primary))
+            }
+        }
+        .padding(16)
+        .frame(width: 360, alignment: .leading)
+        .readableSurface(RoundedRectangle(cornerRadius: 24))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Руни просит разрешения: \(description.title)")
+    }
+
+    private var alwaysHelp: String {
+        switch request.toolName {
+        case "Bash": "Больше не спрашивать об этой команде до конца разговора"
+        case "WebFetch": "Больше не спрашивать об этом сайте до конца разговора"
+        default: "Больше не спрашивать о таком действии до конца разговора"
+        }
+    }
+}
+
+private struct PermissionButtonStyle: ButtonStyle {
+    enum Kind { case primary, secondary, plain }
+    let kind: Kind
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: kind == .primary ? .semibold : .medium))
+            .foregroundStyle(kind == .primary ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .padding(.horizontal, 14)
+            .frame(height: 30)
+            .background {
+                switch kind {
+                case .primary: Capsule().fill(OrbPalette.deep.gradient)
+                case .secondary: Capsule().fill(.primary.opacity(0.08))
+                case .plain: Color.clear
+                }
+            }
+            .contentShape(Capsule())
+            .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
 

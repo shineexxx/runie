@@ -11,8 +11,7 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
         /// Отвечает хост через `permissionPromptTool`.
         ///
         /// Проверено на CLI 2.1.272: если инструмент не задан, отвечать некому, и CLI
-        /// сразу отказывает сам, присылая `system/permission_denied`. Это безопасное
-        /// поведение по умолчанию: без брокера (шаг 5) ничего необратимого не выполнится.
+        /// сразу отказывает сам, присылая `system/permission_denied`.
         case host
         /// Никто: всё, что потребовало бы подтверждения, отклоняется само.
         case none
@@ -27,9 +26,11 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
     public var session: Session
     public var permissionMode: String
     public var permissionPrompts: PermissionPrompts
-    /// Имя инструмента, через который CLI спрашивает разрешение у приложения.
-    /// Появится на шаге 5 вместе с брокером.
+    /// Через что CLI спрашивает разрешение у приложения. `stdio` — управляющие
+    /// сообщения прямо в потоке stream-json, как у Agent SDK.
     public var permissionPromptTool: String?
+    /// Дописывается к системному промпту Claude Code.
+    public var appendSystemPrompt: String?
     /// Пути к JSON-конфигурациям MCP-серверов.
     public var mcpConfigPaths: [String]
     /// Брать MCP только из переданных конфигураций, игнорируя пользовательские.
@@ -42,7 +43,8 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
         session: Session = .new(id: UUID()),
         permissionMode: String = "manual",
         permissionPrompts: PermissionPrompts = .host,
-        permissionPromptTool: String? = nil,
+        permissionPromptTool: String? = "stdio",
+        appendSystemPrompt: String? = nil,
         mcpConfigPaths: [String] = [],
         strictMCPConfig: Bool = false,
         includePartialMessages: Bool = true,
@@ -52,6 +54,7 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
         self.permissionMode = permissionMode
         self.permissionPrompts = permissionPrompts
         self.permissionPromptTool = permissionPromptTool
+        self.appendSystemPrompt = appendSystemPrompt
         self.mcpConfigPaths = mcpConfigPaths
         self.strictMCPConfig = strictMCPConfig
         self.includePartialMessages = includePartialMessages
@@ -84,6 +87,9 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
 
         if let permissionPromptTool {
             arguments += ["--permission-prompt-tool", permissionPromptTool]
+        }
+        if let appendSystemPrompt {
+            arguments += ["--append-system-prompt", appendSystemPrompt]
         }
         for path in mcpConfigPaths {
             arguments += ["--mcp-config", path]

@@ -45,6 +45,41 @@ public enum RuntimeOutput: Sendable, Equatable {
     }
 }
 
+/// Ответ на запрос разрешения в формате управляющего протокола stream-json.
+///
+/// Снято с CLI 2.1.272 при `--permission-prompt-tool stdio`: CLI присылает
+/// `control_request` с подтипом `can_use_tool` и ждёт `control_response` в stdin.
+/// Разрешение обязано вернуть входные данные инструмента в `updatedInput`.
+public struct PermissionResponse: Sendable, Equatable {
+    public let request: PermissionRequest
+    public let decision: PermissionDecision
+
+    public init(request: PermissionRequest, decision: PermissionDecision) {
+        self.request = request
+        self.decision = decision
+    }
+
+    public func ndjsonLine() throws -> Data {
+        let answer: JSONValue = switch decision {
+        case .allow:
+            .object(["behavior": .string("allow"), "updatedInput": request.input])
+        case .deny(let message):
+            .object(["behavior": .string("deny"), "message": .string(message)])
+        }
+        let payload: JSONValue = .object([
+            "type": .string("control_response"),
+            "response": .object([
+                "subtype": .string("success"),
+                "request_id": .string(request.requestID),
+                "response": answer
+            ])
+        ])
+        var data = try JSONEncoder().encode(payload)
+        data.append(UInt8(ascii: "\n"))
+        return data
+    }
+}
+
 /// Сообщение пользователя в формате, который ждёт `--input-format stream-json`.
 public struct UserMessage: Sendable, Equatable {
     public let text: String

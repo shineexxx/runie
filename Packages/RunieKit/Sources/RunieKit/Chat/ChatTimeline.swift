@@ -22,6 +22,8 @@ public struct ChatTimeline: Sendable, Equatable {
     public private(set) var activity: Activity = .idle
     public private(set) var usage: SubscriptionUsage?
     public private(set) var sessionID: String?
+    /// Вопросы о разрешении, на которые ещё не ответили, в порядке прихода.
+    public private(set) var pendingPermissions: [PermissionRequest] = []
 
     // MARK: Потоковый текст
 
@@ -105,6 +107,18 @@ public struct ChatTimeline: Sendable, Equatable {
                 action.output = result.text.isEmpty ? nil : result.text
             }
 
+        case .permissionRequested(let request):
+            pendingPermissions.removeAll { $0.requestID == request.requestID }
+            pendingPermissions.append(request)
+            if let toolUseID = request.toolUseID {
+                updateAction(toolUseID) { $0.status = .awaitingApproval }
+            }
+
+        case .permissionRequestCancelled(let requestID):
+            if let request = pendingPermissions.first(where: { $0.requestID == requestID }) {
+                resolvePermission(request, allowed: true)
+            }
+
         case .permissionDenied(let denial):
             updateAction(denial.toolUseID) { action in
                 action.status = .denied
@@ -133,6 +147,17 @@ public struct ChatTimeline: Sendable, Equatable {
 
         case .unknown:
             break
+        }
+    }
+
+    /// На вопрос ответили или его сняли. Отказанное действие сразу помечается
+    /// отказанным: результат с текстом отказа придёт позже.
+    public mutating func resolvePermission(_ request: PermissionRequest, allowed: Bool) {
+        pendingPermissions.removeAll { $0.requestID == request.requestID }
+        guard let toolUseID = request.toolUseID else { return }
+        updateAction(toolUseID) { action in
+            guard action.status == .awaitingApproval else { return }
+            action.status = allowed ? .running : .denied
         }
     }
 
@@ -242,8 +267,11 @@ public struct ChatTimeline: Sendable, Equatable {
     }
 
     private mutating func interruptRunningActions() {
+        // Ход закончился — спрашивать больше не о чем.
+        pendingPermissions.removeAll()
         for index in items.indices {
-            if case .action(var action) = items[index], action.status == .running {
+            if case .action(var action) = items[index],
+               action.status == .running || action.status == .awaitingApproval {
                 action.status = .interrupted
                 items[index] = .action(action)
             }
@@ -290,6 +318,8 @@ public struct ActionItem: Sendable, Equatable {
 
     public enum Status: Sendable, Equatable {
         case running
+        /// Ждёт, пока человек разрешит или откажет.
+        case awaitingApproval
         case succeeded
         case failed
         /// В разрешении отказано.

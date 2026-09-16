@@ -119,6 +119,7 @@ private struct ActionRow: View {
     private var statusLabel: String {
         switch action.status {
         case .running: "выполняется"
+        case .awaitingApproval: "ждёт разрешения"
         case .succeeded: "готово"
         case .failed: "ошибка"
         case .denied: "отказано в разрешении"
@@ -134,6 +135,10 @@ struct ActionStatusIcon: View {
         switch status {
         case .running:
             ProgressView().controlSize(.mini)
+        case .awaitingApproval:
+            Image(systemName: "hand.raised")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(OrbPalette.teal)
         case .succeeded:
             Image(systemName: "checkmark")
                 .font(.system(size: 10, weight: .bold))

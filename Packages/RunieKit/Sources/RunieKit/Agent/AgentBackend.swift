@@ -13,6 +13,8 @@ public enum AgentStreamItem: Sendable, Equatable {
 /// Живое соединение с агентом.
 public protocol AgentConnection: AnyObject, Sendable {
     func send(_ text: String) throws
+    /// Отвечает на запрос разрешения. Агент ждёт этого ответа и без него не продолжит.
+    func respond(to request: PermissionRequest, with decision: PermissionDecision) throws
     func stop()
 }
 
@@ -103,6 +105,10 @@ final class ClaudeCodeConnection: AgentConnection {
 
     func send(_ text: String) throws {
         try runtime.send(UserMessage(text))
+    }
+
+    func respond(to request: PermissionRequest, with decision: PermissionDecision) throws {
+        try runtime.send(PermissionResponse(request: request, decision: decision))
     }
 
     func stop() {
