@@ -3,22 +3,22 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000101 /* RunieApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001 /* RunieApp.swift */; };
-		A1000102 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002 /* ContentView.swift */; };
 		A1000103 /* RunieKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1000401 /* RunieKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A1000000 /* Runie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runie.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1000001 /* RunieApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunieApp.swift; sourceTree = "<group>"; };
-		A1000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000004 /* Runie.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runie.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A1000800 /* Runie */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Runie; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A1000200 /* Frameworks */ = {
@@ -51,20 +51,11 @@
 		A1000302 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				A1000303 /* Runie */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		A1000303 /* Runie */ = {
-			isa = PBXGroup;
-			children = (
-				A1000001 /* RunieApp.swift */,
-				A1000002 /* ContentView.swift */,
+				A1000800 /* Runie */,
 				A1000003 /* Info.plist */,
 				A1000004 /* Runie.entitlements */,
 			);
-			path = Runie;
+			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -76,10 +67,14 @@
 			buildPhases = (
 				A1000201 /* Sources */,
 				A1000200 /* Frameworks */,
+				A1000202 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A1000800 /* Runie */,
 			);
 			name = Runie;
 			packageProductDependencies = (
@@ -105,7 +100,6 @@
 				};
 			};
 			buildConfigurationList = A1000600 /* Build configuration list for PBXProject "Runie" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -113,9 +107,11 @@
 				Base,
 			);
 			mainGroup = A1000300;
+			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A1000400 /* XCLocalSwiftPackageReference "Packages/RunieKit" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = A1000301 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -125,13 +121,21 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		A1000202 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		A1000201 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1000102 /* ContentView.swift in Sources */,
-				A1000101 /* RunieApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,7 +156,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -171,7 +175,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -182,8 +186,7 @@
 		A1000604 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
-				CODE_SIGN_ENTITLEMENTS = App/Runie/Runie.entitlements;
+				CODE_SIGN_ENTITLEMENTS = App/Runie.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -191,8 +194,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = App/Runie/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -208,8 +210,7 @@
 		A1000605 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
-				CODE_SIGN_ENTITLEMENTS = App/Runie/Runie.entitlements;
+				CODE_SIGN_ENTITLEMENTS = App/Runie.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -217,8 +218,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = App/Runie/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

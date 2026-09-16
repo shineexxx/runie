@@ -34,12 +34,28 @@ public final class AgentRuntime: @unchecked Sendable {
         }
     }
 
-    public enum Failure: Error, Sendable {
+    public enum Failure: LocalizedError, Sendable {
         case alreadyRunning
         case notRunning
         case launchFailed(String)
         case writeFailed(String)
         case streamCorrupted(NDJSONLineSplitter.Failure)
+
+        // Эти строки видит пользователь в ленте чата.
+        public var errorDescription: String? {
+            switch self {
+            case .alreadyRunning:
+                "Агент уже запущен."
+            case .notRunning:
+                "Агент не запущен. Попробуйте отправить сообщение ещё раз."
+            case .launchFailed(let reason):
+                "Не удалось запустить Claude Code: \(reason)"
+            case .writeFailed(let reason):
+                "Не удалось передать сообщение агенту: \(reason)"
+            case .streamCorrupted:
+                "Ответ агента пришёл повреждённым."
+            }
+        }
     }
 
     /// Запись в stdin умершего процесса поднимает SIGPIPE, который по умолчанию

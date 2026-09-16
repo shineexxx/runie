@@ -44,7 +44,7 @@ public final class ChatSession {
         } catch {
             connection?.stop()
             connection = nil
-            timeline.recordLocalFailure("Не удалось связаться с агентом: \(error)")
+            timeline.recordLocalFailure(error.localizedDescription)
         }
     }
 
