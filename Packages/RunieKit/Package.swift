@@ -6,11 +6,13 @@ let package = Package(
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "RunieKit", targets: ["RunieKit"]),
-        .executable(name: "runie-smoke", targets: ["runie-smoke"])
+        .executable(name: "runie-smoke", targets: ["runie-smoke"]),
+        .executable(name: "runie-suggest", targets: ["runie-suggest"])
     ],
     targets: [
         .target(name: "RunieKit"),
         .executableTarget(name: "runie-smoke", dependencies: ["RunieKit"]),
+        .executableTarget(name: "runie-suggest", dependencies: ["RunieKit"]),
         .testTarget(
             name: "RunieKitTests",
             dependencies: ["RunieKit"],
