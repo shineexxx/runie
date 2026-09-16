@@ -151,17 +151,17 @@ private struct EdgeGlow: View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let breath = reduceMotion ? 0.5 : (sin(time * 1.3) + 1) / 2
-            let strength = (0.32 + 0.18 * breath) * (1 + 0.6 * energy)
+            let strength = (0.22 + 0.12 * breath) * (1 + 0.6 * energy)
 
             ZStack {
                 Ellipse()
                     .fill(OrbPalette.cyan.opacity(strength))
-                    .frame(width: 26, height: 64)
-                    .blur(radius: 12)
+                    .frame(width: 16, height: 40)
+                    .blur(radius: 8)
                 Ellipse()
                     .fill(OrbPalette.mint.opacity(strength * 0.8))
-                    .frame(width: 8, height: 26)
-                    .blur(radius: 5)
+                    .frame(width: 5, height: 16)
+                    .blur(radius: 3)
             }
             .blendMode(.plusLighter)
             // У вершины горбика: он выступает из кромки примерно до центра панели.
