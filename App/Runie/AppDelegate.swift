@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var button: EdgeButtonController!
     private var chat: ChatPanelController!
     private var settings: AppSettings!
+    private var suggestions: SuggestionsModel!
     private var mainWindow: MainWindowController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -36,7 +37,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !chat.isVisible { openChat() }
         }
         tracker = FrontmostAppTracker()
-        chat = ChatPanelController(session: session, tracker: tracker, settings: settings)
+        suggestions = SuggestionsModel(store: store)
+        chat = ChatPanelController(session: session, tracker: tracker, settings: settings, suggestions: suggestions)
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
         // Агент стоит, пока человек не ответит: вопрос должен быть на виду.
         session.onPermissionRequest = { [weak self] in
@@ -107,6 +109,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Агент поднимается, пока чат открывается: к первому сообщению список
         // моделей уже свежий, а ответ приходит быстрее.
         session.prepare()
+        // Подсказки обновляются в фоне; чат открывается с последними готовыми.
+        if session.timeline.items.isEmpty {
+            suggestions.refresh(for: tracker.current?.context)
+        }
         button.detach { [weak self] in
             guard let self else { return }
             chat.show(anchor: button.panel.frame)

@@ -83,7 +83,7 @@ final class ChatPanelController {
     /// Чат начал закрываться — откуда бы ни пришла команда: орб, Esc, крестик.
     var onHide: (() -> Void)?
 
-    init(session: ChatSession, tracker: FrontmostAppTracker, settings: AppSettings) {
+    init(session: ChatSession, tracker: FrontmostAppTracker, settings: AppSettings, suggestions: SuggestionsModel) {
         self.session = session
         self.tracker = tracker
         panel = FloatingPanel(size: Self.size, allowsKey: true)
@@ -94,6 +94,7 @@ final class ChatPanelController {
             settings: settings,
             layout: layout,
             tracker: tracker,
+            suggestions: suggestions,
             onSend: { [weak self] text in self?.send(text) },
             onClose: { [weak self] in self?.hide() },
             onOpenWindow: { [weak self] in self?.onOpenWindow?() }

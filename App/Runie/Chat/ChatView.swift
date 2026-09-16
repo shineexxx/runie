@@ -12,6 +12,7 @@ struct ChatView: View {
     let settings: AppSettings
     let layout: ChatLayout
     let tracker: FrontmostAppTracker
+    let suggestions: SuggestionsModel
     let onSend: (String) -> Void
     let onClose: () -> Void
     /// Открыть окно Runie на этом разговоре.
@@ -89,7 +90,7 @@ struct ChatView: View {
 
                     ChipsRow(
                         session: session,
-                        suggestions: tracker.current?.context.suggestions ?? ContextSuggestions.fallback,
+                        suggestions: suggestions.current,
                         alignment: frameAlignment,
                         onSend: onSend
                     )
@@ -682,7 +683,7 @@ private struct InputRow: View {
 
 private struct ChipsRow: View {
     let session: ChatSession
-    let suggestions: [String]
+    let suggestions: [Suggestion]
     let alignment: Alignment
     let onSend: (String) -> Void
 
@@ -706,15 +707,18 @@ private struct ChipsRow: View {
             .accessibilityLabel("Новый разговор")
 
             if session.timeline.items.isEmpty {
-                ForEach(suggestions, id: \.self) { suggestion in
-                    Chip(title: suggestion) { onSend(suggestion) }
+                ForEach(suggestions) { suggestion in
+                    // На кнопке — короткая надпись, агенту уходит полная просьба.
+                    Chip(title: suggestion.label) { onSend(suggestion.prompt) }
+                        .help(suggestion.prompt)
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             } else if let usage = session.timeline.usage {
                 UsageChip(usage: usage)
             }
         }
         .frame(maxWidth: .infinity, alignment: alignment)
-        .animation(.easeOut(duration: 0.2), value: suggestions)
+        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: suggestions)
     }
 }
 
