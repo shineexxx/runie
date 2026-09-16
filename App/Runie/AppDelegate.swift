@@ -28,6 +28,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button.makeMenu = { [weak self] in
             self?.makeButtonMenu() ?? NSMenu()
         }
+
+        #if DEBUG
+        // Для съёмки анимаций: `-RunieAutoOpen 3` открывает чат через 3 секунды
+        // после запуска. Клик инструментом автоматизации доходит с непредсказуемой
+        // задержкой, и привязать к нему съёмку кадров нельзя.
+        let autoOpen = UserDefaults.standard.double(forKey: "RunieAutoOpen")
+        if autoOpen > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen) { [weak self] in
+                self?.orbClicked()
+            }
+        }
+        #endif
     }
 
     /// Орб лежит в конце поля ввода и отвечает за всё сразу: открыть чат,

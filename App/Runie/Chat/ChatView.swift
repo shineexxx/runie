@@ -14,61 +14,141 @@ struct ChatView: View {
     let onSend: (String) -> Void
     let onClose: () -> Void
 
-    /// Поле «вытекло» из орба. Сбрасывается при каждом открытии чата.
-    @State private var hasFlowed = false
+    /// Когда началось появление. Ход считается от этого времени внутри `TimelineView`,
+    /// а не интерполяцией SwiftUI: свечение на Canvas при анимируемом значении
+    /// не перерисовывалось, и блоки просто оказывались на месте.
+    @State private var emergenceStart = Date.distantPast
+    @State private var isEmerging = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Сколько длится появление. Первые мгновения совпадают с уходом света из орба.
+    private static var emergenceDuration: Double {
+        #if DEBUG
+        // Для разглядывания по кадрам: `-RunieEmergeDuration 6` в аргументах запуска.
+        let forced = UserDefaults.standard.double(forKey: "RunieEmergeDuration")
+        if forced > 0 { return forced }
+        #endif
+        return 0.75
+    }
 
     var body: some View {
-        GlassEffectContainer(spacing: 4) {
-            VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
-                Spacer(minLength: 0)
-
-                Group {
-                    if layout.isExpanded {
-                        ConversationPanel(session: session, onCollapse: collapse)
-                            .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
-                    } else {
-                        CompactFeed(session: session, alignment: horizontalAlignment)
-                            .transition(.opacity)
-                    }
-                }
-                .opacity(hasFlowed ? 1 : 0)
-                .scaleEffect(hasFlowed ? 1 : 0.4, anchor: orbCornerAnchor)
-
-                if let current = tracker.current {
-                    ContextChip(current: current, layout: layout)
-                        .frame(maxWidth: .infinity, alignment: farAlignment)
-                        .opacity(hasFlowed ? 1 : 0)
-                }
-
-                InputRow(
-                    session: session,
-                    layout: layout,
-                    onSubmitDraft: submitDraft,
-                    onToggleExpanded: toggleExpanded
-                )
-                .frame(height: ChatPanelController.inputHeight)
-                // Поле вытекает из орба: растёт от его стороны.
-                .scaleEffect(x: hasFlowed ? 1 : 0.14, y: hasFlowed ? 1 : 0.86, anchor: orbAnchor)
-                .opacity(hasFlowed ? 1 : 0)
-
-                ChipsRow(
-                    session: session,
-                    suggestions: tracker.current?.context.suggestions ?? ContextSuggestions.fallback,
-                    alignment: frameAlignment,
-                    onSend: onSend
-                )
-                .frame(height: ChatPanelController.chipsHeight)
-                .opacity(hasFlowed ? 1 : 0)
-            }
-            // Поля шире тени блоков, иначе край окна её обрезает.
-            .padding(.horizontal, ChatPanelController.shadowMargin)
-            .padding(.bottom, ChatPanelController.bottomInset)
-            .frame(width: ChatPanelController.size.width)
-            .frame(maxHeight: .infinity, alignment: .bottom)
+        TimelineView(.animation(paused: !isEmerging)) { timeline in
+            content(emergence: emergenceProgress(at: timeline.date))
         }
-        .onAppear(perform: flowOut)
-        .onChange(of: layout.openGeneration) { flowOut() }
+        .onAppear(perform: emerge)
+        .onChange(of: layout.openGeneration) { emerge() }
     }
+
+    private func content(emergence: Double) -> some View {
+        ZStack(alignment: .bottom) {
+            // Свет, пришедший из орба. Лежит под блоками: они проступают из него.
+            GeometryReader { proxy in
+                EmergenceGlow(
+                    progress: emergence,
+                    origin: orbPoint(in: proxy.size),
+                    targets: glowTargets(in: proxy.size)
+                )
+            }
+            .allowsHitTesting(false)
+
+            // Без GlassEffectContainer: он рисует стекло детей отдельным проходом
+            // и игнорирует их прозрачность и масштаб — блоки не проступали бы из света.
+            do {
+                VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
+                    Spacer(minLength: 0)
+
+                    Group {
+                        if layout.isExpanded {
+                            ConversationPanel(session: session, onCollapse: collapse)
+                                .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
+                        } else {
+                            CompactFeed(session: session, alignment: horizontalAlignment)
+                                .transition(.opacity)
+                        }
+                    }
+                    .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
+
+                    if let current = tracker.current {
+                        ContextChip(current: current, layout: layout)
+                            .frame(maxWidth: .infinity, alignment: farAlignment)
+                            .modifier(EmergeFromLight(progress: emergence, window: 0.46...0.9, anchor: .center))
+                    }
+
+                    InputRow(
+                        session: session,
+                        layout: layout,
+                        onSubmitDraft: submitDraft,
+                        onToggleExpanded: toggleExpanded
+                    )
+                    .frame(height: ChatPanelController.inputHeight)
+                    // Поле первым вытягивается из света вдоль строки, от орба.
+                    .modifier(EmergeFromLight(
+                        progress: emergence,
+                        window: 0.08...0.52,
+                        anchor: orbAnchor,
+                        stretchesHorizontally: true
+                    ))
+
+                    ChipsRow(
+                        session: session,
+                        suggestions: tracker.current?.context.suggestions ?? ContextSuggestions.fallback,
+                        alignment: frameAlignment,
+                        onSend: onSend
+                    )
+                    .frame(height: ChatPanelController.chipsHeight)
+                    .modifier(EmergeFromLight(progress: emergence, window: 0.26...0.72, anchor: orbCornerAnchor))
+                }
+                // Поля шире тени блоков, иначе край окна её обрезает.
+                .padding(.horizontal, ChatPanelController.shadowMargin)
+                .padding(.bottom, ChatPanelController.bottomInset)
+                .frame(width: ChatPanelController.size.width)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            }
+        }
+    }
+
+    /// Ход появления от 0 до 1 с замедлением к концу.
+    private func emergenceProgress(at date: Date) -> Double {
+        let raw = date.timeIntervalSince(emergenceStart) / Self.emergenceDuration
+        let t = min(max(raw, 0), 1)
+        return 1 - pow(1 - t, 3)
+    }
+
+    // MARK: Геометрия света
+
+    /// Центр орба в координатах окна: он лежит в конце поля ввода.
+    private func orbPoint(in size: CGSize) -> CGPoint {
+        let fromEdge = ChatPanelController.shadowMargin
+            + ChatPanelController.pillBeyondOrb
+            + EdgeButtonController.orbDiameter / 2
+        let x = layout.orbSide == .trailing ? size.width - fromEdge : fromEdge
+        return CGPoint(x: x, y: size.height - inputCenterFromBottom)
+    }
+
+    /// Куда растекается свет: вдоль поля, к подсказкам и к месту ответа.
+    private func glowTargets(in size: CGSize) -> [CGPoint] {
+        let origin = orbPoint(in: size)
+        let direction: CGFloat = layout.orbSide == .trailing ? -1 : 1
+        let rowWidth = size.width - ChatPanelController.shadowMargin * 2
+        let inputY = origin.y
+        let chipsY = size.height - ChatPanelController.bottomInset - ChatPanelController.chipsHeight / 2
+        let bubbleY = inputY - ChatPanelController.inputHeight / 2 - ChatPanelController.blockSpacing - 40
+        return [
+            CGPoint(x: origin.x + direction * rowWidth * 0.45, y: inputY),
+            CGPoint(x: origin.x + direction * rowWidth * 0.85, y: inputY),
+            CGPoint(x: origin.x + direction * rowWidth * 0.35, y: chipsY),
+            CGPoint(x: origin.x + direction * rowWidth * 0.2, y: bubbleY)
+        ]
+    }
+
+    private var inputCenterFromBottom: CGFloat {
+        ChatPanelController.bottomInset
+            + ChatPanelController.chipsHeight
+            + ChatPanelController.blockSpacing
+            + ChatPanelController.inputHeight / 2
+    }
+
+    // MARK: Выравнивание
 
     private var horizontalAlignment: HorizontalAlignment {
         layout.orbSide == .trailing ? .trailing : .leading
@@ -87,17 +167,26 @@ struct ChatView: View {
         layout.orbSide == .trailing ? .trailing : .leading
     }
 
-    /// Нижний угол блоков со стороны орба: ответ вырастает из шара.
+    /// Нижний угол блоков со стороны орба: блоки вырастают из того места, откуда пришёл свет.
     private var orbCornerAnchor: UnitPoint {
         layout.orbSide == .trailing ? .bottomTrailing : .bottomLeading
     }
 
-    private func flowOut() {
-        var instant = Transaction()
-        instant.disablesAnimations = true
-        withTransaction(instant) { hasFlowed = false }
-        withAnimation(.spring(response: 0.46, dampingFraction: 0.8)) {
-            hasFlowed = true
+    // MARK: Действия
+
+    private func emerge() {
+        guard !reduceMotion else {
+            emergenceStart = .distantPast
+            return
+        }
+        let start = Date()
+        emergenceStart = start
+        isEmerging = true
+        let duration = Self.emergenceDuration
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(duration + 0.1))
+            // Если чат успели открыть заново, этот запуск уже не главный.
+            if emergenceStart == start { isEmerging = false }
         }
     }
 
@@ -118,6 +207,80 @@ struct ChatView: View {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             layout.isExpanded = false
         }
+    }
+}
+
+// MARK: - Появление из света
+
+/// Бирюзовое свечение, которое вылетает из орба и растекается по месту блоков.
+///
+/// Пятна те же, что внутри орба, и выходят из той же точки: для глаза это
+/// продолжение света, который только что покинул шар. Ярче всего свет посередине
+/// пути — в этот момент из него проступают блоки, — и гаснет, когда они на месте.
+private struct EmergenceGlow: View {
+
+    let progress: Double
+    let origin: CGPoint
+    let targets: [CGPoint]
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private static let colors = [OrbPalette.cyan, OrbPalette.teal, OrbPalette.azure, OrbPalette.mint]
+
+    var body: some View {
+        Canvas { context, canvasSize in
+            guard !reduceMotion, progress > 0.001, progress < 0.999 else { return }
+            let blur: CGFloat = 22
+            context.addFilter(.blur(radius: blur))
+            context.blendMode = .plusLighter
+
+            // Рост быстрый, угасание долгое: свет вспыхивает и медленно тает.
+            let brightness = sin(min(progress / 0.7, 1) * .pi) * (1 - max(0, progress - 0.7) / 0.3)
+            let travel = 1 - pow(1 - progress, 3)
+
+            for (index, target) in targets.enumerated() {
+                // Пятна отстают друг от друга, поэтому свет течёт, а не прыгает.
+                let lag = Double(index) * 0.08
+                let t = max(0, min(1, (travel - lag) / (1 - lag)))
+                let point = CGPoint(
+                    x: origin.x + (target.x - origin.x) * t,
+                    y: origin.y + (target.y - origin.y) * t
+                )
+                // Пятно вместе с хвостом размытия не должно доходить до края окна,
+                // иначе край срежет свет прямой линией.
+                let room = min(point.x, canvasSize.width - point.x, point.y, canvasSize.height - point.y) - blur * 1.6
+                let radius = max(6, min(22 + 58 * t, room))
+                let rect = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
+                let color = Self.colors[index % Self.colors.count]
+                context.fill(Path(ellipseIn: rect), with: .color(color.opacity(0.75 * brightness)))
+            }
+        }
+    }
+}
+
+/// Блок проступает из света в своё окно времени: сначала бледный и сжатый к орбу,
+/// потом яркий и на месте. Окна у блоков разные — ближние к орбу появляются раньше.
+private struct EmergeFromLight: ViewModifier {
+
+    let progress: Double
+    let window: ClosedRange<Double>
+    let anchor: UnitPoint
+    var stretchesHorizontally = false
+
+    func body(content: Content) -> some View {
+        let raw = (progress - window.lowerBound) / (window.upperBound - window.lowerBound)
+        let reveal = max(0, min(1, raw))
+        // Плавный вход и выход вместо линейного.
+        let eased = reveal * reveal * (3 - 2 * reveal)
+
+        return content
+            .opacity(eased)
+            .brightness((1 - eased) * 0.35)
+            .scaleEffect(
+                x: stretchesHorizontally ? 0.12 + 0.88 * eased : 0.82 + 0.18 * eased,
+                y: stretchesHorizontally ? 0.7 + 0.3 * eased : 0.82 + 0.18 * eased,
+                anchor: anchor
+            )
     }
 }
 
