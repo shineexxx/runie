@@ -50,6 +50,41 @@ enum AttachmentStore {
         }
     }
 
+    /// Что лежит в буфере обмена — для подписи в списке.
+    static func clipboardSummary() -> String {
+        let board = NSPasteboard.general
+        if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+           !urls.isEmpty {
+            return urls.count == 1 ? urls[0].lastPathComponent : "Файлов: \(urls.count)"
+        }
+        if NSImage(pasteboard: board) != nil { return "Картинка" }
+        if let text = board.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            let line = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text
+            return "«\(line.count > 28 ? String(line.prefix(28)) + "…" : line)»"
+        }
+        return "Пусто"
+    }
+
+    /// Содержимое буфера: файлы и картинка — вложениями, текст — в поле ввода.
+    static func readClipboard() -> (attachments: [Attachment], text: String?) {
+        let board = NSPasteboard.general
+        if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+           !urls.isEmpty {
+            return (importFiles(urls), nil)
+        }
+        if let image = NSImage(pasteboard: board),
+           let tiff = image.tiffRepresentation,
+           let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+            let raw = FileManager.default.temporaryDirectory.appending(path: "runie-clip-\(UUID().uuidString).png")
+            defer { try? FileManager.default.removeItem(at: raw) }
+            if (try? png.write(to: raw)) != nil, let attachment = importImage(raw, name: "Из буфера обмена") {
+                return ([attachment], nil)
+            }
+        }
+        let text = board.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ([], text?.isEmpty == false ? text : nil)
+    }
+
     static func pickFiles() -> [Attachment] {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
@@ -82,18 +117,20 @@ enum AttachmentStore {
 
 // MARK: - Кнопки и полоска вложений
 
-/// Скрепка у поля ввода. Нажатие открывает список: снимок области или файлы.
+/// «+» у поля ввода. Нажатие открывает список: снимок области, буфер обмена, файлы.
 struct AttachmentButtons: View {
     let onPickFiles: () -> Void
     let onCapture: () -> Void
+    let onPaste: () -> Void
 
     @State private var anchor = WindowAnchor()
     @State private var isOpen = false
 
     var body: some View {
         Button(action: toggle) {
-            Image(systemName: "paperclip")
-                .font(.system(size: 13, weight: .medium))
+            Image(systemName: "plus")
+                .font(.system(size: 14, weight: .semibold))
+                .rotationEffect(.degrees(isOpen ? 45 : 0))
                 .foregroundStyle(isOpen ? .primary : .secondary)
                 .frame(width: 26, height: 26)
                 .background(.primary.opacity(isOpen ? 0.08 : 0), in: Circle())
@@ -122,6 +159,8 @@ struct AttachmentButtons: View {
             items: [
                 DropdownItem(id: "capture", title: "Снимок области экрана",
                              detail: "Выделите, что показать Руни", symbol: "viewfinder", action: onCapture),
+                DropdownItem(id: "clipboard", title: "Буфер обмена",
+                             detail: AttachmentStore.clipboardSummary(), symbol: "doc.on.clipboard", action: onPaste),
                 DropdownItem(id: "files", title: "Файлы…",
                              detail: "Документы, картинки, архивы", symbol: "doc", action: onPickFiles)
             ],

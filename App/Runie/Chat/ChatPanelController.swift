@@ -103,7 +103,8 @@ final class ChatPanelController {
             onClose: { [weak self] in self?.hide() },
             onOpenWindow: { [weak self] in self?.onOpenWindow?() },
             onPickFiles: { [weak self] in self?.pickFiles() },
-            onCapture: { [weak self] in self?.captureScreenshot() }
+            onCapture: { [weak self] in self?.captureScreenshot() },
+            onPaste: { [weak self] in self?.pasteClipboard() }
         ))
         hosting.frame = NSRect(origin: .zero, size: Self.size)
         hosting.autoresizingMask = [.width, .height]
@@ -143,6 +144,17 @@ final class ChatPanelController {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { layout.attachments.append(shot) }
             }
         }
+    }
+
+    /// Буфер обмена: файлы и картинка — во вложения, текст — в поле ввода.
+    func pasteClipboard() {
+        let (files, text) = AttachmentStore.readClipboard()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { layout.attachments += files }
+        if let text {
+            layout.draft += (layout.draft.isEmpty ? "" : " ") + text
+        }
+        panel.makeKey()
+        layout.requestFocus()
     }
 
     func pickFiles() {

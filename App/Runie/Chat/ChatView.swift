@@ -19,6 +19,7 @@ struct ChatView: View {
     let onOpenWindow: () -> Void
     let onPickFiles: () -> Void
     let onCapture: () -> Void
+    let onPaste: () -> Void
 
     /// Когда началось появление. Ход считается от этого времени внутри `TimelineView`,
     /// а не интерполяцией SwiftUI: свечение на Canvas при анимируемом значении
@@ -89,6 +90,7 @@ struct ChatView: View {
                         settings: settings,
                         onPickFiles: onPickFiles,
                         onCapture: onCapture,
+                        onPaste: onPaste,
                         layout: layout,
                         onSubmitDraft: submitDraft,
                         onStop: { session.stop() },
@@ -636,6 +638,7 @@ private struct InputRow: View {
     let settings: AppSettings
     let onPickFiles: () -> Void
     let onCapture: () -> Void
+    let onPaste: () -> Void
     @Bindable var layout: ChatLayout
     let onSubmitDraft: () -> Void
     let onStop: () -> Void
@@ -665,7 +668,7 @@ private struct InputRow: View {
         // и многострочное поле подпрыгивает над центром.
         HStack(spacing: 4) {
             if layout.orbSide == .leading { sendButton }
-            if layout.orbSide == .trailing { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture) }
+            if layout.orbSide == .trailing { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste) }
 
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -678,7 +681,7 @@ private struct InputRow: View {
                 .layoutPriority(1)
 
             ModelMenu(session: session, settings: settings)
-            if layout.orbSide == .leading { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture) }
+            if layout.orbSide == .leading { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste) }
             if layout.orbSide == .trailing { sendButton }
         }
         .padding(.leading, layout.orbSide == .trailing ? 8 : 7)

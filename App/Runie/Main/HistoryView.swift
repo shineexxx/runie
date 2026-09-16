@@ -115,7 +115,7 @@ struct ConversationDetail: View {
                     .frame(height: 68)
             }
             HStack(alignment: .bottom, spacing: 10) {
-                AttachmentButtons(onPickFiles: pickFiles, onCapture: capture)
+                AttachmentButtons(onPickFiles: pickFiles, onCapture: capture, onPaste: paste)
                     .padding(.bottom, 5)
                 TextField(placeholder, text: $draft, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -171,6 +171,13 @@ struct ConversationDetail: View {
     private func pickFiles() {
         let files = AttachmentStore.pickFiles()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments += files }
+    }
+
+    private func paste() {
+        let (files, text) = AttachmentStore.readClipboard()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments += files }
+        if let text { draft += (draft.isEmpty ? "" : " ") + text }
+        isFocused = true
     }
 
     private func capture() {
