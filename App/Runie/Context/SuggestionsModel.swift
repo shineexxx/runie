@@ -57,8 +57,11 @@ final class SuggestionsModel {
             greeting = (Self.stillFits(cached) ? cached.set.greeting : nil) ?? SuggestionSet.fallbackGreeting()
             if Date().timeIntervalSince(cached.date) < Self.refreshInterval, Self.stillFits(cached) { return }
         } else {
-            if let app {
-                // Пока ИИ думает — подсказки под семейство приложения.
+            // Пока ИИ думает — последние придуманные подсказки. Шаблонные под
+            // семейство приложения — только если ИИ ещё ни разу не отвечал.
+            if let last {
+                current = last.set.suggestions
+            } else if let app {
                 current = Suggestion.fixed(app.suggestions)
             }
             // Последнее придуманное приветствие лучше шаблонного, если время суток то же.
