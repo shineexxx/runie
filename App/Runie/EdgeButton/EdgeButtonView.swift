@@ -16,7 +16,10 @@ struct EdgeButtonView: View {
                     .fill(.black)
                     // Мягкий ореол вокруг горба, как у Eney: горб читается и на тёмных обоях.
                     .shadow(color: .white.opacity(0.09), radius: 14)
-                    .animation(.spring(response: 0.34, dampingFraction: 0.8), value: tetherExtent)
+                    .animation(.spring(response: 0.22, dampingFraction: 0.85), value: tetherExtent)
+                    // Оторвавшийся от края орб горб не тащит: иначе вместе с панелью
+                    // на экран выезжает его часть, спрятанная за кромкой.
+                    .opacity(state.isAttached ? 1 : 0)
             }
 
             RunieOrb(
@@ -31,7 +34,7 @@ struct EdgeButtonView: View {
             // Спрятанный шар уезжает за кромку и гаснет, чтобы свет не торчал из-за края.
             .offset(x: retractOffset)
             .opacity(state.isRetracted ? 0 : 1)
-            .animation(.spring(response: 0.42, dampingFraction: 0.85), value: state.isRetracted)
+            .animation(.spring(response: 0.26, dampingFraction: 0.85), value: state.isRetracted)
         }
         .frame(width: EdgeButtonController.panelSize.width, height: EdgeButtonController.panelSize.height)
         .help(chatLayout.isOpen ? "Закрыть чат" : "Руни")
@@ -103,9 +106,10 @@ struct OrbTether: Shape, @preconcurrency Animatable {
         // Рисуем для правого края и отражаем для левого.
         let cy = rect.midY
         let wall = rect.midX + EdgeButtonController.attachedInset
-        let beyond = rect.maxX + 1
+        // За кромку горб заходит совсем чуть-чуть — только чтобы не было щели.
+        let beyond = wall + 2
         let depth = d * Self.depth * extent
-        let half = min(d * Self.halfHeight * (0.55 + 0.45 * extent), rect.height / 2)
+        let half = min(d * Self.halfHeight * sqrt(max(extent, 0)), rect.height / 2)
         let apex = wall - depth
 
         var path = Path()

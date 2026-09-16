@@ -28,7 +28,7 @@ struct ChatView: View {
         let forced = UserDefaults.standard.double(forKey: "RunieEmergeDuration")
         if forced > 0 { return forced }
         #endif
-        return 0.75
+        return 0.5
     }
 
     var body: some View {
