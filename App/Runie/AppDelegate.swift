@@ -88,8 +88,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // `-RunieAutoSend "текст"` вместе с `-RunieAutoOpen` отправляет сообщение после
         // открытия — чтобы проверять живые ходы агента без мыши.
         if let text = UserDefaults.standard.string(forKey: "RunieAutoSend"), autoOpen > 0 {
+            // `-RunieAttach /путь/к/файлу` прикладывает файл к этому сообщению.
+            let attach = UserDefaults.standard.string(forKey: "RunieAttach")
             DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1) { [weak self] in
-                self?.chat.send(text)
+                guard let self else { return }
+                if let attach {
+                    chat.layout.attachments = AttachmentStore.importFiles([URL(fileURLWithPath: attach)])
+                }
+                chat.send(text)
             }
         }
         #endif
@@ -194,7 +200,10 @@ private let runiePrompt = """
 и видит не твои команды, а их краткие описания. Отвечай на языке пользователя. \
 Поле description у инструментов (например, у Bash) пиши кратко по-русски, с глаголом \
 в настоящем времени, например «Узнаёт версию macOS» или «Ищет файлы с отчётами»: \
-по этому описанию пользователь решает, разрешить ли действие.
+по этому описанию пользователь решает, разрешить ли действие. \
+Чтобы показать пользователю картинку, вставь её в ответ как ![описание](полный путь или https-ссылка) — \
+она появится прямо в чате. Чтобы отдать файл, дай ссылку [имя файла](полный путь). \
+Пути пиши полностью, начиная с /.
 """
 
 /// Бэкенд на случай, когда Claude Code не установлен. Приложение при этом

@@ -35,8 +35,14 @@ final class FakeBackend: AgentBackend, @unchecked Sendable {
             lock.withLock { _responses.append((request, decision)) }
         }
 
-        func send(_ text: String) throws {
-            lock.withLock { _sent.append(text) }
+        private var _messages: [UserMessage] = []
+        var messages: [UserMessage] { lock.withLock { _messages } }
+
+        func send(_ message: UserMessage) throws {
+            lock.withLock {
+                _sent.append(message.text)
+                _messages.append(message)
+            }
         }
 
         func stop() {

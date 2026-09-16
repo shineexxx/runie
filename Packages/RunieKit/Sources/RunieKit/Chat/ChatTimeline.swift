@@ -56,8 +56,8 @@ public struct ChatTimeline: Sendable, Equatable {
 
     // MARK: - Действия пользователя
 
-    public mutating func appendUserMessage(_ text: String, id: UUID = UUID()) {
-        items.append(.user(UserItem(id: id, text: text)))
+    public mutating func appendUserMessage(_ text: String, attachments: [Attachment] = [], id: UUID = UUID()) {
+        items.append(.user(UserItem(id: id, text: text, attachments: attachments.isEmpty ? nil : attachments)))
         activity = .waiting
     }
 
@@ -307,6 +307,14 @@ public enum TimelineItem: Sendable, Equatable, Identifiable, Codable {
 public struct UserItem: Sendable, Equatable, Codable {
     public let id: UUID
     public let text: String
+    /// Приложенные картинки и файлы. Необязательно: старые разговоры сохранены без них.
+    public let attachments: [Attachment]?
+
+    public init(id: UUID, text: String, attachments: [Attachment]? = nil) {
+        self.id = id
+        self.text = text
+        self.attachments = attachments
+    }
 }
 
 public struct AssistantItem: Sendable, Equatable, Codable {

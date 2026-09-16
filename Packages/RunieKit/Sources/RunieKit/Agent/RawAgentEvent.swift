@@ -80,27 +80,62 @@ public struct PermissionResponse: Sendable, Equatable {
     }
 }
 
+/// Картинка, которая уходит агенту внутри сообщения — модель видит её сама.
+public struct MessageImage: Sendable, Equatable {
+    /// `image/png`, `image/jpeg`, `image/gif`, `image/webp`.
+    public let mediaType: String
+    public let data: Data
+
+    public init(mediaType: String, data: Data) {
+        self.mediaType = mediaType
+        self.data = data
+    }
+
+    /// Типы, которые модель принимает как изображение.
+    public static func mediaType(forExtension ext: String) -> String? {
+        switch ext.lowercased() {
+        case "png": "image/png"
+        case "jpg", "jpeg": "image/jpeg"
+        case "gif": "image/gif"
+        case "webp": "image/webp"
+        default: nil
+        }
+    }
+
+    public static func load(from url: URL) throws -> MessageImage? {
+        guard let type = mediaType(forExtension: url.pathExtension) else { return nil }
+        return MessageImage(mediaType: type, data: try Data(contentsOf: url))
+    }
+}
+
 /// Сообщение пользователя в формате, который ждёт `--input-format stream-json`.
+///
+/// Проверено на CLI 2.1.272: картинки идут блоками `image` с base64 перед текстом,
+/// как в Messages API.
 public struct UserMessage: Sendable, Equatable {
     public let text: String
+    public let images: [MessageImage]
 
-    public init(_ text: String) {
+    public init(_ text: String, images: [MessageImage] = []) {
         self.text = text
+        self.images = images
     }
 
     /// Одна строка NDJSON, готовая к записи в stdin, вместе с переводом строки.
     public func ndjsonLine() throws -> Data {
-        var data = try JSONEncoder().encode(Payload(text: text))
+        var data = try JSONEncoder().encode(Payload(text: text, images: images))
         data.append(UInt8(ascii: "\n"))
         return data
     }
 
     private struct Payload: Encodable {
         let text: String
+        let images: [MessageImage]
 
         enum CodingKeys: String, CodingKey { case type, message }
         enum MessageKeys: String, CodingKey { case role, content }
-        enum BlockKeys: String, CodingKey { case type, text }
+        enum BlockKeys: String, CodingKey { case type, text, source }
+        enum SourceKeys: String, CodingKey { case type, media_type, data }
 
         func encode(to encoder: any Encoder) throws {
             var root = encoder.container(keyedBy: CodingKeys.self)
@@ -108,6 +143,14 @@ public struct UserMessage: Sendable, Equatable {
             var message = root.nestedContainer(keyedBy: MessageKeys.self, forKey: .message)
             try message.encode("user", forKey: .role)
             var content = message.nestedUnkeyedContainer(forKey: .content)
+            for image in images {
+                var block = content.nestedContainer(keyedBy: BlockKeys.self)
+                try block.encode("image", forKey: .type)
+                var source = block.nestedContainer(keyedBy: SourceKeys.self, forKey: .source)
+                try source.encode("base64", forKey: .type)
+                try source.encode(image.mediaType, forKey: .media_type)
+                try source.encode(image.data.base64EncodedString(), forKey: .data)
+            }
             var block = content.nestedContainer(keyedBy: BlockKeys.self)
             try block.encode("text", forKey: .type)
             try block.encode(text, forKey: .text)

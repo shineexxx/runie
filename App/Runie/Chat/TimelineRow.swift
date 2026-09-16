@@ -7,7 +7,7 @@ struct TimelineRow: View {
     var body: some View {
         switch item {
         case .user(let user):
-            UserBubble(text: user.text)
+            UserBubble(text: user.text, attachments: user.attachments ?? [])
         case .assistant(let assistant):
             AssistantMessage(text: assistant.text)
         case .action(let action):
@@ -22,10 +22,26 @@ struct TimelineRow: View {
 
 private struct UserBubble: View {
     let text: String
+    let attachments: [Attachment]
 
     var body: some View {
         HStack {
             Spacer(minLength: 48)
+            VStack(alignment: .trailing, spacing: 6) {
+                if !attachments.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(attachments) { attachment in
+                            AttachmentThumbnail(attachment: attachment, size: 72)
+                        }
+                    }
+                }
+                bubble
+            }
+        }
+    }
+
+    private var bubble: some View {
+        HStack {
             Text(text)
                 .font(.system(size: 14))
                 .textSelection(.enabled)
@@ -44,11 +60,10 @@ private struct AssistantMessage: View {
 
     var body: some View {
         HStack {
-            Text(MarkdownText.inline(text))
+            RichMessageText(text: text, imageWidth: 420)
                 .font(.system(size: 14))
                 .lineSpacing(2)
                 .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(.primary.opacity(0.07), in: MessageBubbleShape(tail: .leading))

@@ -17,6 +17,8 @@ struct ChatView: View {
     let onClose: () -> Void
     /// Открыть окно Runie на этом разговоре.
     let onOpenWindow: () -> Void
+    let onPickFiles: () -> Void
+    let onCapture: () -> Void
 
     /// Когда началось появление. Ход считается от этого времени внутри `TimelineView`,
     /// а не интерполяцией SwiftUI: свечение на Canvas при анимируемом значении
@@ -71,9 +73,22 @@ struct ChatView: View {
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
 
+                    if !layout.attachments.isEmpty {
+                        AttachmentStrip(attachments: Binding(
+                            get: { layout.attachments },
+                            set: { layout.attachments = $0 }
+                        ))
+                        .frame(height: 68)
+                        .frame(maxWidth: 360, alignment: frameAlignment)
+                        .readableSurface(RoundedRectangle(cornerRadius: 20))
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+
                     InputRow(
                         session: session,
                         settings: settings,
+                        onPickFiles: onPickFiles,
+                        onCapture: onCapture,
                         layout: layout,
                         onSubmitDraft: submitDraft,
                         onStop: { session.stop() },
@@ -270,6 +285,7 @@ private struct EmergeFromLight: ViewModifier {
 /// Последнее сообщение пользователя и всё, что случилось после него.
 private struct CurrentTurn {
     let userText: String?
+    let userAttachments: [Attachment]
     let lastAction: ActionItem?
     let lastAssistantText: String?
     let lastNotice: NoticeItem?
@@ -278,8 +294,10 @@ private struct CurrentTurn {
         let userIndex = items.lastIndex { if case .user = $0 { true } else { false } }
         if let userIndex, case .user(let user) = items[userIndex] {
             userText = user.text
+            userAttachments = user.attachments ?? []
         } else {
             userText = nil
+            userAttachments = []
         }
         let start = userIndex.map { $0 + 1 } ?? 0
         var action: ActionItem?
@@ -316,7 +334,7 @@ private struct CompactFeed: View {
         // Как в мессенджере: моё сообщение справа, Руни отвечает слева.
         VStack(alignment: .leading, spacing: 8) {
             if let userText = turn.userText {
-                UserMessageBubble(text: userText)
+                UserMessageBubble(text: userText, attachments: turn.userAttachments)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
 
@@ -382,9 +400,23 @@ private struct Bubble<Content: View>: View {
 /// Моё сообщение: бирюзовое облачко справа.
 struct UserMessageBubble: View {
     let text: String
+    var attachments: [Attachment] = []
     var maxWidth: CGFloat = 300
 
     var body: some View {
+        VStack(alignment: .trailing, spacing: 6) {
+            if !attachments.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(attachments.prefix(4)) { attachment in
+                        AttachmentThumbnail(attachment: attachment, size: 44)
+                    }
+                }
+            }
+            bubble
+        }
+    }
+
+    private var bubble: some View {
         Text(text)
             .font(.system(size: 14, weight: .medium))
             .lineLimit(4)
@@ -474,11 +506,10 @@ private struct AssistantText: View {
     }
 
     private var label: some View {
-        Text(MarkdownText.inline(text))
+        RichMessageText(text: text, imageWidth: 300)
             // Полужирный пузыря хорош для коротких реплик, а в абзаце тяжелит.
             .fontWeight(.regular)
             .lineSpacing(2)
-            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -603,6 +634,8 @@ private struct PermissionButtonStyle: ButtonStyle {
 private struct InputRow: View {
     let session: ChatSession
     let settings: AppSettings
+    let onPickFiles: () -> Void
+    let onCapture: () -> Void
     @Bindable var layout: ChatLayout
     let onSubmitDraft: () -> Void
     let onStop: () -> Void
@@ -619,12 +652,17 @@ private struct InputRow: View {
         }
         .onAppear { isFocused = true }
         .onChange(of: layout.focusGeneration) { isFocused = true }
+        // Файлы можно бросить прямо на поле.
+        .acceptsDroppedFiles { files in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { layout.attachments += files }
+        }
     }
 
     /// Кнопка отправки — у ближнего к орбу конца поля, откуда пришёл свет.
     private var inputPill: some View {
         HStack(spacing: 10) {
             if layout.orbSide == .leading { sendButton }
+            if layout.orbSide == .trailing { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture) }
 
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -634,10 +672,11 @@ private struct InputRow: View {
                 .onSubmit(onSubmitDraft)
 
             ModelMenu(session: session, settings: settings)
+            if layout.orbSide == .leading { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture) }
             if layout.orbSide == .trailing { sendButton }
         }
-        .padding(.leading, layout.orbSide == .trailing ? 22 : 7)
-        .padding(.trailing, layout.orbSide == .trailing ? 7 : 22)
+        .padding(.leading, layout.orbSide == .trailing ? 10 : 7)
+        .padding(.trailing, layout.orbSide == .trailing ? 7 : 10)
         .frame(maxWidth: .infinity)
         .frame(height: ChatPanelController.inputHeight)
         .readableSurface(Capsule(), interactive: true)
@@ -665,7 +704,7 @@ private struct InputRow: View {
     }
 
     private var placeholder: String {
-        session.isBusy ? "Руни работает…" : "Опишите задачу…"
+        session.isBusy ? "Работаю…" : "Спросите Руни…"
     }
 
     private var expandButton: some View {

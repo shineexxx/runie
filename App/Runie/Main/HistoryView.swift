@@ -14,6 +14,7 @@ struct ConversationDetail: View {
     let onDelete: () -> Void
 
     @State private var draft = ""
+    @State private var attachments: [Attachment] = []
     @FocusState private var isFocused: Bool
 
     /// Этот разговор сейчас в сессии: показываем живую ленту, а не снимок из файла.
@@ -108,7 +109,14 @@ struct ConversationDetail: View {
                     .foregroundStyle(.secondary)
             }
 
+            VStack(alignment: .leading, spacing: 0) {
+            if !attachments.isEmpty {
+                AttachmentStrip(attachments: $attachments)
+                    .frame(height: 68)
+            }
             HStack(alignment: .bottom, spacing: 10) {
+                AttachmentButtons(onPickFiles: pickFiles, onCapture: capture)
+                    .padding(.bottom, 5)
                 TextField(placeholder, text: $draft, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.system(size: 14))
@@ -122,7 +130,8 @@ struct ConversationDetail: View {
                     .padding(.bottom, 5)
                 sendButton
             }
-            .padding(.leading, 16)
+            }
+            .padding(.leading, 8)
             .padding(.trailing, 6)
             .padding(.vertical, 4)
             // Стекло с бирюзовым оттенком, как блоки чата у орба; в фокусе — светящийся край.
@@ -139,6 +148,9 @@ struct ConversationDetail: View {
             }
             .shadow(color: OrbPalette.teal.opacity(isFocused ? 0.25 : 0), radius: 14)
             .animation(.easeOut(duration: 0.2), value: isFocused)
+            .acceptsDroppedFiles { files in
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments += files }
+            }
         }
         .frame(maxWidth: 720)
         .padding(.horizontal, 24)
@@ -153,7 +165,19 @@ struct ConversationDetail: View {
     }
 
     private var hasDraft: Bool {
-        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !attachments.isEmpty
+    }
+
+    private func pickFiles() {
+        let files = AttachmentStore.pickFiles()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments += files }
+    }
+
+    private func capture() {
+        Task { @MainActor in
+            guard let shot = await AttachmentStore.captureArea() else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments.append(shot) }
+        }
     }
 
     private var sendButton: some View {
@@ -176,11 +200,13 @@ struct ConversationDetail: View {
 
     private func send() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !session.isBusy else { return }
+        guard hasDraft, !session.isBusy else { return }
         if let record, record.id != session.conversationID {
             session.open(record)
         }
+        let files = attachments
         draft = ""
-        session.send(text)
+        attachments = []
+        session.send(text, attachments: files)
     }
 }

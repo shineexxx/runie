@@ -118,18 +118,25 @@ public final class ChatSession {
     ///
     /// Контекст уходит агенту перед сообщением, но в ленте его нет: человек видит
     /// только то, что написал сам.
-    public func send(_ text: String, context: AppContext? = nil) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !timeline.isBusy else { return }
+    public func send(_ text: String, context: AppContext? = nil, attachments: [Attachment] = []) {
+        var trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty || !attachments.isEmpty, !timeline.isBusy else { return }
+        if trimmed.isEmpty {
+            trimmed = attachments.allSatisfy(\.isImage) ? "Посмотри на это." : "Посмотри эти файлы."
+        }
 
-        timeline.appendUserMessage(trimmed)
+        timeline.appendUserMessage(trimmed, attachments: attachments)
         persist()
 
         do {
             if connection == nil {
                 try connect()
             }
-            try connection?.send(context?.decorate(trimmed) ?? trimmed)
+            // Картинки модель видит сама; путь к ним и к остальным файлам — в тексте,
+            // чтобы агент мог с ними работать: переслать, переложить, прочитать.
+            let body = (context?.decorate(trimmed) ?? trimmed) + Attachment.agentNote(for: attachments)
+            let images = attachments.filter(\.isImage).compactMap { try? MessageImage.load(from: $0.url) }
+            try connection?.send(UserMessage(body, images: images))
         } catch {
             connection?.stop()
             connection = nil

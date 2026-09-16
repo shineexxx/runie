@@ -22,8 +22,12 @@ final class ChatLayout {
     /// Меняется при каждом открытии — чтобы поле заново «вытекло» из орба.
     private(set) var openGeneration = 0
 
+    /// Картинки и файлы к ещё не отправленному сообщению.
+    var attachments: [Attachment] = []
+
+    /// Есть что отправить: текст или вложения.
     var hasDraft: Bool {
-        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !attachments.isEmpty
     }
 
     func requestFocus() {
@@ -97,7 +101,9 @@ final class ChatPanelController {
             suggestions: suggestions,
             onSend: { [weak self] text in self?.send(text) },
             onClose: { [weak self] in self?.hide() },
-            onOpenWindow: { [weak self] in self?.onOpenWindow?() }
+            onOpenWindow: { [weak self] in self?.onOpenWindow?() },
+            onPickFiles: { [weak self] in self?.pickFiles() },
+            onCapture: { [weak self] in self?.captureScreenshot() }
         ))
         hosting.frame = NSRect(origin: .zero, size: Self.size)
         hosting.autoresizingMask = [.width, .height]
@@ -116,7 +122,32 @@ final class ChatPanelController {
     func send(_ text: String) {
         guard !session.isBusy else { return }
         let context = layout.includesContext ? tracker.current?.context : nil
-        session.send(text, context: context)
+        session.send(text, context: context, attachments: layout.attachments)
+        layout.attachments = []
+    }
+
+    /// Снимок области: чат прячется, чтобы не попасть в кадр и не мешать выделению,
+    /// и возвращается со снимком во вложениях.
+    func captureScreenshot() {
+        panel.orderOut(nil)
+        Task { @MainActor in
+            let shot = await AttachmentStore.captureArea()
+            if layout.isOpen {
+                panel.orderFrontRegardless()
+                panel.makeKey()
+                layout.requestFocus()
+            }
+            if let shot {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { layout.attachments.append(shot) }
+            }
+        }
+    }
+
+    func pickFiles() {
+        let files = AttachmentStore.pickFiles()
+        panel.makeKeyAndOrderFront(nil)
+        layout.requestFocus()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { layout.attachments += files }
     }
 
     func toggle(anchor: NSRect) {
