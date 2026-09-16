@@ -10,26 +10,55 @@ struct ChatView: View {
 
     let session: ChatSession
     let layout: ChatLayout
+    let tracker: FrontmostAppTracker
+    let onSend: (String) -> Void
     let onClose: () -> Void
+
+    /// Поле «вытекло» из орба. Сбрасывается при каждом открытии чата.
+    @State private var hasFlowed = false
 
     var body: some View {
         GlassEffectContainer(spacing: 4) {
             VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
                 Spacer(minLength: 0)
 
-                if layout.isExpanded {
-                    ConversationPanel(session: session, onCollapse: collapse)
-                        .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
-                } else {
-                    CompactFeed(session: session, alignment: horizontalAlignment)
-                        .transition(.opacity)
+                Group {
+                    if layout.isExpanded {
+                        ConversationPanel(session: session, onCollapse: collapse)
+                            .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
+                    } else {
+                        CompactFeed(session: session, alignment: horizontalAlignment)
+                            .transition(.opacity)
+                    }
+                }
+                .opacity(hasFlowed ? 1 : 0)
+                .scaleEffect(hasFlowed ? 1 : 0.4, anchor: orbCornerAnchor)
+
+                if let current = tracker.current {
+                    ContextChip(current: current, layout: layout)
+                        .frame(maxWidth: .infinity, alignment: farAlignment)
+                        .opacity(hasFlowed ? 1 : 0)
                 }
 
-                InputRow(session: session, layout: layout, onToggleExpanded: toggleExpanded)
-                    .frame(height: ChatPanelController.inputHeight)
+                InputRow(
+                    session: session,
+                    layout: layout,
+                    onSubmitDraft: submitDraft,
+                    onToggleExpanded: toggleExpanded
+                )
+                .frame(height: ChatPanelController.inputHeight)
+                // Поле вытекает из орба: растёт от его стороны.
+                .scaleEffect(x: hasFlowed ? 1 : 0.14, y: hasFlowed ? 1 : 0.86, anchor: orbAnchor)
+                .opacity(hasFlowed ? 1 : 0)
 
-                ChipsRow(session: session, alignment: frameAlignment)
-                    .frame(height: ChatPanelController.chipsHeight)
+                ChipsRow(
+                    session: session,
+                    suggestions: tracker.current?.context.suggestions ?? ContextSuggestions.fallback,
+                    alignment: frameAlignment,
+                    onSend: onSend
+                )
+                .frame(height: ChatPanelController.chipsHeight)
+                .opacity(hasFlowed ? 1 : 0)
             }
             // Поля шире тени блоков, иначе край окна её обрезает.
             .padding(.horizontal, ChatPanelController.shadowMargin)
@@ -37,6 +66,8 @@ struct ChatView: View {
             .frame(width: ChatPanelController.size.width)
             .frame(maxHeight: .infinity, alignment: .bottom)
         }
+        .onAppear(perform: flowOut)
+        .onChange(of: layout.openGeneration) { flowOut() }
     }
 
     private var horizontalAlignment: HorizontalAlignment {
@@ -45,6 +76,36 @@ struct ChatView: View {
 
     private var frameAlignment: Alignment {
         layout.orbSide == .trailing ? .trailing : .leading
+    }
+
+    /// Сторона, дальняя от орба.
+    private var farAlignment: Alignment {
+        layout.orbSide == .trailing ? .leading : .trailing
+    }
+
+    private var orbAnchor: UnitPoint {
+        layout.orbSide == .trailing ? .trailing : .leading
+    }
+
+    /// Нижний угол блоков со стороны орба: ответ вырастает из шара.
+    private var orbCornerAnchor: UnitPoint {
+        layout.orbSide == .trailing ? .bottomTrailing : .bottomLeading
+    }
+
+    private func flowOut() {
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) { hasFlowed = false }
+        withAnimation(.spring(response: 0.46, dampingFraction: 0.8)) {
+            hasFlowed = true
+        }
+    }
+
+    private func submitDraft() {
+        guard layout.hasDraft, !session.isBusy else { return }
+        let text = layout.draft
+        layout.draft = ""
+        onSend(text)
     }
 
     private func toggleExpanded() {
@@ -195,15 +256,15 @@ private struct ActionCapsule: View {
 
 private struct InputRow: View {
     let session: ChatSession
-    let layout: ChatLayout
+    @Bindable var layout: ChatLayout
+    let onSubmitDraft: () -> Void
     let onToggleExpanded: () -> Void
 
-    @State private var draft = ""
     @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: 8) {
-            // Кнопка «развернуть» с дальней от орба стороны, как у Eney.
+            // Кнопка «развернуть» с дальней от орба стороны.
             if layout.orbSide == .trailing { expandButton }
             inputPill
             if layout.orbSide == .leading { expandButton }
@@ -212,32 +273,36 @@ private struct InputRow: View {
         .onChange(of: layout.focusGeneration) { isFocused = true }
     }
 
+    /// Поле заканчивается за орбом: сам орб — отдельное окно поверх, а здесь для
+    /// него оставлено пустое место, чтобы текст не уходил под шар.
     private var inputPill: some View {
-        HStack(spacing: 8) {
-            TextField("Опишите задачу…", text: $draft, axis: .vertical)
+        HStack(spacing: 10) {
+            if layout.orbSide == .leading { orbSlot }
+
+            TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15))
                 .lineLimit(1...3)
                 .focused($isFocused)
-                .onSubmit(send)
+                .onSubmit(onSubmitDraft)
 
-            if session.isBusy {
-                CircleIconButton(symbol: "stop.fill", tint: nil, help: "Остановить", action: session.stop)
-            } else {
-                CircleIconButton(
-                    symbol: "arrow.up",
-                    tint: trimmedDraft.isEmpty ? nil : OrbPalette.teal,
-                    help: "Отправить (Return)",
-                    action: send
-                )
-                .disabled(trimmedDraft.isEmpty)
-            }
+            if layout.orbSide == .trailing { orbSlot }
         }
-        .padding(.leading, 20)
-        .padding(.trailing, 7)
+        .padding(.leading, layout.orbSide == .trailing ? 22 : ChatPanelController.pillBeyondOrb)
+        .padding(.trailing, layout.orbSide == .trailing ? ChatPanelController.pillBeyondOrb : 22)
         .frame(maxWidth: .infinity)
         .frame(height: ChatPanelController.inputHeight)
         .readableSurface(Capsule(), interactive: true)
+    }
+
+    private var orbSlot: some View {
+        Color.clear
+            .frame(width: EdgeButtonController.orbDiameter, height: EdgeButtonController.orbDiameter)
+            .accessibilityHidden(true)
+    }
+
+    private var placeholder: String {
+        session.isBusy ? "Руни работает — нажмите на орб, чтобы остановить" : "Опишите задачу…"
     }
 
     private var expandButton: some View {
@@ -254,44 +319,43 @@ private struct InputRow: View {
         .help(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
         .accessibilityLabel(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
     }
-
-    private var trimmedDraft: String {
-        draft.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func send() {
-        guard !trimmedDraft.isEmpty, !session.isBusy else { return }
-        session.send(draft)
-        draft = ""
-    }
 }
 
-private struct CircleIconButton: View {
-    let symbol: String
-    let tint: Color?
-    let help: String
-    let action: () -> Void
+// MARK: - Контекст
 
-    @Environment(\.isEnabled) private var isEnabled
+/// Где человек сейчас. Клик выключает передачу контекста агенту.
+private struct ContextChip: View {
+    let current: FrontmostAppTracker.Current
+    @Bindable var layout: ChatLayout
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(tint == nil ? AnyShapeStyle(.primary) : AnyShapeStyle(.white))
-                .frame(width: 36, height: 36)
-                .contentShape(.circle)
+        Button {
+            withAnimation(.easeOut(duration: 0.15)) { layout.includesContext.toggle() }
+        } label: {
+            HStack(spacing: 6) {
+                Image(nsImage: current.icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 16, height: 16)
+                    .saturation(layout.includesContext ? 1 : 0)
+                Text(current.context.name)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .strikethrough(!layout.includesContext, color: .secondary)
+                    .foregroundStyle(layout.includesContext ? .primary : .secondary)
+            }
+            .padding(.leading, 8)
+            .padding(.trailing, 11)
+            .frame(height: 28)
+            .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .glassEffect(glass, in: .circle)
-        .opacity(isEnabled ? 1 : 0.45)
-        .help(help)
-        .accessibilityLabel(help)
-    }
-
-    private var glass: Glass {
-        if let tint { return .regular.tint(tint).interactive() }
-        return .regular.interactive()
+        .readableSurface(Capsule(), interactive: true)
+        .help(layout.includesContext
+              ? "Руни знает, что вы в «\(current.context.name)». Нажмите, чтобы не сообщать."
+              : "Руни не знает, где вы. Нажмите, чтобы сообщать.")
+        .accessibilityLabel("Контекст: \(current.context.name)")
+        .accessibilityValue(layout.includesContext ? "включён" : "выключен")
     }
 }
 
@@ -299,12 +363,9 @@ private struct CircleIconButton: View {
 
 private struct ChipsRow: View {
     let session: ChatSession
+    let suggestions: [String]
     let alignment: Alignment
-
-    private let suggestions = [
-        "Календарь на сегодня",
-        "Вчерашние скриншоты"
-    ]
+    let onSend: (String) -> Void
 
     var body: some View {
         HStack(spacing: 8) {
@@ -327,13 +388,14 @@ private struct ChipsRow: View {
 
             if session.timeline.items.isEmpty {
                 ForEach(suggestions, id: \.self) { suggestion in
-                    Chip(title: suggestion) { session.send(suggestion) }
+                    Chip(title: suggestion) { onSend(suggestion) }
                 }
             } else if let usage = session.timeline.usage {
                 UsageChip(usage: usage)
             }
         }
         .frame(maxWidth: .infinity, alignment: alignment)
+        .animation(.easeOut(duration: 0.2), value: suggestions)
     }
 }
 

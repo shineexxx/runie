@@ -7,9 +7,10 @@ struct EdgeButtonView: View {
 
     let state: EdgeButtonState
     let session: ChatSession
+    let chatLayout: ChatLayout
 
     var body: some View {
-        RunieOrb(mood: mood)
+        RunieOrb(mood: mood, release: release, releaseDirection: releaseDirection, glyph: glyph)
             .offset(x: tuckOffset)
             .scaleEffect(state.isPressed && !state.isDragging ? 0.92 : 1)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: state.isPressed)
@@ -19,7 +20,7 @@ struct EdgeButtonView: View {
             .accessibilityElement()
             .accessibilityLabel("Руни")
             .accessibilityValue(accessibilityStatus)
-            .accessibilityHint(state.isTucked ? "Выдвинуть" : "Открыть чат")
+            .accessibilityHint(accessibilityHint)
     }
 
     private var mood: RunieMood {
@@ -32,12 +33,38 @@ struct EdgeButtonView: View {
         return state.isDragging ? .carried : RunieMood(activity: session.timeline.activity)
     }
 
+    /// Открытый чат забирает свет из орба: из него и вытекает интерфейс. Пока агент
+    /// работает, свет возвращается — видно, что Руни занят.
+    private var release: Double {
+        chatLayout.isOpen && !session.isBusy ? 1 : 0
+    }
+
+    /// Свет уходит туда, где открывается чат, — к центру экрана.
+    private var releaseDirection: Double {
+        state.edge == .right ? -1 : 1
+    }
+
+    /// На тёмном ядре — то, что сделает клик по орбу.
+    private var glyph: OrbGlyph {
+        guard chatLayout.isOpen else { return .none }
+        if session.isBusy { return .stop }
+        return .send(enabled: chatLayout.hasDraft)
+    }
+
     /// Задвинутый шар прижимается к видимой полоске, чтобы из-за края торчал свет,
     /// а не пустое стекло.
     private var tuckOffset: CGFloat {
         guard state.isTucked, !state.isDragging else { return 0 }
         let inset = EdgeButtonController.orbInset
         return state.edge == .right ? -inset : inset
+    }
+
+    /// Что сделает клик: орб — и вызов чата, и кнопка отправки, и стоп.
+    private var accessibilityHint: String {
+        if state.isTucked { return "Выдвинуть" }
+        guard chatLayout.isOpen else { return "Открыть чат" }
+        if session.isBusy { return "Остановить" }
+        return chatLayout.hasDraft ? "Отправить" : "Закрыть чат"
     }
 
     private var accessibilityStatus: String {

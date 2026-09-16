@@ -34,7 +34,7 @@ final class EdgeButtonController {
 
     /// Панель больше самого шара (48): вокруг нужно место для свечения, иначе оно
     /// обрезается границей окна и вокруг орба проступает квадрат.
-    static let panelSize = NSSize(width: 96, height: 96)
+    static let panelSize = NSSize(width: 112, height: 112)
     /// Диаметр самого орба внутри панели.
     static let orbDiameter: CGFloat = 48
     /// Прозрачное поле между орбом и краем панели. Свечение и волнующийся край
@@ -69,7 +69,7 @@ final class EdgeButtonController {
     private var pressLocation: NSPoint?
     private var grabOffset: NSSize = .zero
 
-    init(session: ChatSession) {
+    init(session: ChatSession, chatLayout: ChatLayout) {
         let defaults = UserDefaults.standard
         state.edge = EdgeButtonState.Edge(rawValue: defaults.string(forKey: DefaultsKey.edge) ?? "") ?? .right
         state.isTucked = defaults.bool(forKey: DefaultsKey.tucked)
@@ -77,10 +77,12 @@ final class EdgeButtonController {
         verticalPosition = CGFloat(stored ?? 0.5)
 
         panel = FloatingPanel(size: Self.panelSize, allowsKey: false)
+        // Уровнем выше чата: орб лежит в конце поля ввода, поверх него.
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 1)
         // Кнопка не уезжает в Mission Control вместе с окнами.
         panel.collectionBehavior.insert(.stationary)
 
-        let hosting = EdgeButtonHostingView(rootView: EdgeButtonView(state: state, session: session))
+        let hosting = EdgeButtonHostingView(rootView: EdgeButtonView(state: state, session: session, chatLayout: chatLayout))
         hosting.controller = self
         hosting.frame = NSRect(origin: .zero, size: Self.panelSize)
         panel.contentView = hosting

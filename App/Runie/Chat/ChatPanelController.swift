@@ -14,17 +14,36 @@ final class ChatLayout {
     /// Сигнал «поставь фокус в поле ввода». Панель переиспользуется, поэтому
     /// `onAppear` срабатывает один раз, а показывать её можно сколько угодно.
     private(set) var focusGeneration = 0
+    /// Черновик сообщения. Живёт здесь, а не во вьюхе: отправляет его орб,
+    /// а орб — это другое окно.
+    var draft = ""
+    /// Отправлять ли агенту, в каком приложении сейчас человек.
+    var includesContext = true
+    /// Чат открыт. Орб по этому решает, что делать с кликом.
+    var isOpen = false
+    /// Меняется при каждом открытии — чтобы поле заново «вытекло» из орба.
+    private(set) var openGeneration = 0
+
+    var hasDraft: Bool {
+        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     func requestFocus() {
         focusGeneration += 1
     }
+
+    func markOpened() {
+        isOpen = true
+        openGeneration += 1
+    }
 }
 
-/// Чат без подложки: отдельные стеклянные блоки рядом с орбом.
+/// Чат без подложки: отдельные стеклянные блоки у орба.
 ///
 /// Окно прозрачное и заметно больше видимых блоков — в нём хватает места для
-/// развёрнутой переписки. Блоки прижаты к низу окна, а окно выставлено так, чтобы
-/// поле ввода стояло вровень с орбом, как у Eney.
+/// развёрнутой переписки и теней. Поле ввода дотягивается до орба и заканчивается
+/// за ним: орб лежит в конце поля и служит кнопкой отправки. Окно орба стоит уровнем
+/// выше, поэтому шар оказывается поверх поля, а не под ним.
 @MainActor
 final class ChatPanelController {
 
@@ -37,12 +56,12 @@ final class ChatPanelController {
     private static let minimumHeight: CGFloat = 320
     /// Высота ряда подсказок под полем ввода.
     static let chipsHeight: CGFloat = 36
-    /// Высота поля ввода.
-    static let inputHeight: CGFloat = 50
+    /// Высота поля ввода. Чуть больше орба (48), чтобы шар лежал в поле с зазором.
+    static let inputHeight: CGFloat = 56
+    /// Насколько поле выходит за край орба.
+    static let pillBeyondOrb: CGFloat = 4
     static let blockSpacing: CGFloat = 10
     static var bottomInset: CGFloat { shadowMargin }
-    /// Зазор между орбом и блоками.
-    private static let gap: CGFloat = 2
     private static let screenInset: CGFloat = 8
 
     /// Расстояние от низа окна до середины поля ввода — по нему окно
@@ -53,18 +72,25 @@ final class ChatPanelController {
 
     let panel: FloatingPanel
     let layout = ChatLayout()
+    private let session: ChatSession
+    private let tracker: FrontmostAppTracker
 
     /// Меняется при каждом показе и скрытии. Анимация скрытия убирает панель, только
     /// если за время анимации её не открыли снова.
     private var visibilityGeneration = 0
     private var isHiding = false
 
-    init(session: ChatSession) {
+    init(session: ChatSession, tracker: FrontmostAppTracker) {
+        self.session = session
+        self.tracker = tracker
         panel = FloatingPanel(size: Self.size, allowsKey: true)
 
+        let layout = self.layout
         let hosting = NSHostingView(rootView: ChatView(
             session: session,
             layout: layout,
+            tracker: tracker,
+            onSend: { [weak self] text in self?.send(text) },
             onClose: { [weak self] in self?.hide() }
         ))
         hosting.frame = NSRect(origin: .zero, size: Self.size)
@@ -75,6 +101,23 @@ final class ChatPanelController {
 
     /// Видим и не уезжает прямо сейчас.
     var isVisible: Bool { panel.isVisible && !isHiding }
+
+    /// Отправляет черновик. Вызывается и из поля по Return, и из орба по клику.
+    func submitDraft() {
+        // Проверка занятости до очистки: иначе черновик пропал бы, так и не уйдя.
+        guard layout.hasDraft, !session.isBusy else { return }
+        let text = layout.draft
+        layout.draft = ""
+        send(text)
+    }
+
+    /// Отправляет сообщение с контекстом приложения, если он включён. Черновик не
+    /// трогает: подсказки уходят мимо него.
+    func send(_ text: String) {
+        guard !session.isBusy else { return }
+        let context = layout.includesContext ? tracker.current?.context : nil
+        session.send(text, context: context)
+    }
 
     func toggle(anchor: NSRect) {
         isVisible ? hide() : show(anchor: anchor)
@@ -87,6 +130,7 @@ final class ChatPanelController {
         if isHiding {
             // Передумали закрывать: возвращаем прозрачность, панель ещё на экране.
             isHiding = false
+            layout.isOpen = true
             panel.setFrame(target, display: true)
             panel.makeKey()
             layout.requestFocus()
@@ -107,6 +151,7 @@ final class ChatPanelController {
         panel.setFrame(target, display: false)
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
+        layout.markOpened()
         layout.requestFocus()
 
         NSAnimationContext.runAnimationGroup { context in
@@ -120,6 +165,7 @@ final class ChatPanelController {
         visibilityGeneration += 1
         let generation = visibilityGeneration
         isHiding = true
+        layout.isOpen = false
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.14
@@ -151,7 +197,8 @@ final class ChatPanelController {
         }
     }
 
-    /// Блоки открываются в сторону центра экрана от орба, поле ввода вровень с ним.
+    /// Блоки открываются в сторону центра экрана от орба, поле ввода вровень с ним
+    /// и заканчивается за орбом.
     private func frame(anchor: NSRect) -> NSRect {
         let screen = NSScreen.screens.first { $0.frame.intersects(anchor) } ?? NSScreen.main ?? NSScreen.screens[0]
         let visible = screen.visibleFrame
@@ -159,12 +206,12 @@ final class ChatPanelController {
         let orbOnRight = anchor.midX > screen.frame.midX
         layout.orbSide = orbOnRight ? .trailing : .leading
 
-        // Зазор считаем от видимых краёв — шара и блоков, — а не от прозрачных полей
-        // обоих окон.
-        let orbInset = EdgeButtonController.orbInset
+        // Край поля — за дальним краем шара. Считаем от центра орба, а не от
+        // прозрачных полей обоих окон.
+        let pillEnd = EdgeButtonController.orbDiameter / 2 + Self.pillBeyondOrb
         var x = orbOnRight
-            ? anchor.minX + orbInset - Self.gap + Self.shadowMargin - size.width
-            : anchor.maxX - orbInset + Self.gap - Self.shadowMargin
+            ? anchor.midX + pillEnd + Self.shadowMargin - size.width
+            : anchor.midX - pillEnd - Self.shadowMargin
         // Прозрачные поля окна могут заходить за край экрана — не должны только блоки.
         let edgeSlack = Self.shadowMargin - Self.screenInset
         x = min(max(x, visible.minX - edgeSlack), visible.maxX - size.width + edgeSlack)

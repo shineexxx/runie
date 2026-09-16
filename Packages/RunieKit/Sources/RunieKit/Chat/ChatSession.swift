@@ -28,7 +28,10 @@ public final class ChatSession {
     public var isBusy: Bool { timeline.isBusy }
 
     /// Отправляет сообщение. Пустые и повторные во время работы — игнорируются.
-    public func send(_ text: String) {
+    ///
+    /// Контекст уходит агенту перед сообщением, но в ленте его нет: человек видит
+    /// только то, что написал сам.
+    public func send(_ text: String, context: AppContext? = nil) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !timeline.isBusy else { return }
 
@@ -40,7 +43,7 @@ public final class ChatSession {
                 connection = handle.connection
                 consume(handle.stream)
             }
-            try connection?.send(trimmed)
+            try connection?.send(context?.decorate(trimmed) ?? trimmed)
         } catch {
             connection?.stop()
             connection = nil

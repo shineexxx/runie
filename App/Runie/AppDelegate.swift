@@ -5,6 +5,7 @@ import RunieKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var session: ChatSession!
+    private var tracker: FrontmostAppTracker!
     private var button: EdgeButtonController!
     private var chat: ChatPanelController!
 
@@ -13,12 +14,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         session = ChatSession(backend: Self.makeBackend())
-        chat = ChatPanelController(session: session)
-        button = EdgeButtonController(session: session)
+        tracker = FrontmostAppTracker()
+        chat = ChatPanelController(session: session, tracker: tracker)
+        button = EdgeButtonController(session: session, chatLayout: chat.layout)
 
         button.onClick = { [weak self] in
-            guard let self else { return }
-            chat.toggle(anchor: button.panel.frame)
+            self?.orbClicked()
         }
         button.onMove = { [weak self] in
             guard let self, chat != nil else { return }
@@ -26,6 +27,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         button.makeMenu = { [weak self] in
             self?.makeButtonMenu() ?? NSMenu()
+        }
+    }
+
+    /// Орб лежит в конце поля ввода и отвечает за всё сразу: открыть чат,
+    /// отправить черновик, остановить агента, закрыть пустой чат.
+    private func orbClicked() {
+        guard chat.isVisible else {
+            chat.show(anchor: button.panel.frame)
+            return
+        }
+        if session.isBusy {
+            session.stop()
+        } else if chat.layout.hasDraft {
+            chat.submitDraft()
+        } else {
+            chat.hide()
         }
     }
 
