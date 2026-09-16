@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Sandbox выключен намеренно: в песочнице недоступны Accessibility и
+	     запуск произвольного процесса `claude`, а это основа работы Runie.
+	     Защита строится на подтверждении каждого необратимого действия, а не на sandbox. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+	<!-- Управление другими приложениями через Apple Events. -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<!-- Hardened Runtime: Runie запускает сторонний исполняемый файл (claude),
+	     подписанный не нами. -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
+</plist>

@@ -1,0 +1,32 @@
+.DS_Store
+
+## Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Swift Package Manager
+.build/
+.swiftpm/
+Packages/*/.build/
+Packages/*/.swiftpm/
+Package.resolved
+
+## Signing and notarization secrets — never commit
+*.p12
+*.mobileprovision
+*.provisionprofile
+.env
+notarize.env
+
+## Release artifacts
+dist/
+*.zip
+*.dmg
