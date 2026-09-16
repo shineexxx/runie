@@ -337,11 +337,11 @@ private struct CompactFeed: View {
             }
 
             if let notice = turn.lastNotice, notice.kind == .error {
-                Bubble { Text(notice.text).foregroundStyle(.red) }
+                Bubble(tail: tailEdge) { Text(notice.text).foregroundStyle(.red) }
             } else if let text = turn.lastAssistantText {
-                Bubble { AssistantText(text: text) }
+                Bubble(tail: tailEdge) { AssistantText(text: text) }
             } else if timeline.isBusy, !asking {
-                Bubble {
+                Bubble(tail: tailEdge) {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
                         Text(ActivityLabel.text(timeline.activity))
@@ -349,12 +349,17 @@ private struct CompactFeed: View {
                     }
                 }
             } else if timeline.items.isEmpty {
-                Bubble { Text("Чем помочь?") }
+                Bubble(tail: tailEdge) { Text("Чем помочь?") }
             } else if let notice = turn.lastNotice {
-                Bubble { Text(notice.text).foregroundStyle(.secondary) }
+                Bubble(tail: tailEdge) { Text(notice.text).foregroundStyle(.secondary) }
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.85), value: turn.lastAction?.id)
+    }
+
+    /// Хвостик облачка смотрит на орб: реплика идёт от него.
+    private var tailEdge: HorizontalEdge {
+        alignment == .trailing ? .trailing : .leading
     }
 
     /// «Руки» видны, пока агент работает, или если последнее действие не удалось.
@@ -364,6 +369,7 @@ private struct CompactFeed: View {
 }
 
 private struct Bubble<Content: View>: View {
+    var tail: HorizontalEdge = .trailing
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -374,7 +380,55 @@ private struct Bubble<Content: View>: View {
             .padding(.vertical, 13)
             .frame(maxWidth: 360, alignment: .leading)
             .fixedSize(horizontal: true, vertical: false)
-            .readableSurface(RoundedRectangle(cornerRadius: 24))
+            .readableSurface(MessageBubbleShape(tail: tail))
+            // Хвостик выходит за рамку пузыря — место под него.
+            .padding(tail == .trailing ? .trailing : .leading, MessageBubbleShape.tailReach)
+    }
+}
+
+/// Облачко сообщения: скруглённый блок с хвостиком в нижнем углу, как в Сообщениях.
+struct MessageBubbleShape: InsettableShape {
+    var tail: HorizontalEdge
+    var inset: CGFloat = 0
+
+    static let tailReach: CGFloat = 6
+    private static let radius: CGFloat = 20
+
+    func inset(by amount: CGFloat) -> MessageBubbleShape {
+        var copy = self
+        copy.inset += amount
+        return copy
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let r = rect.insetBy(dx: inset, dy: inset)
+        let radius = min(Self.radius, r.height / 2)
+        let reach = Self.tailReach
+
+        // Рисуем с хвостиком справа, для левого отражаем.
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX + radius, y: r.minY))
+        path.addLine(to: CGPoint(x: r.maxX - radius, y: r.minY))
+        path.addArc(center: CGPoint(x: r.maxX - radius, y: r.minY + radius), radius: radius,
+                    startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+        // Правый край спускается к хвостику и плавно вытягивается в остриё.
+        path.addLine(to: CGPoint(x: r.maxX, y: r.maxY - radius * 0.9))
+        path.addQuadCurve(to: CGPoint(x: r.maxX + reach, y: r.maxY),
+                          control: CGPoint(x: r.maxX, y: r.maxY - 2))
+        path.addQuadCurve(to: CGPoint(x: r.maxX - radius * 0.75, y: r.maxY - 2),
+                          control: CGPoint(x: r.maxX - 4, y: r.maxY + 1))
+        path.addQuadCurve(to: CGPoint(x: r.maxX - radius * 1.1, y: r.maxY),
+                          control: CGPoint(x: r.maxX - radius * 0.95, y: r.maxY))
+        path.addLine(to: CGPoint(x: r.minX + radius, y: r.maxY))
+        path.addArc(center: CGPoint(x: r.minX + radius, y: r.maxY - radius), radius: radius,
+                    startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        path.addLine(to: CGPoint(x: r.minX, y: r.minY + radius))
+        path.addArc(center: CGPoint(x: r.minX + radius, y: r.minY + radius), radius: radius,
+                    startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        path.closeSubpath()
+
+        guard tail == .leading else { return path }
+        return path.applying(CGAffineTransform(translationX: rect.minX + rect.maxX, y: 0).scaledBy(x: -1, y: 1))
     }
 }
 
