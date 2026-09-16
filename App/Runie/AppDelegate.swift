@@ -45,8 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #endif
     }
 
-    /// Орб открывает и закрывает чат. Прицепленный к краю отходит от кромки, и чат
-    /// открывается сразу у того места, куда он едет, — не дожидаясь конца движения.
+    /// Орб открывает и закрывает чат. Прицепленный к краю сначала отходит от кромки,
+    /// чтобы чату было куда открыться, и только потом выпускает свет.
     private func orbClicked() {
         if chat.isVisible {
             chat.hide()
@@ -56,7 +56,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func openChat() {
-        chat.show(anchor: button.detach())
+        button.detach { [weak self] in
+            guard let self else { return }
+            chat.show(anchor: button.panel.frame)
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

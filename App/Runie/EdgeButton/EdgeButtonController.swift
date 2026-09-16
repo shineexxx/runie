@@ -134,17 +134,17 @@ final class EdgeButtonController {
         NSPoint(x: panel.frame.midX, y: panel.frame.midY)
     }
 
-    /// Отводит прицепленный орб от края и возвращает рамку, где он встанет.
+    /// Отводит прицепленный орб от края и зовёт `completion`, когда он встал.
     /// Свободный орб никуда не едет.
-    @discardableResult
-    func detach() -> NSRect {
-        guard state.dock != nil, !state.isDetached else { return panel.frame }
+    func detach(then completion: @escaping @MainActor () -> Void) {
+        guard state.dock != nil, !state.isDetached else {
+            completion()
+            return
+        }
         cancelRetract()
         state.isRetracted = false
         state.isDetached = true
-        let target = frame(on: currentScreen)
-        layout(animated: true, duration: 0.16)
-        return target
+        layout(animated: true, duration: 0.22, completion: completion)
     }
 
     /// Возвращает отошедший орб к краю.

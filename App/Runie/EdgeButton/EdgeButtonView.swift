@@ -16,7 +16,7 @@ struct EdgeButtonView: View {
                     .fill(.black)
                     // Мягкий ореол вокруг горба, как у Eney: горб читается и на тёмных обоях.
                     .shadow(color: .white.opacity(0.09), radius: 14)
-                    .animation(.spring(response: 0.22, dampingFraction: 0.85), value: tetherExtent)
+                    .animation(.spring(response: 0.16, dampingFraction: 0.9), value: tetherExtent)
                     // Оторвавшийся от края орб горб не тащит: иначе вместе с панелью
                     // на экран выезжает его часть, спрятанная за кромкой.
                     .opacity(state.isAttached ? 1 : 0)
@@ -39,7 +39,7 @@ struct EdgeButtonView: View {
             // Спрятанный шар уезжает за кромку и гаснет, чтобы свет не торчал из-за края.
             .offset(x: retractOffset)
             .opacity(state.isRetracted ? 0 : 1)
-            .animation(.spring(response: 0.26, dampingFraction: 0.85), value: state.isRetracted)
+            .animation(.spring(response: 0.16, dampingFraction: 0.9), value: state.isRetracted)
         }
         .frame(width: EdgeButtonController.panelSize.width, height: EdgeButtonController.panelSize.height)
         .help(chatLayout.isOpen ? "Закрыть чат" : "Руни")
