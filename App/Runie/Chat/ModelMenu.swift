@@ -94,9 +94,9 @@ final class ModelDropdown {
 
     static let shared = ModelDropdown()
 
-    private static let width: CGFloat = 300
-    private static let rowHeight: CGFloat = 46
-    private static let inset: CGFloat = 6
+    private static let width: CGFloat = 250
+    private static let rowHeight: CGFloat = 36
+    private static let inset: CGFloat = 5
     /// Прозрачное поле под тень, чтобы край окна её не срезал.
     private static let margin: CGFloat = 24
     private static let gap: CGFloat = 6
@@ -245,7 +245,7 @@ private struct DropdownView: View {
                 Text("Загружаю модели…")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 46)
+                    .frame(maxWidth: .infinity, minHeight: 36)
             }
             ForEach(models) { model in
                 DropdownRow(model: model, isSelected: model.value == selected) {
@@ -253,9 +253,9 @@ private struct DropdownView: View {
                 }
             }
         }
-        .padding(6)
-        .frame(width: 300)
-        .readableSurface(RoundedRectangle(cornerRadius: 22))
+        .padding(5)
+        .frame(width: 250)
+        .readableSurface(RoundedRectangle(cornerRadius: 18))
         // Выезжает из надписи: растёт от края, ближнего к ней.
         .scaleEffect(x: state.isVisible ? 1 : 0.92, y: state.isVisible ? 1 : 0.4,
                      anchor: state.opensDown ? .top : .bottom)
@@ -278,24 +278,24 @@ private struct DropdownRow: View {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(ModelNames.title(model))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
                     Text(ModelNames.detail(model))
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 4)
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(OrbPalette.teal)
                 }
             }
-            .padding(.horizontal, 12)
-            .frame(height: 46)
-            .background(.primary.opacity(isHovering ? 0.08 : 0), in: RoundedRectangle(cornerRadius: 16))
-            .contentShape(RoundedRectangle(cornerRadius: 16))
+            .padding(.horizontal, 10)
+            .frame(height: 36)
+            .background(.primary.opacity(isHovering ? 0.08 : 0), in: RoundedRectangle(cornerRadius: 13))
+            .contentShape(RoundedRectangle(cornerRadius: 13))
         }
         .buttonStyle(.plain)
         .onHover { isHovering = $0 }
