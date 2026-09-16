@@ -9,22 +9,6 @@ struct AgentEventNormalizerTests {
 
     // MARK: - Вспомогательное
 
-    /// Читает фикстуру, снятую с настоящего CLI и очищенную scripts/sanitize-fixture.py.
-    private func fixture(_ name: String) throws -> [RawAgentEvent] {
-        let url = try #require(
-            Bundle.module.url(forResource: name, withExtension: "jsonl", subdirectory: "Fixtures"),
-            "нет фикстуры \(name).jsonl"
-        )
-        var splitter = NDJSONLineSplitter()
-        var lines = try splitter.append(try Data(contentsOf: url))
-        if let tail = splitter.flush() { lines.append(tail) }
-        return try lines.map { RawAgentEvent(payload: try JSONValue.decode($0)) }
-    }
-
-    private func normalizeAll(_ events: [RawAgentEvent]) -> [AgentEvent] {
-        events.flatMap(normalizer.normalize)
-    }
-
     private func raw(_ json: String) throws -> RawAgentEvent {
         RawAgentEvent(payload: try JSONValue.decode(Data(json.utf8)))
     }
@@ -33,7 +17,7 @@ struct AgentEventNormalizerTests {
 
     @Test("вызов разрешённого инструмента: старт, руки, результат, текст, итог")
     func toolUseFixture() throws {
-        let events = normalizeAll(try fixture("tool-use"))
+        let events = try FixtureLoader.events("tool-use")
 
         let session = try #require(events.compactMap {
             if case .sessionStarted(let info) = $0 { info } else { nil }
@@ -67,7 +51,7 @@ struct AgentEventNormalizerTests {
 
     @Test("отказ в разрешении связывает вызов, отказ и результат одним идентификатором")
     func permissionDeniedFixture() throws {
-        let events = normalizeAll(try fixture("permission"))
+        let events = try FixtureLoader.events("permission")
 
         let toolUse = try #require(events.compactMap {
             if case .toolUse(let use) = $0 { use } else { nil }
@@ -103,7 +87,7 @@ struct AgentEventNormalizerTests {
 
     @Test("несуществующая сессия даёт turnFailed с причиной из события")
     func resumeMissingFixture() throws {
-        let events = normalizeAll(try fixture("resume-missing"))
+        let events = try FixtureLoader.events("resume-missing")
         guard case .turnFailed(let failure) = events.first, events.count == 1 else {
             Issue.record("ожидался ровно один turnFailed, пришло \(events)")
             return
@@ -117,7 +101,7 @@ struct AgentEventNormalizerTests {
         // Снято в режиме manual без инструмента разрешений. CLI сам классифицирует
         // команду как безопасную для чтения и не спрашивает. Граница «что безопасно»
         // проведена внутри CLI, а не в Runie — это важно для шага 5.
-        let events = normalizeAll(try fixture("bash-readonly"))
+        let events = try FixtureLoader.events("bash-readonly")
 
         let toolUse = try #require(events.compactMap {
             if case .toolUse(let use) = $0 { use } else { nil }
@@ -137,7 +121,7 @@ struct AgentEventNormalizerTests {
 
     @Test("размышление приходит отдельным событием перед текстом")
     func thinkingFixture() throws {
-        let events = normalizeAll(try fixture("thinking"))
+        let events = try FixtureLoader.events("thinking")
         let thinkingIndex = try #require(events.firstIndex {
             if case .thinking = $0 { true } else { false }
         })
@@ -154,8 +138,8 @@ struct AgentEventNormalizerTests {
     func fixturesHaveNoUnknownEvents() throws {
         // Если CLI добавил новый тип и фикстуры пересняты, этот тест покажет, что
         // именно появилось, а не даст ему тихо проваливаться в unknown.
-        for name in ["tool-use", "permission", "resume-missing", "bash-readonly", "thinking"] {
-            let unknown = normalizeAll(try fixture(name)).compactMap {
+        for name in FixtureLoader.names {
+            let unknown = try FixtureLoader.events(name).compactMap {
                 if case .unknown(let raw) = $0 { raw.subtype.map { "\(raw.type)/\($0)" } ?? raw.type } else { nil }
             }
             #expect(unknown.isEmpty, "\(name): незнакомые события \(unknown)")
