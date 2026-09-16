@@ -29,7 +29,7 @@ struct MainWindowView: View {
         } detail: {
             switch navigation.section {
             case .history:
-                HistoryView(session: session, store: store, onContinue: onContinue)
+                HistoryView(navigation: navigation, session: session, store: store, onContinue: onContinue)
             case .permissions:
                 PermissionsSettingsView(settings: settings)
             case .usage:

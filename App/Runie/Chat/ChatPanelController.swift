@@ -7,8 +7,6 @@ import SwiftUI
 @MainActor
 @Observable
 final class ChatLayout {
-    /// Вся переписка вместо одного последнего ответа.
-    var isExpanded = false
     /// С какой стороны от блоков стоит орб: к нему блоки и прижимаются.
     var orbSide: HorizontalEdge = .trailing
     /// Сигнал «поставь фокус в поле ввода». Панель переиспользуется, поэтому
@@ -79,6 +77,9 @@ final class ChatPanelController {
     private var visibilityGeneration = 0
     private var isHiding = false
 
+    /// Кнопка масштабирования: открыть разговор в окне Runie.
+    var onOpenWindow: (() -> Void)?
+
     /// Чат начал закрываться — откуда бы ни пришла команда: орб, Esc, крестик.
     var onHide: (() -> Void)?
 
@@ -93,7 +94,8 @@ final class ChatPanelController {
             layout: layout,
             tracker: tracker,
             onSend: { [weak self] text in self?.send(text) },
-            onClose: { [weak self] in self?.hide() }
+            onClose: { [weak self] in self?.hide() },
+            onOpenWindow: { [weak self] in self?.onOpenWindow?() }
         ))
         hosting.frame = NSRect(origin: .zero, size: Self.size)
         hosting.autoresizingMask = [.width, .height]
@@ -173,7 +175,6 @@ final class ChatPanelController {
                 self.isHiding = false
                 self.panel.orderOut(nil)
                 self.panel.alphaValue = 1
-                self.layout.isExpanded = false
             }
         }
     }
@@ -183,15 +184,9 @@ final class ChatPanelController {
         panel.setFrame(frame(anchor: anchor), display: true)
     }
 
-    /// Esc сначала сворачивает переписку, потом закрывает чат.
+    /// Esc закрывает чат.
     private func cancel() {
-        if layout.isExpanded {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                layout.isExpanded = false
-            }
-        } else {
-            hide()
-        }
+        hide()
     }
 
     /// Блоки открываются в сторону центра экрана от орба, поле ввода вровень с ним

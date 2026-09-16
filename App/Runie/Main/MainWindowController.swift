@@ -30,6 +30,12 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         self.store = store
     }
 
+    /// Открывает окно на разговоре: он выделяется в истории.
+    func showConversation(_ id: UUID) {
+        navigation.selectedConversation = id
+        show(.history)
+    }
+
     func show(_ section: Section? = nil) {
         if let section { navigation.section = section }
         let window = self.window ?? makeWindow()
@@ -72,4 +78,6 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 @Observable
 final class MainNavigation {
     var section: MainWindowController.Section = .history
+    /// Какой разговор выделить в истории.
+    var selectedConversation: UUID?
 }

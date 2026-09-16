@@ -3,12 +3,12 @@ import SwiftUI
 
 /// Все разговоры с Руни: слева список, справа переписка.
 struct HistoryView: View {
+    @Bindable var navigation: MainNavigation
     let session: ChatSession
     let store: ChatHistoryStore
     let onContinue: (ConversationRecord) -> Void
 
     @State private var records: [ConversationRecord] = []
-    @State private var selection: UUID?
     @State private var query = ""
     @State private var pendingDelete: ConversationRecord?
 
@@ -58,7 +58,7 @@ struct HistoryView: View {
                 description: Text("Нажмите на орб и напишите Руни — разговор появится здесь.")
             )
         } else {
-            List(filtered, selection: $selection) { record in
+            List(filtered, selection: $navigation.selectedConversation) { record in
                 ConversationListRow(record: record, isCurrent: record.id == session.conversationID)
                     .tag(record.id)
                     .contextMenu {
@@ -72,7 +72,7 @@ struct HistoryView: View {
 
     @ViewBuilder
     private var detail: some View {
-        if let record = records.first(where: { $0.id == selection }) {
+        if let record = records.first(where: { $0.id == navigation.selectedConversation }) {
             VStack(spacing: 0) {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
@@ -107,8 +107,8 @@ struct HistoryView: View {
 
     private func reload() {
         records = store.list()
-        if selection == nil || !records.contains(where: { $0.id == selection }) {
-            selection = records.first?.id
+        if !records.contains(where: { $0.id == navigation.selectedConversation }) {
+            navigation.selectedConversation = records.first?.id
         }
     }
 

@@ -13,6 +13,8 @@ struct ChatView: View {
     let tracker: FrontmostAppTracker
     let onSend: (String) -> Void
     let onClose: () -> Void
+    /// Открыть окно Runie на этом разговоре.
+    let onOpenWindow: () -> Void
 
     /// Когда началось появление. Ход считается от этого времени внутри `TimelineView`,
     /// а не интерполяцией SwiftUI: свечение на Canvas при анимируемом значении
@@ -57,16 +59,8 @@ struct ChatView: View {
                 VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
                     Spacer(minLength: 0)
 
-                    Group {
-                        if layout.isExpanded {
-                            ConversationPanel(session: session, onCollapse: collapse)
-                                .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
-                        } else {
-                            CompactFeed(session: session, alignment: horizontalAlignment)
-                                .transition(.opacity)
-                        }
-                    }
-                    .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
+                    CompactFeed(session: session, alignment: horizontalAlignment)
+                        .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
 
                     // Агент стоит и ждёт ответа — вопрос прямо над полем ввода.
                     if let request = session.pendingPermission {
@@ -80,7 +74,7 @@ struct ChatView: View {
                         layout: layout,
                         onSubmitDraft: submitDraft,
                         onStop: { session.stop() },
-                        onToggleExpanded: toggleExpanded
+                        onOpenWindow: onOpenWindow
                     )
                     .frame(height: ChatPanelController.inputHeight)
                     // Поле первым вытягивается из света вдоль строки, от орба.
@@ -192,17 +186,6 @@ struct ChatView: View {
         onSend(text)
     }
 
-    private func toggleExpanded() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-            layout.isExpanded.toggle()
-        }
-    }
-
-    private func collapse() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-            layout.isExpanded = false
-        }
-    }
 }
 
 // MARK: - Появление из света
@@ -613,7 +596,7 @@ private struct InputRow: View {
     @Bindable var layout: ChatLayout
     let onSubmitDraft: () -> Void
     let onStop: () -> Void
-    let onToggleExpanded: () -> Void
+    let onOpenWindow: () -> Void
 
     @FocusState private var isFocused: Bool
 
@@ -675,18 +658,16 @@ private struct InputRow: View {
     }
 
     private var expandButton: some View {
-        Button(action: onToggleExpanded) {
-            Image(systemName: layout.isExpanded
-                  ? "arrow.down.right.and.arrow.up.left"
-                  : "arrow.up.left.and.arrow.down.right")
+        Button(action: onOpenWindow) {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
                 .font(.system(size: 15, weight: .medium))
                 .frame(width: 44, height: 44)
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
         .readableSurface(Circle(), interactive: true)
-        .help(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
-        .accessibilityLabel(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
+        .help("Открыть разговор в окне Runie")
+        .accessibilityLabel("Открыть разговор в окне Runie")
     }
 }
 
@@ -809,83 +790,6 @@ private struct UsagePopover: View {
         }
         .padding(14)
         .frame(width: 260)
-    }
-}
-
-// MARK: - Развёрнутая переписка
-
-private struct ConversationPanel: View {
-    let session: ChatSession
-    let onCollapse: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                if session.isBusy {
-                    ProgressView().controlSize(.mini)
-                }
-                Text(session.isBusy ? ActivityLabel.text(session.timeline.activity) : "Переписка")
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                Button(action: onCollapse) {
-                    Image(systemName: "chevron.down")
-                }
-                .buttonStyle(.borderless)
-                .help("Свернуть (Esc)")
-            }
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 18)
-            .padding(.top, 14)
-            .padding(.bottom, 6)
-
-            if session.timeline.items.isEmpty {
-                Text("Пока пусто")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ConversationList(timeline: session.timeline)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .readableSurface(RoundedRectangle(cornerRadius: 26))
-    }
-}
-
-private struct ConversationList: View {
-    let timeline: ChatTimeline
-
-    var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
-                    ForEach(timeline.items) { item in
-                        TimelineRow(item: item)
-                            .id(item.id)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-            }
-            .scrollIndicators(.hidden)
-            .onChange(of: timeline.items) { old, items in
-                guard let last = items.last else { return }
-                // Новая реплика въезжает плавно. Дописывание текущей — без анимации:
-                // при потоковом выводе это десятки обновлений в секунду.
-                if old.last?.id == last.id {
-                    proxy.scrollTo(last.id, anchor: .bottom)
-                } else {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo(last.id, anchor: .bottom)
-                    }
-                }
-            }
-            .onAppear {
-                if let last = timeline.items.last {
-                    proxy.scrollTo(last.id, anchor: .bottom)
-                }
-            }
-        }
     }
 }
 
