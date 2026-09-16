@@ -154,13 +154,21 @@ final class ModelDropdown {
                 self?.close()
             }
         )
+        // Сначала окно нужного размера и готовая раскладка в скрытом состоянии.
+        // Иначе при первом показе SwiftUI раскладывает список в крошечном новом
+        // окне и анимирует переезд — список выплывал слева, а не из надписи.
+        panel.setFrame(frame, display: false)
         let hosting = FirstMouseHostingView(rootView: AnyView(content))
         hosting.frame = NSRect(origin: .zero, size: size)
         panel.contentView = hosting
-        panel.setFrame(frame, display: true)
+        hosting.layoutSubtreeIfNeeded()
         panel.orderFrontRegardless()
-        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-            state.isVisible = true
+        let current = generation
+        DispatchQueue.main.async { [weak self] in
+            guard let self, current == self.generation else { return }
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                self.state.isVisible = true
+            }
         }
         watchOutsideClicks()
     }
@@ -183,7 +191,7 @@ final class ModelDropdown {
     }
 
     private func makePanel() -> FloatingPanel {
-        let panel = FloatingPanel(size: NSSize(width: 10, height: 10), allowsKey: false)
+        let panel = FloatingPanel(size: NSSize(width: Self.width, height: Self.rowHeight), allowsKey: false)
         // Над чатом и орбом.
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
         return panel
