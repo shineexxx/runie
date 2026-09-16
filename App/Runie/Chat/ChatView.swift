@@ -383,16 +383,23 @@ private struct Bubble<Content: View>: View {
 private struct AssistantText: View {
     let text: String
 
+    private static let maxHeight: CGFloat = 280
+
+    /// Высота текста целиком. `ViewThatFits` для этого не годится: он сравнивает с
+    /// высотой, которую предлагает стек, а та бывает меньше нужной, — и пузырь
+    /// с коротким ответом раздувался до полной высоты прокрутки.
+    @State private var contentHeight: CGFloat = 0
+
     var body: some View {
-        ViewThatFits(in: .vertical) {
+        ScrollView {
             label
-            ScrollView {
-                label.frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .scrollIndicators(.hidden)
-            .defaultScrollAnchor(.bottom)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         }
-        .frame(maxHeight: 280)
+        .scrollIndicators(.hidden)
+        .scrollDisabled(contentHeight <= Self.maxHeight)
+        .defaultScrollAnchor(.bottom)
+        .frame(height: min(max(contentHeight, 1), Self.maxHeight))
     }
 
     private var label: some View {
