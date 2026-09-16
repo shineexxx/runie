@@ -341,7 +341,7 @@ enum ModelNames {
 
     private static let phrases: [String: String] = [
         "Best for everyday, complex tasks": "для повседневных и сложных задач",
-        "Most capable for your hardest and longest-running tasks": "самая способная — для самых трудных и долгих задач",
+        "Most capable for your hardest and longest-running tasks": "для самых трудных и долгих задач",
         "Efficient for routine tasks": "экономная — для обычных задач",
         "Fastest for quick answers": "самая быстрая — для коротких ответов",
     ]
