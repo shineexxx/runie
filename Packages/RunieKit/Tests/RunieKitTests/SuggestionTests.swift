@@ -91,6 +91,6 @@ struct SuggestionTests {
         #expect(arguments.contains("--no-session-persistence"))
         #expect(arguments.contains("--strict-mcp-config"))
         #expect(arguments[arguments.firstIndex(of: "--tools")! + 1] == "")
-        #expect(arguments[arguments.firstIndex(of: "--model")! + 1] == "haiku")
+        #expect(arguments[arguments.firstIndex(of: "--model")! + 1] == "sonnet")
     }
 }

@@ -2,7 +2,7 @@ import Foundation
 
 /// Придумывает подсказки разовым запросом к Claude Code, отдельно от разговора.
 ///
-/// Запрос лёгкий: быстрая модель, без инструментов, без MCP, без настроек и хуков
+/// Запрос лёгкий: Sonnet — заметно точнее Haiku в подсказках, без инструментов, без MCP, без настроек и хуков
 /// пользователя, со своим коротким системным промптом и без сохранения сессии.
 /// Так он стоит порядка тысячи токенов и не попадает в историю Claude Code.
 public struct ClaudeSuggestionGenerator: Sendable {
@@ -11,7 +11,7 @@ public struct ClaudeSuggestionGenerator: Sendable {
     public var model: String
     public var timeout: Duration
 
-    public init(executable: URL, model: String = "haiku", timeout: Duration = .seconds(90)) {
+    public init(executable: URL, model: String = "sonnet", timeout: Duration = .seconds(90)) {
         self.executable = executable
         self.model = model
         self.timeout = timeout
