@@ -52,7 +52,7 @@ struct EdgeButtonView: View {
     /// Горб во весь рост у выглянувшего орба, маленький горбик у спрятанного.
     private var tetherExtent: CGFloat {
         guard state.isAttached else { return 0 }
-        return state.isRetracted ? 0.32 : 1
+        return state.isRetracted ? EdgeGlow.extent : 1
     }
 
     private var retractOffset: CGFloat {
@@ -139,11 +139,14 @@ struct OrbTether: Shape, @preconcurrency Animatable {
     }
 }
 
-/// Лёгкое бирюзовое свечение у горбика спрятанного орба. Медленно дышит, а когда
-/// агент работает, светит ярче.
+/// Лёгкое бирюзовое свечение вдоль края горбика спрятанного орба — ровно по всему
+/// контуру, а не из одной точки. Медленно дышит, а когда агент работает, светит ярче.
 private struct EdgeGlow: View {
     let edge: EdgeButtonState.Edge
     let energy: Double
+
+    /// Тот же размер горбика, что у спрятанного орба.
+    static let extent: CGFloat = 0.32
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -151,21 +154,12 @@ private struct EdgeGlow: View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let breath = reduceMotion ? 0.5 : (sin(time * 1.3) + 1) / 2
-            let strength = (0.22 + 0.12 * breath) * (1 + 0.6 * energy)
+            let strength = (0.35 + 0.2 * breath) * (1 + 0.5 * energy)
 
-            ZStack {
-                Ellipse()
-                    .fill(OrbPalette.cyan.opacity(strength))
-                    .frame(width: 16, height: 40)
-                    .blur(radius: 8)
-                Ellipse()
-                    .fill(OrbPalette.mint.opacity(strength * 0.8))
-                    .frame(width: 5, height: 16)
-                    .blur(radius: 3)
-            }
-            .blendMode(.plusLighter)
-            // У вершины горбика: он выступает из кромки примерно до центра панели.
-            .offset(x: edge == .right ? 2 : -2)
+            OrbTether(edge: edge, extent: Self.extent)
+                .stroke(OrbPalette.cyan.opacity(min(strength, 1)), lineWidth: 2.5)
+                .blur(radius: 3.5)
+                .blendMode(.plusLighter)
         }
         .allowsHitTesting(false)
     }
