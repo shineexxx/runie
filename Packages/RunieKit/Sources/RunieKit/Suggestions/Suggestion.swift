@@ -82,7 +82,7 @@ public struct SuggestionContext: Sendable, Equatable {
     }
 
     /// Максимум символов в надписи: в ряд под полем помещаются две кнопки.
-    public static let labelLimit = 24
+    public static let labelLimit = 20
 
     public enum PartOfDay: String, Sendable {
         case morning, day, evening, night

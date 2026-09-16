@@ -713,11 +713,11 @@ private struct ChipsRow: View {
             .accessibilityLabel("Новый разговор")
 
             if session.timeline.items.isEmpty {
-                ForEach(suggestions) { suggestion in
-                    // На кнопке — короткая надпись, агенту уходит полная просьба.
-                    Chip(title: suggestion.label) { onSend(suggestion.prompt) }
-                        .help(suggestion.prompt)
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                // Подсказки от ИИ бывают длинными. Не влезают две — показываем одну:
+                // иначе ряд распирает столбец блоков, и поле ввода съезжает на орб.
+                ViewThatFits(in: .horizontal) {
+                    chips(suggestions)
+                    chips(Array(suggestions.prefix(1)))
                 }
             } else if let usage = session.timeline.usage {
                 UsageChip(usage: usage)
@@ -725,6 +725,17 @@ private struct ChipsRow: View {
         }
         .frame(maxWidth: .infinity, alignment: alignment)
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: suggestions)
+    }
+
+    private func chips(_ items: [Suggestion]) -> some View {
+        HStack(spacing: 8) {
+            ForEach(items) { suggestion in
+                // На кнопке — короткая надпись, агенту уходит полная просьба.
+                Chip(title: suggestion.label) { onSend(suggestion.prompt) }
+                    .help(suggestion.prompt)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            }
+        }
     }
 }
 
