@@ -34,6 +34,14 @@ final class FloatingPanel: NSPanel {
         animationBehavior = .none
     }
 
+    /// AppKit по умолчанию вталкивает окно обратно в экран, если оно залезает под
+    /// строку меню или за край. У Runie за край намеренно заходят прозрачные поля
+    /// под тень и свечение, а видимое положение считают контроллеры. Без этой
+    /// поправки окно чата съезжало вниз, и поле ввода уходило ниже орба.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        frameRect
+    }
+
     override var canBecomeKey: Bool { allowsKey }
     override var canBecomeMain: Bool { false }
 

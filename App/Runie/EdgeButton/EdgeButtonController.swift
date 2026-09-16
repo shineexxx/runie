@@ -34,10 +34,15 @@ final class EdgeButtonController {
 
     /// Панель больше самого шара (48): вокруг нужно место для свечения, иначе оно
     /// обрезается границей окна и вокруг орба проступает квадрат.
-    static let panelSize = NSSize(width: 80, height: 80)
+    static let panelSize = NSSize(width: 96, height: 96)
+    /// Диаметр самого орба внутри панели.
+    static let orbDiameter: CGFloat = 48
+    /// Прозрачное поле между орбом и краем панели. Свечение и волнующийся край
+    /// капли должны помещаться в него целиком, иначе край окна режет их по квадрату.
+    static var orbInset: CGFloat { (panelSize.width - orbDiameter) / 2 }
     /// Отступ панели от края видимой области. Отрицательный: прозрачное поле
     /// вокруг шара и так отодвигает его от края.
-    private static let margin: CGFloat = -8
+    private static let margin: CGFloat = 8 - orbInset
     /// Сколько задвинутой панели торчит из-за края. Шар при этом прижат к полоске.
     private static let sliver: CGFloat = 22
     /// Смещение курсора, после которого нажатие считается перетаскиванием, а не кликом.

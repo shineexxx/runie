@@ -32,12 +32,12 @@ enum RunieMood: String, CaseIterable, Sendable {
     }
 }
 
-/// Орб Руни: стеклянный шар, внутри которого переливается бирюзовый свет.
+/// Орб Руни: живая стеклянная капля, внутри которой переливается бирюзовый свет.
 ///
 /// Нарисован кодом: несколько размытых цветных пятен плывут по кривым Лиссажу
-/// и складываются светом. Частоты движения постоянные, настроение меняет только
-/// амплитуду и яркость — поэтому при смене настроения пятна не прыгают, а
-/// «энергия» перетекает плавно.
+/// и складываются светом, а край капли всё время слегка волнуется, как у Siri.
+/// Частоты движения постоянные, настроение меняет только амплитуду и яркость —
+/// поэтому при смене настроения ничего не прыгает, а «энергия» перетекает плавно.
 struct RunieOrb: View {
 
     let mood: RunieMood
@@ -109,6 +109,8 @@ private struct OrbFluid: View, @preconcurrency Animatable {
         let voice = reduceMotion ? 0 : abs(sin(time * 8.5)) * 0.045 * speaking
         let glow = 0.14 + 0.36 * energy
 
+        let outline = BlobOutline(time: time, energy: energy)
+
         return Canvas { context, canvasSize in
             let side = canvasSize.width
             context.fill(Path(ellipseIn: CGRect(origin: .zero, size: canvasSize)), with: .color(OrbPalette.deep))
@@ -135,10 +137,51 @@ private struct OrbFluid: View, @preconcurrency Animatable {
                 context.fill(Path(ellipseIn: rect), with: .color(blob.color.opacity(intensity)))
             }
         }
-        .clipShape(Circle())
+        .clipShape(outline)
         .frame(width: size, height: size)
-        .glassEffect(.regular.tint(OrbPalette.teal.opacity(0.16)).interactive(), in: .circle)
-        .shadow(color: OrbPalette.cyan.opacity(glow), radius: size * 0.16)
+        .glassEffect(.regular.tint(OrbPalette.teal.opacity(0.16)).interactive(), in: outline)
+        .shadow(color: OrbPalette.cyan.opacity(glow), radius: size * 0.2)
         .scaleEffect(1 + breath + voice)
+    }
+}
+
+/// Край живой капли: окружность, радиус которой волнуется несколькими медленными
+/// гармониками. В покое отклонение едва заметно, в работе — отчётливое.
+///
+/// Гармоники идут с разными скоростями и в разные стороны, поэтому форма не
+/// повторяется и не выглядит как вращение одного и того же пятна.
+struct BlobOutline: Shape {
+    let time: TimeInterval
+    let energy: Double
+
+    private static let pointCount = 72
+
+    func path(in rect: CGRect) -> Path {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let base = min(rect.width, rect.height) / 2
+        let wobble = 0.03 + 0.045 * energy
+
+        // Радиус не выходит за квадрат: капля «проседает» внутрь, а не выпирает наружу.
+        func radius(at angle: Double) -> CGFloat {
+            let shape = sin(angle * 2 + time * 0.9)
+                + 0.7 * sin(angle * 3 - time * 1.3)
+                + 0.45 * sin(angle * 5 + time * 1.7)
+            let normalized = (shape / 2.15 + 1) / 2 // от 0 до 1
+            return base * CGFloat(1 - wobble * normalized)
+        }
+
+        var path = Path()
+        for index in 0...Self.pointCount {
+            let angle = Double(index) / Double(Self.pointCount) * 2 * .pi
+            let r = radius(at: angle)
+            let point = CGPoint(x: center.x + r * CGFloat(cos(angle)), y: center.y + r * CGFloat(sin(angle)))
+            if index == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        path.closeSubpath()
+        return path
     }
 }

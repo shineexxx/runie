@@ -31,7 +31,8 @@ struct ChatView: View {
                 ChipsRow(session: session, alignment: frameAlignment)
                     .frame(height: ChatPanelController.chipsHeight)
             }
-            .padding(.horizontal, 10)
+            // Поля шире тени блоков, иначе край окна её обрезает.
+            .padding(.horizontal, ChatPanelController.shadowMargin)
             .padding(.bottom, ChatPanelController.bottomInset)
             .frame(width: ChatPanelController.size.width)
             .frame(maxHeight: .infinity, alignment: .bottom)
@@ -140,8 +141,7 @@ private struct Bubble<Content: View>: View {
             .padding(.vertical, 13)
             .frame(maxWidth: 360, alignment: .leading)
             .fixedSize(horizontal: true, vertical: false)
-            .glassEffect(.regular, in: .rect(cornerRadius: 24))
-            .blockShadow()
+            .readableSurface(RoundedRectangle(cornerRadius: 24))
     }
 }
 
@@ -187,8 +187,7 @@ private struct ActionCapsule: View {
         .frame(height: 32)
         .frame(maxWidth: 320)
         .fixedSize(horizontal: true, vertical: false)
-        .glassEffect(.regular, in: .capsule)
-        .blockShadow()
+        .readableSurface(Capsule())
     }
 }
 
@@ -238,8 +237,7 @@ private struct InputRow: View {
         .padding(.trailing, 7)
         .frame(maxWidth: .infinity)
         .frame(height: ChatPanelController.inputHeight)
-        .glassEffect(.regular.interactive(), in: .capsule)
-        .blockShadow()
+        .readableSurface(Capsule(), interactive: true)
     }
 
     private var expandButton: some View {
@@ -252,8 +250,7 @@ private struct InputRow: View {
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
-        .blockShadow()
+        .readableSurface(Circle(), interactive: true)
         .help(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
         .accessibilityLabel(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
     }
@@ -322,8 +319,7 @@ private struct ChipsRow: View {
                     .contentShape(.circle)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .circle)
-            .blockShadow()
+            .readableSurface(Circle(), interactive: true)
             .disabled(session.timeline.items.isEmpty)
             .opacity(session.timeline.items.isEmpty ? 0.45 : 1)
             .help("Новый разговор")
@@ -356,8 +352,7 @@ private struct Chip: View {
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .capsule)
-        .blockShadow()
+        .readableSurface(Capsule(), interactive: true)
     }
 }
 
@@ -373,8 +368,7 @@ private struct UsageChip: View {
                 .foregroundStyle(window.utilization >= 0.8 ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
                 .padding(.horizontal, 11)
                 .frame(height: 32)
-                .glassEffect(.regular, in: .capsule)
-                .blockShadow()
+                .readableSurface(Capsule())
                 .help(UsageChip.tooltip(usage))
         }
     }
@@ -428,8 +422,7 @@ private struct ConversationPanel: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .glassEffect(.regular, in: .rect(cornerRadius: 26))
-        .blockShadow()
+        .readableSurface(RoundedRectangle(cornerRadius: 26))
     }
 }
 
@@ -473,10 +466,40 @@ private struct ConversationList: View {
 // MARK: - Общее
 
 private extension View {
-    /// Мягкая тень под блоком. На светлом фоне стекло почти сливается со страницей,
-    /// и без тени блоки не отделяются от того, что под ними.
-    func blockShadow() -> some View {
-        shadow(color: .black.opacity(0.10), radius: 14, y: 5)
+    /// Поверхность блока — стекло, тонированное так, чтобы оставаться читаемым.
+    ///
+    /// Чистое `regular`-стекло над плотным текстом пропускает строки под собой.
+    /// В SDK всего два вида стекла, `regular` и `clear`, поэтому читаемость
+    /// даёт тонировка внутри самого стекла: так делает Spotlight. Непрозрачная
+    /// заливка поверх стекла тоже читается, но убивает само стекло.
+    func readableSurface<S: InsettableShape>(_ shape: S, interactive: Bool = false) -> some View {
+        let glass = Glass.regular.tint(SurfaceTint.color)
+        return glassEffect(interactive ? glass.interactive() : glass, in: shape)
+            .shadow(color: .black.opacity(0.14), radius: 16, y: 6)
+    }
+}
+
+/// Тонировка стекла. Светлая в светлой теме, тёмная в тёмной.
+enum SurfaceTint {
+    static var color: Color {
+        let strength = level
+        return Color(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            return isDark
+                ? NSColor(white: 0.08, alpha: strength * 0.8)
+                : NSColor(white: 1.0, alpha: strength)
+        })
+    }
+
+    private static var level: CGFloat {
+        #if DEBUG
+        // Для подбора на экране: `-RunieSurface 0.6` в аргументах запуска.
+        // 0.35 выбрано сравнением на экране: ближе всего к Spotlight. При 0.6
+        // белая тонировка внутри стекла уже даёт серый, а не белёсый блок.
+        let forced = UserDefaults.standard.double(forKey: "RunieSurface")
+        if forced > 0 { return CGFloat(forced) }
+        #endif
+        return 0.35
     }
 }
 

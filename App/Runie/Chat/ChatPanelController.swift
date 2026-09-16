@@ -29,7 +29,10 @@ final class ChatLayout {
 final class ChatPanelController {
 
     /// Наибольший размер окна. Высота подстраивается под место над орбом.
-    static let size = NSSize(width: 420, height: 640)
+    static let size = NSSize(width: 380 + shadowMargin * 2, height: 640)
+    /// Прозрачное поле вокруг блоков. Тень блока выходит далеко за его край,
+    /// и если поля не хватает, край окна обрезает её прямой линией.
+    static let shadowMargin: CGFloat = 40
     /// Меньше этого окно не сжимается: иначе ответу негде поместиться.
     private static let minimumHeight: CGFloat = 320
     /// Высота ряда подсказок под полем ввода.
@@ -37,7 +40,7 @@ final class ChatPanelController {
     /// Высота поля ввода.
     static let inputHeight: CGFloat = 50
     static let blockSpacing: CGFloat = 10
-    static let bottomInset: CGFloat = 10
+    static var bottomInset: CGFloat { shadowMargin }
     /// Зазор между орбом и блоками.
     private static let gap: CGFloat = 2
     private static let screenInset: CGFloat = 8
@@ -156,21 +159,24 @@ final class ChatPanelController {
         let orbOnRight = anchor.midX > screen.frame.midX
         layout.orbSide = orbOnRight ? .trailing : .leading
 
-        // Сам шар меньше панели кнопки: зазор считаем от шара, а не от прозрачных полей.
-        let orbInset = (anchor.width - 48) / 2
+        // Зазор считаем от видимых краёв — шара и блоков, — а не от прозрачных полей
+        // обоих окон.
+        let orbInset = EdgeButtonController.orbInset
         var x = orbOnRight
-            ? anchor.minX + orbInset - size.width - Self.gap
-            : anchor.maxX - orbInset + Self.gap
-        x = min(max(x, visible.minX + Self.screenInset), visible.maxX - size.width - Self.screenInset)
+            ? anchor.minX + orbInset - Self.gap + Self.shadowMargin - size.width
+            : anchor.maxX - orbInset + Self.gap - Self.shadowMargin
+        // Прозрачные поля окна могут заходить за край экрана — не должны только блоки.
+        let edgeSlack = Self.shadowMargin - Self.screenInset
+        x = min(max(x, visible.minX - edgeSlack), visible.maxX - size.width + edgeSlack)
 
         // Поле ввода вровень с орбом. Окно растёт вверх настолько, насколько позволяет
         // экран: если отвести ему всегда полную высоту, над орбом посередине экрана
         // оно не влезает, и ограничитель уводит поле ввода далеко вниз от шара.
-        var y = max(anchor.midY - Self.inputCenterFromBottom, visible.minY + Self.screenInset)
-        var height = min(size.height, visible.maxY - Self.screenInset - y)
+        var y = max(anchor.midY - Self.inputCenterFromBottom, visible.minY - edgeSlack)
+        var height = min(size.height, visible.maxY + edgeSlack - y)
         if height < Self.minimumHeight {
             height = Self.minimumHeight
-            y = visible.maxY - Self.screenInset - height
+            y = visible.maxY + edgeSlack - height
         }
         return NSRect(x: x, y: y, width: size.width, height: height)
     }

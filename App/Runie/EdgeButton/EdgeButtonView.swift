@@ -36,7 +36,8 @@ struct EdgeButtonView: View {
     /// а не пустое стекло.
     private var tuckOffset: CGFloat {
         guard state.isTucked, !state.isDragging else { return 0 }
-        return state.edge == .right ? -16 : 16
+        let inset = EdgeButtonController.orbInset
+        return state.edge == .right ? -inset : inset
     }
 
     private var accessibilityStatus: String {
