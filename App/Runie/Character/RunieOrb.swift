@@ -83,15 +83,19 @@ struct RunieOrb: View {
     }
 }
 
-/// Бирюзовая палитра орба.
+/// Бирюзовая палитра орба и всех акцентов Руни. Меняется по времени суток —
+/// см. `DayPalette`; вьюхи, которые её читают, перерисовываются сами.
+@MainActor
 enum OrbPalette {
-    static let teal = Color(red: 0.10, green: 0.78, blue: 0.74)
-    static let cyan = Color(red: 0.30, green: 0.90, blue: 0.98)
-    static let azure = Color(red: 0.22, green: 0.56, blue: 1.00)
-    static let mint = Color(red: 0.55, green: 1.00, blue: 0.84)
+    static var teal: Color { DayPalette.shared.colors.teal.color }
+    static var cyan: Color { DayPalette.shared.colors.cyan.color }
+    static var azure: Color { DayPalette.shared.colors.azure.color }
+    static var mint: Color { DayPalette.shared.colors.mint.color }
     /// Тёмное ядро под светом. Без него пятна сливаются в ровный диск; когда свет
     /// уходит в чат, остаётся именно оно.
-    static let deep = Color(red: 0.03, green: 0.42, blue: 0.58)
+    static var deep: Color { DayPalette.shared.colors.deep.color }
+    /// Яркость свечения: ночью орб светит слабее.
+    static var glow: Double { DayPalette.shared.colors.glow }
 }
 
 // MARK: - Свет
@@ -119,17 +123,18 @@ private struct OrbFluid: View, @preconcurrency Animatable {
     }
 
     private struct Blob {
-        let color: Color
+        /// Цвет берётся из палитры в момент рисования: она меняется в течение дня.
+        let color: KeyPath<DayPalette.Colors, DayPalette.RGB>
         let radius: CGFloat
         let frequency: Double
         let phase: Double
     }
 
     private static let blobs = [
-        Blob(color: OrbPalette.cyan, radius: 0.46, frequency: 1.0, phase: 0),
-        Blob(color: OrbPalette.teal, radius: 0.40, frequency: 1.31, phase: 2.1),
-        Blob(color: OrbPalette.azure, radius: 0.36, frequency: 0.83, phase: 4.2),
-        Blob(color: OrbPalette.mint, radius: 0.28, frequency: 1.57, phase: 1.3)
+        Blob(color: \.cyan, radius: 0.46, frequency: 1.0, phase: 0),
+        Blob(color: \.teal, radius: 0.40, frequency: 1.31, phase: 2.1),
+        Blob(color: \.azure, radius: 0.36, frequency: 0.83, phase: 4.2),
+        Blob(color: \.mint, radius: 0.28, frequency: 1.57, phase: 1.3)
     ]
 
     var body: some View {
@@ -205,6 +210,8 @@ private struct OrbFluid: View, @preconcurrency Animatable {
         intensity: Double,
         time: TimeInterval
     ) {
+        let palette = DayPalette.shared.colors
+        let intensity = intensity * palette.glow
         guard intensity > 0.005 else { return }
         let slow = (0.20 + 0.06 * energy) * reach
         let fast = 0.12 * energy * reach
@@ -221,7 +228,7 @@ private struct OrbFluid: View, @preconcurrency Animatable {
                 width: radius * 2,
                 height: radius * 2
             )
-            context.fill(Path(ellipseIn: rect), with: .color(blob.color.opacity(intensity)))
+            context.fill(Path(ellipseIn: rect), with: .color(palette[keyPath: blob.color].color.opacity(intensity)))
         }
     }
 }

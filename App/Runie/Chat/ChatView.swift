@@ -206,7 +206,7 @@ private struct EmergenceGlow: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let colors = [OrbPalette.cyan, OrbPalette.teal, OrbPalette.azure, OrbPalette.mint]
+    private static var colors: [Color] { [OrbPalette.cyan, OrbPalette.teal, OrbPalette.azure, OrbPalette.mint] }
 
     var body: some View {
         Canvas { context, canvasSize in
