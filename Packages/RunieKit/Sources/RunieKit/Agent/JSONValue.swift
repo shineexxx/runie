@@ -119,3 +119,52 @@ extension JSONValue: Decodable {
         try JSONDecoder().decode(JSONValue.self, from: data)
     }
 }
+
+// MARK: - Сериализация
+
+extension JSONValue: Encodable {
+
+    public func encode(to encoder: any Encoder) throws {
+        switch self {
+        case .null:
+            var container = encoder.singleValueContainer()
+            try container.encodeNil()
+        case .bool(let value):
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+        case .int(let value):
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+        case .double(let value):
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+        case .string(let value):
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+        case .array(let values):
+            var container = encoder.unkeyedContainer()
+            for value in values { try container.encode(value) }
+        case .object(let dictionary):
+            var container = encoder.container(keyedBy: DynamicKey.self)
+            for (key, value) in dictionary {
+                try container.encode(value, forKey: DynamicKey(key))
+            }
+        }
+    }
+
+    /// Компактная строка JSON с отсортированными ключами — удобно для логов и сравнения.
+    public func jsonString() -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        guard let data = try? encoder.encode(self) else { return "null" }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    private struct DynamicKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init(_ string: String) { stringValue = string }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+}

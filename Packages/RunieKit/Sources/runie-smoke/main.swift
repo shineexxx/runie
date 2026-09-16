@@ -1,12 +1,15 @@
 import Foundation
 import RunieKit
 
-/// Ручная проверка рантайма на настоящем Claude Code.
+/// Ручная проверка рантайма и нормализатора на настоящем Claude Code.
 ///
-/// Тесты гоняются на поддельном исполняемом файле и не тратят подписку. Эта утилита —
-/// наоборот: один живой ход, чтобы увидеть реальные события своими глазами.
+/// Тесты гоняются на поддельном исполняемом файле и очищенных фикстурах и не тратят
+/// подписку. Эта утилита — наоборот: один живой ход, чтобы увидеть события своими глазами.
 ///
 ///     swift run --package-path Packages/RunieKit runie-smoke "скажи ровно: pong"
+///
+/// Незнакомые события печатаются отдельно: так видно, что CLI добавил новый тип
+/// и нормализатор пора учить.
 
 let prompt = CommandLine.arguments.dropFirst().joined(separator: " ")
 let text = prompt.isEmpty ? "Ответь ровно одним словом: pong" : prompt
@@ -26,66 +29,67 @@ let runtime = AgentRuntime(configuration: .init(
     arguments: ClaudeCodeArguments().build(),
     workingDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
 ))
+let normalizer = AgentEventNormalizer()
 
 let stream = try runtime.start()
 try runtime.send(UserMessage(text))
 runtime.finishInput()
 
-var eventCounts: [String: Int] = [:]
+var unknownTypes: [String] = []
+
+func percent(_ window: SubscriptionUsage.Window?) -> String {
+    window.map { String(format: "%.0f%%", $0.utilization * 100) } ?? "—"
+}
 
 for await output in stream {
     switch output {
-    case .event(let event):
-        let key = event.subtype.map { "\(event.type)/\($0)" } ?? event.type
-        eventCounts[key, default: 0] += 1
-
-        switch event.type {
-        case "system" where event.subtype == "init":
-            let tools = event.payload["tools"]?.arrayValue?.count ?? 0
-            print("init      сессия \(event.sessionID ?? "?"), инструментов: \(tools)")
-
-        case "assistant":
-            let blocks = event.payload.path("message", "content")?.arrayValue ?? []
-            for block in blocks {
-                if let text = block["text"]?.stringValue {
-                    print("текст     \(text)")
-                } else if let name = block["name"]?.stringValue {
-                    print("инструмент \(name)")
-                }
+    case .event(let raw):
+        for event in normalizer.normalize(raw) {
+            switch event {
+            case .sessionStarted(let info):
+                print("старт      сессия \(info.sessionID), модель \(info.model ?? "?"), инструментов \(info.tools.count)")
+            case .assistantText(let text):
+                print("текст      \(text.text)")
+            case .thinking:
+                print("думает")
+            case .toolUse(let use):
+                print("руки       \(use.name)")
+            case .toolResult(let result):
+                print("результат  \(result.isError ? "ошибка" : "ок"): \(result.text.prefix(80))")
+            case .permissionDenied(let denial):
+                print("отказано   \(denial.toolName)")
+            case .progress(let detail):
+                print("занят      \(detail)")
+            case .subscriptionUsage(let usage):
+                print("подписка   5 часов: \(percent(usage.window("five_hour"))), 7 дней: \(percent(usage.window("seven_day")))")
+            case .turnCompleted(let summary):
+                print(String(format: "готово     %d мс, $%.4f",
+                             summary.durationMilliseconds ?? 0, summary.costUSD ?? 0))
+            case .turnFailed(let failure):
+                print("сбой       \(failure.reason): \(failure.message ?? "")")
+            case .unknown(let raw):
+                let name = raw.subtype.map { "\(raw.type)/\($0)" } ?? raw.type
+                unknownTypes.append(name)
+                // Полная форма нужна, чтобы научить нормализатор, не гадая по имени.
+                // Вывод остаётся в локальном терминале; в фикстуры — только через
+                // scripts/sanitize-fixture.py.
+                print("незнакомое \(name)\n           \(raw.payload.jsonString().prefix(600))")
             }
-
-        case "rate_limit_event":
-            let info = event.payload["rate_limit_info"]
-            let fiveHour = info?.path("unifiedWindows", "five_hour", "utilization")?.doubleValue
-            let sevenDay = info?.path("unifiedWindows", "seven_day", "utilization")?.doubleValue
-            print(String(
-                format: "подписка  5 часов: %.0f%%, 7 дней: %.0f%%",
-                (fiveHour ?? 0) * 100,
-                (sevenDay ?? 0) * 100
-            ))
-
-        case "result":
-            let cost = event.payload["total_cost_usd"]?.doubleValue ?? 0
-            let duration = event.payload["duration_ms"]?.intValue ?? 0
-            print(String(format: "result    %@, %d мс, $%.4f",
-                         event.subtype ?? "?", duration, cost))
-
-        default:
-            break
         }
 
     case .malformedLine(let line):
-        print("мусор     \(line.prefix(120))")
+        print("мусор      \(line.prefix(120))")
 
     case .diagnostic(let line):
-        print("stderr    \(line.prefix(120))")
+        print("stderr     \(line.prefix(120))")
 
     case .terminated(let code, let reason):
-        print("\nзавершён  код \(code), \(reason)")
+        print("\nзавершён   код \(code), \(reason)")
     }
 }
 
-print("\nсобытий по типам:")
-for (key, count) in eventCounts.sorted(by: { $0.key < $1.key }) {
-    print("  \(key): \(count)")
+if unknownTypes.isEmpty {
+    print("незнакомых событий нет")
+} else {
+    print("незнакомые события: \(Set(unknownTypes).sorted().joined(separator: ", "))")
 }

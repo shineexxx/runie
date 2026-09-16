@@ -11,6 +11,10 @@ let package = Package(
     targets: [
         .target(name: "RunieKit"),
         .executableTarget(name: "runie-smoke", dependencies: ["RunieKit"]),
-        .testTarget(name: "RunieKitTests", dependencies: ["RunieKit"])
+        .testTarget(
+            name: "RunieKitTests",
+            dependencies: ["RunieKit"],
+            resources: [.copy("Fixtures")]
+        )
     ]
 )

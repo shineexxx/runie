@@ -1,0 +1,211 @@
+import Foundation
+
+/// Превращает сырые события Claude Code в события приложения.
+///
+/// Формы событий сняты с настоящего CLI, фикстуры лежат в тестах. Общие правила:
+///
+/// - Одно сырое событие даёт ноль, одно или несколько событий приложения:
+///   сообщение ассистента несёт несколько блоков подряд.
+/// - Нехватка поля не роняет разбор. Если событие известного типа не удалось
+///   разобрать, оно уходит как `.unknown`, а не пропадает молча.
+/// - Шумовые события, которые интерфейсу не нужны, отбрасываются явно и перечислены
+///   в одном месте.
+public struct AgentEventNormalizer: Sendable {
+
+    /// События, которые интерфейсу не нужны. Перечислены явно, чтобы новый
+    /// незнакомый тип не потерялся среди них, а пришёл как `.unknown`.
+    public static let ignoredSystemSubtypes: Set<String> = [
+        // Служебные события хуков пользователя. Их вывод принадлежит чужому коду.
+        "hook_started",
+        "hook_response",
+        // Сводка хода для внутреннего пользования CLI; итог хода приходит в result.
+        "post_turn_summary"
+    ]
+
+    public init() {}
+
+    public func normalize(_ event: RawAgentEvent) -> [AgentEvent] {
+        let payload = event.payload
+
+        switch event.type {
+        case "system":
+            return normalizeSystem(event)
+        case "assistant":
+            return normalizeAssistant(payload) ?? [.unknown(event)]
+        case "user":
+            return normalizeUser(payload) ?? [.unknown(event)]
+        case "rate_limit_event":
+            return normalizeRateLimit(payload).map { [$0] } ?? [.unknown(event)]
+        case "result":
+            return [normalizeResult(event)]
+        default:
+            return [.unknown(event)]
+        }
+    }
+
+    // MARK: - system
+
+    private func normalizeSystem(_ event: RawAgentEvent) -> [AgentEvent] {
+        let payload = event.payload
+        guard let subtype = event.subtype else { return [.unknown(event)] }
+        if Self.ignoredSystemSubtypes.contains(subtype) { return [] }
+
+        switch subtype {
+        case "init":
+            guard let sessionID = event.sessionID else { return [.unknown(event)] }
+            let tools = payload["tools"]?.arrayValue?.compactMap(\.stringValue) ?? []
+            return [.sessionStarted(SessionInfo(
+                sessionID: sessionID,
+                model: payload["model"]?.stringValue,
+                tools: tools,
+                workingDirectory: payload["cwd"]?.stringValue,
+                permissionMode: payload["permissionMode"]?.stringValue,
+                cliVersion: payload["claude_code_version"]?.stringValue
+            ))]
+
+        case "permission_denied":
+            guard let toolUseID = payload["tool_use_id"]?.stringValue,
+                  let toolName = payload["tool_name"]?.stringValue
+            else { return [.unknown(event)] }
+            return [.permissionDenied(PermissionDenial(
+                toolUseID: toolUseID,
+                toolName: toolName,
+                message: payload["message"]?.stringValue ?? ""
+            ))]
+
+        case "task_summary":
+            guard let detail = payload["detail"]?.stringValue, !detail.isEmpty else { return [] }
+            return [.progress(detail)]
+
+        default:
+            return [.unknown(event)]
+        }
+    }
+
+    // MARK: - assistant
+
+    private func normalizeAssistant(_ payload: JSONValue) -> [AgentEvent]? {
+        guard let blocks = payload.path("message", "content")?.arrayValue else { return nil }
+        let messageID = payload.path("message", "id")?.stringValue
+        let parent = payload["parent_tool_use_id"]?.stringValue
+
+        return blocks.compactMap { block -> AgentEvent? in
+            switch block["type"]?.stringValue {
+            case "text":
+                guard let text = block["text"]?.stringValue, !text.isEmpty else { return nil }
+                return .assistantText(AssistantText(
+                    text: text,
+                    messageID: messageID,
+                    parentToolUseID: parent
+                ))
+
+            case "thinking", "redacted_thinking":
+                return .thinking(parentToolUseID: parent)
+
+            case "tool_use", "server_tool_use":
+                guard let id = block["id"]?.stringValue,
+                      let name = block["name"]?.stringValue
+                else { return nil }
+                return .toolUse(ToolUse(
+                    id: id,
+                    name: name,
+                    input: block["input"] ?? .object([:]),
+                    parentToolUseID: parent
+                ))
+
+            default:
+                return nil
+            }
+        }
+    }
+
+    // MARK: - user
+
+    /// В потоке `user` приходят результаты инструментов. Текст самого пользователя
+    /// приложение знает и так, поэтому он отбрасывается.
+    private func normalizeUser(_ payload: JSONValue) -> [AgentEvent]? {
+        let content = payload.path("message", "content")
+        if content?.stringValue != nil { return [] }
+        guard let blocks = content?.arrayValue else { return nil }
+        let parent = payload["parent_tool_use_id"]?.stringValue
+
+        return blocks.compactMap { block -> AgentEvent? in
+            guard block["type"]?.stringValue == "tool_result",
+                  let toolUseID = block["tool_use_id"]?.stringValue
+            else { return nil }
+            return .toolResult(ToolResult(
+                toolUseID: toolUseID,
+                isError: block["is_error"]?.boolValue ?? false,
+                text: Self.flattenToolResultContent(block["content"]),
+                parentToolUseID: parent
+            ))
+        }
+    }
+
+    /// Содержимое результата бывает строкой или массивом блоков.
+    static func flattenToolResultContent(_ content: JSONValue?) -> String {
+        switch content {
+        case .string(let text):
+            return text
+        case .array(let blocks):
+            return blocks.compactMap { block -> String? in
+                switch block["type"]?.stringValue {
+                case "text": block["text"]?.stringValue
+                case "image": "[изображение]"
+                case .some(let other): "[\(other)]"
+                case .none: nil
+                }
+            }
+            .joined(separator: "\n")
+        default:
+            return ""
+        }
+    }
+
+    // MARK: - rate_limit_event
+
+    private func normalizeRateLimit(_ payload: JSONValue) -> AgentEvent? {
+        guard let info = payload["rate_limit_info"] else { return nil }
+
+        let windows = (info["unifiedWindows"]?.objectValue ?? [:])
+            .compactMap { kind, window -> SubscriptionUsage.Window? in
+                guard let utilization = window["utilization"]?.doubleValue else { return nil }
+                return SubscriptionUsage.Window(
+                    kind: kind,
+                    utilization: utilization,
+                    resetsAt: window["resetsAt"]?.doubleValue.map { Date(timeIntervalSince1970: $0) }
+                )
+            }
+            .sorted { $0.kind < $1.kind }
+
+        return .subscriptionUsage(SubscriptionUsage(
+            status: info["status"]?.stringValue ?? "unknown",
+            windows: windows
+        ))
+    }
+
+    // MARK: - result
+
+    private func normalizeResult(_ event: RawAgentEvent) -> AgentEvent {
+        let payload = event.payload
+        let subtype = event.subtype ?? ""
+        let isError = payload["is_error"]?.boolValue ?? false
+
+        if subtype == "success" && !isError {
+            return .turnCompleted(TurnSummary(
+                result: payload["result"]?.stringValue,
+                durationMilliseconds: payload["duration_ms"]?.intValue,
+                costUSD: payload["total_cost_usd"]?.doubleValue,
+                turnCount: payload["num_turns"]?.intValue,
+                permissionDenialCount: payload["permission_denials"]?.arrayValue?.count ?? 0
+            ))
+        }
+
+        let errors = payload["errors"]?.arrayValue?.compactMap(\.stringValue) ?? []
+        let message = errors.isEmpty ? payload["result"]?.stringValue : errors.joined(separator: "\n")
+        return .turnFailed(TurnFailure(
+            reason: subtype.isEmpty ? "error" : subtype,
+            message: message
+        ))
+    }
+}
