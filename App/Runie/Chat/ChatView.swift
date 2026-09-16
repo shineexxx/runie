@@ -292,14 +292,21 @@ private struct EmergeFromLight: ViewModifier {
 
 // MARK: - Текущий ход
 
-/// Всё, что случилось после последнего сообщения пользователя.
+/// Последнее сообщение пользователя и всё, что случилось после него.
 private struct CurrentTurn {
+    let userText: String?
     let lastAction: ActionItem?
     let lastAssistantText: String?
     let lastNotice: NoticeItem?
 
     init(_ items: [TimelineItem]) {
-        let start = (items.lastIndex { if case .user = $0 { true } else { false } }).map { $0 + 1 } ?? 0
+        let userIndex = items.lastIndex { if case .user = $0 { true } else { false } }
+        if let userIndex, case .user(let user) = items[userIndex] {
+            userText = user.text
+        } else {
+            userText = nil
+        }
+        let start = userIndex.map { $0 + 1 } ?? 0
         var action: ActionItem?
         var text: String?
         var notice: NoticeItem?
@@ -330,7 +337,13 @@ private struct CompactFeed: View {
         // Пока висит вопрос о разрешении, всё про текущее действие уже в карточке.
         let asking = session.pendingPermission != nil
 
-        VStack(alignment: alignment, spacing: 8) {
+        // Как в мессенджере: моё сообщение справа, Руни отвечает слева.
+        VStack(alignment: .leading, spacing: 8) {
+            if let userText = turn.userText {
+                UserMessageBubble(text: userText)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
             if let action = turn.lastAction, showsAction(action), !asking {
                 ActionCapsule(action: action)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -354,13 +367,12 @@ private struct CompactFeed: View {
                 Bubble(tail: tailEdge) { Text(notice.text).foregroundStyle(.secondary) }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.spring(response: 0.3, dampingFraction: 0.85), value: turn.lastAction?.id)
     }
 
-    /// Хвостик облачка смотрит на орб: реплика идёт от него.
-    private var tailEdge: HorizontalEdge {
-        alignment == .trailing ? .trailing : .leading
-    }
+    /// Руни всегда отвечает слева.
+    private let tailEdge: HorizontalEdge = .leading
 
     /// «Руки» видны, пока агент работает, или если последнее действие не удалось.
     private func showsAction(_ action: ActionItem) -> Bool {
@@ -383,6 +395,30 @@ private struct Bubble<Content: View>: View {
             .readableSurface(MessageBubbleShape(tail: tail))
             // Хвостик выходит за рамку пузыря — место под него.
             .padding(tail == .trailing ? .trailing : .leading, MessageBubbleShape.tailReach)
+    }
+}
+
+/// Моё сообщение: бирюзовое облачко справа.
+struct UserMessageBubble: View {
+    let text: String
+    var maxWidth: CGFloat = 300
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 14, weight: .medium))
+            .lineLimit(4)
+            .truncationMode(.tail)
+            .textSelection(.enabled)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .foregroundStyle(.white)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: maxWidth, alignment: .leading)
+            // Сплошная заливка, а не стекло: бирюзовый оттенок стекла на тёмном фоне
+            // уходит в серый, и своё сообщение не отличить от ответа.
+            .background(OrbPalette.deep.gradient, in: MessageBubbleShape(tail: .trailing))
+            .shadow(color: .black.opacity(0.14), radius: 16, y: 6)
+            .padding(.trailing, MessageBubbleShape.tailReach)
     }
 }
 

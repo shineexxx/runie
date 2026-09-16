@@ -33,7 +33,8 @@ private struct UserBubble: View {
                 .padding(.vertical, 8)
                 // Заливка, а не стекло: строка лежит внутри стеклянной панели,
                 // и стекло на стекле мутнеет.
-                .background(OrbPalette.teal.opacity(0.22), in: .rect(cornerRadius: 16))
+                .background(OrbPalette.teal.opacity(0.28), in: MessageBubbleShape(tail: .trailing))
+                .padding(.trailing, MessageBubbleShape.tailReach)
         }
     }
 }
@@ -42,12 +43,18 @@ private struct AssistantMessage: View {
     let text: String
 
     var body: some View {
-        Text(MarkdownText.inline(text))
-            .font(.system(size: 14))
-            .lineSpacing(2)
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
+        HStack {
+            Text(MarkdownText.inline(text))
+                .font(.system(size: 14))
+                .lineSpacing(2)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.primary.opacity(0.07), in: MessageBubbleShape(tail: .leading))
+                .padding(.leading, MessageBubbleShape.tailReach)
+            Spacer(minLength: 48)
+        }
     }
 
 }
