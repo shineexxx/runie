@@ -134,6 +134,38 @@ struct AgentEventNormalizerTests {
         #expect(text.text.contains("18"))
     }
 
+    @Test("потоковый вывод: куски текста в сумме дают ровно полный текст")
+    func partialFixtureDeltasMatchFullText() throws {
+        let events = try FixtureLoader.events("partial")
+
+        let started = events.compactMap {
+            if case .messageStarted(let id, _) = $0 { id } else { nil }
+        }
+        #expect(started.count == 2)
+
+        let deltas = events.compactMap { if case .textDelta(let delta) = $0 { delta.text } else { nil } }
+        #expect(deltas.count > 1, "текст должен прийти несколькими кусками")
+
+        let full = try #require(events.compactMap {
+            if case .assistantText(let text) = $0 { text } else { nil }
+        }.first)
+        #expect(deltas.joined() == full.text)
+        // Полное событие относится к последнему начатому сообщению.
+        #expect(full.messageID == started.last)
+    }
+
+    @Test("кусок аргументов инструмента не превращается в событие")
+    func ignoresInputJSONDelta() throws {
+        let event = try raw(#"{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"file"}}}"#)
+        #expect(normalizer.normalize(event).isEmpty)
+    }
+
+    @Test("незнакомое потоковое событие приходит как unknown")
+    func unknownStreamEvent() throws {
+        let event = try raw(#"{"type":"stream_event","event":{"type":"brand_new_stream_thing"}}"#)
+        #expect(normalizer.normalize(event) == [.unknown(event)])
+    }
+
     @Test("в фикстурах нет событий, которые нормализатор не знает")
     func fixturesHaveNoUnknownEvents() throws {
         // Если CLI добавил новый тип и фикстуры пересняты, этот тест покажет, что

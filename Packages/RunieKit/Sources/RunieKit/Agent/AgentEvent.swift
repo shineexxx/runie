@@ -9,7 +9,15 @@ public enum AgentEvent: Sendable, Equatable {
     /// Сессия поднялась: известен идентификатор, модель и доступные инструменты.
     case sessionStarted(SessionInfo)
     /// Кусок ответа ассистента.
+    ///
+    /// При потоковом выводе этот же текст уже пришёл раньше кусками через `textDelta`.
+    /// Сопоставлять их — задача ленты: нормализатор видит одно событие за раз.
     case assistantText(AssistantText)
+    /// Модель начала новое сообщение. Куски текста идентификатор сообщения не несут,
+    /// поэтому его надо запомнить здесь.
+    case messageStarted(messageID: String, parentToolUseID: String?)
+    /// Очередной кусок текста, пока модель ещё пишет.
+    case textDelta(TextDelta)
     /// Ассистент размышлял. Содержимое CLI обычно не отдаёт, но сам факт полезен
     /// для индикатора «думает».
     case thinking(parentToolUseID: String?)
@@ -47,6 +55,14 @@ public struct AssistantText: Sendable, Equatable {
     public let text: String
     public let messageID: String?
     /// Не `nil`, если текст написал субагент, запущенный этим вызовом инструмента.
+    public let parentToolUseID: String?
+}
+
+public struct TextDelta: Sendable, Equatable {
+    /// Номер блока внутри сообщения.
+    public let blockIndex: Int
+    public let text: String
+    /// Не `nil` для субагента: у него свой поток сообщений, идущий вперемешку с основным.
     public let parentToolUseID: String?
 }
 

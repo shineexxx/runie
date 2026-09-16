@@ -21,6 +21,13 @@ struct ClaudeCodeArgumentsTests {
         #expect(value(after: "--output-format", in: arguments) == "stream-json")
         // Без --verbose не видно вызовов инструментов, а это и есть «руки» в интерфейсе.
         #expect(arguments.contains("--verbose"))
+        #expect(arguments.contains("--include-partial-messages"))
+    }
+
+    @Test("потоковый текст можно выключить")
+    func partialMessagesCanBeDisabled() {
+        let arguments = ClaudeCodeArguments(includePartialMessages: false).build()
+        #expect(arguments.contains("--include-partial-messages") == false)
     }
 
     @Test("новая сессия получает наш идентификатор в нижнем регистре")

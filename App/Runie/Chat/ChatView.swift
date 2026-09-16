@@ -182,10 +182,17 @@ private struct TimelineView: View {
                 .padding(.vertical, 8)
             }
             .scrollIndicators(.hidden)
-            .onChange(of: timeline.items) { _, items in
+            .onChange(of: timeline.items) { old, items in
                 guard let last = items.last else { return }
-                withAnimation(.easeOut(duration: 0.2)) {
+                // Новая реплика въезжает плавно. Дописывание текущей — без анимации:
+                // при потоковом выводе это десятки обновлений в секунду, и анимация
+                // на каждое превращает прокрутку в дрожь.
+                if old.last?.id == last.id {
                     proxy.scrollTo(last.id, anchor: .bottom)
+                } else {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
                 }
             }
             .onAppear {

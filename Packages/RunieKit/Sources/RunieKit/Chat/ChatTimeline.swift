@@ -23,6 +23,24 @@ public struct ChatTimeline: Sendable, Equatable {
     public private(set) var usage: SubscriptionUsage?
     public private(set) var sessionID: String?
 
+    // MARK: Потоковый текст
+
+    /// Какое сообщение сейчас пишется, отдельно для основного агента и каждого
+    /// субагента: их потоки идут вперемешку.
+    private var currentMessage: [String: String] = [:]
+    /// Блоки текста, напечатанные кусками и ещё не подтверждённые полным событием.
+    private var streamingBlocks: [StreamKey: StreamingBlock] = [:]
+
+    private struct StreamKey: Hashable, Sendable {
+        let messageID: String
+        let blockIndex: Int
+    }
+
+    private struct StreamingBlock: Equatable, Sendable {
+        let itemID: UUID
+        var text: String
+    }
+
     public init() {}
 
     public var isBusy: Bool { activity != .idle }
@@ -49,7 +67,16 @@ public struct ChatTimeline: Sendable, Equatable {
             sessionID = info.sessionID
 
         case .assistantText(let text):
-            appendAssistantText(text)
+            if !confirmStreamedText(text) {
+                appendAssistantText(text)
+            }
+            activity = .responding
+
+        case .messageStarted(let messageID, let parent):
+            currentMessage[parent ?? ""] = messageID
+
+        case .textDelta(let delta):
+            appendDelta(delta)
             activity = .responding
 
         case .thinking:
@@ -92,6 +119,7 @@ public struct ChatTimeline: Sendable, Equatable {
 
         case .turnCompleted:
             interruptRunningActions()
+            resetStreaming()
             activity = .idle
 
         case .turnFailed(let failure):
@@ -100,6 +128,7 @@ public struct ChatTimeline: Sendable, Equatable {
                 text: failure.message ?? "Не получилось: \(failure.reason)"
             )))
             interruptRunningActions()
+            resetStreaming()
             activity = .idle
 
         case .unknown:
@@ -120,10 +149,76 @@ public struct ChatTimeline: Sendable, Equatable {
             )))
         }
         interruptRunningActions()
+        resetStreaming()
         activity = .idle
     }
 
     // MARK: - Внутреннее
+
+    private mutating func appendDelta(_ delta: TextDelta) {
+        // Кусок без известного сообщения склеить не с чем — ждём полного события.
+        guard let messageID = currentMessage[delta.parentToolUseID ?? ""] else { return }
+        let key = StreamKey(messageID: messageID, blockIndex: delta.blockIndex)
+
+        if var block = streamingBlocks[key],
+           let index = items.lastIndex(where: { $0.id == block.itemID.uuidString }),
+           case .assistant(var item) = items[index] {
+            item.text += delta.text
+            block.text += delta.text
+            items[index] = .assistant(item)
+            streamingBlocks[key] = block
+            return
+        }
+
+        // Новый блок. Второй текстовый блок того же сообщения без «рук» между ними
+        // приклеивается к предыдущему — так же, как без потокового вывода.
+        if case .assistant(var last) = items.last, last.messageID == messageID {
+            last.text += "\n\n" + delta.text
+            items[items.count - 1] = .assistant(last)
+            streamingBlocks[key] = StreamingBlock(itemID: last.id, text: delta.text)
+            return
+        }
+
+        let item = AssistantItem(messageID: messageID, text: delta.text)
+        items.append(.assistant(item))
+        streamingBlocks[key] = StreamingBlock(itemID: item.id, text: delta.text)
+    }
+
+    /// Полное событие пришло после кусков того же блока. Текст уже в ленте:
+    /// дописывать его второй раз нельзя. Если напечатанное разошлось с полным
+    /// текстом — например, потерялся кусок, — хвост реплики заменяется полным.
+    ///
+    /// Возвращает `false`, если сопоставить не с чем: тогда текст добавляется как обычно.
+    private mutating func confirmStreamedText(_ text: AssistantText) -> Bool {
+        guard let messageID = text.messageID else { return false }
+
+        // Полное событие приходит до конца блока, поэтому подтверждаемый блок —
+        // самый ранний неподтверждённый в этом сообщении.
+        let candidates = streamingBlocks
+            .filter { $0.key.messageID == messageID }
+            .sorted { $0.key.blockIndex < $1.key.blockIndex }
+        guard let (key, block) = candidates.first(where: { $0.value.text == text.text }) ?? candidates.first
+        else { return false }
+
+        streamingBlocks[key] = nil
+        guard block.text != text.text,
+              let index = items.lastIndex(where: { $0.id == block.itemID.uuidString }),
+              case .assistant(var item) = items[index]
+        else { return true }
+
+        if item.text.hasSuffix(block.text) {
+            item.text = String(item.text.dropLast(block.text.count)) + text.text
+        } else {
+            item.text = text.text
+        }
+        items[index] = .assistant(item)
+        return true
+    }
+
+    private mutating func resetStreaming() {
+        currentMessage.removeAll()
+        streamingBlocks.removeAll()
+    }
 
     private mutating func appendAssistantText(_ text: AssistantText) {
         // Несколько текстовых блоков одного сообщения идут подряд — склеиваем их.

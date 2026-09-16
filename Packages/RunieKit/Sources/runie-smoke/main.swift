@@ -49,7 +49,13 @@ for await output in stream {
             case .sessionStarted(let info):
                 print("старт      сессия \(info.sessionID), модель \(info.model ?? "?"), инструментов \(info.tools.count)")
             case .assistantText(let text):
-                print("текст      \(text.text)")
+                print("\nтекст      \(text.text)")
+            case .messageStarted(let id, _):
+                print("сообщение  \(id)")
+            case .textDelta(let delta):
+                // Куски печатаются подряд без перевода строки — так виден сам поток.
+                print(delta.text, terminator: "")
+                fflush(stdout)
             case .thinking:
                 print("думает")
             case .toolUse(let use):

@@ -58,6 +58,89 @@ struct ChatTimelineTests {
         #expect(timeline.activity == .idle)
     }
 
+    @Test("потоковый вывод: текст не задваивается после полного события")
+    func partialFixtureDoesNotDuplicate() throws {
+        let timeline = try replay("partial")
+
+        let texts = timeline.items.compactMap { if case .assistant(let item) = $0 { item.text } else { nil } }
+        #expect(texts.count == 1, "ожидалась одна реплика, пришло \(texts.count)")
+
+        let full = try #require(try FixtureLoader.events("partial").compactMap {
+            if case .assistantText(let text) = $0 { text.text } else { nil }
+        }.first)
+        #expect(texts.first == full)
+
+        let action = try #require(actions(timeline).first)
+        #expect(action.status == .succeeded)
+        #expect(timeline.activity == .idle)
+    }
+
+    @Test("потоковый вывод: текст виден раньше, чем пришло полное событие")
+    func partialTextIsVisibleWhileStreaming() throws {
+        var timeline = ChatTimeline()
+        timeline.appendUserMessage("запрос")
+
+        var sawPartial = false
+        for event in try FixtureLoader.events("partial") {
+            if case .assistantText = event { break }
+            timeline.apply(event)
+            if case .assistant(let item) = timeline.items.last, !item.text.isEmpty {
+                sawPartial = true
+                #expect(timeline.activity == .responding)
+            }
+        }
+        #expect(sawPartial, "до полного события в ленте должен быть недописанный текст")
+    }
+
+    @Test("если напечатанное разошлось с полным текстом, остаётся полный")
+    func mismatchReplacesStreamedTail() {
+        var timeline = ChatTimeline()
+        timeline.apply(.messageStarted(messageID: "m1", parentToolUseID: nil))
+        timeline.apply(.textDelta(TextDelta(blockIndex: 0, text: "При", parentToolUseID: nil)))
+        // Кусок «вет» потерян.
+        timeline.apply(.assistantText(AssistantText(text: "Привет", messageID: "m1", parentToolUseID: nil)))
+
+        let texts = timeline.items.compactMap { if case .assistant(let item) = $0 { item.text } else { nil } }
+        #expect(texts == ["Привет"])
+    }
+
+    @Test("два потоковых блока одного сообщения склеиваются без задвоения")
+    func twoStreamedBlocksMerge() {
+        var timeline = ChatTimeline()
+        timeline.apply(.messageStarted(messageID: "m1", parentToolUseID: nil))
+        timeline.apply(.textDelta(TextDelta(blockIndex: 0, text: "Раз", parentToolUseID: nil)))
+        timeline.apply(.textDelta(TextDelta(blockIndex: 0, text: ".", parentToolUseID: nil)))
+        timeline.apply(.assistantText(AssistantText(text: "Раз.", messageID: "m1", parentToolUseID: nil)))
+        timeline.apply(.textDelta(TextDelta(blockIndex: 1, text: "Два.", parentToolUseID: nil)))
+        timeline.apply(.assistantText(AssistantText(text: "Два.", messageID: "m1", parentToolUseID: nil)))
+
+        let texts = timeline.items.compactMap { if case .assistant(let item) = $0 { item.text } else { nil } }
+        #expect(texts == ["Раз.\n\nДва."])
+    }
+
+    @Test("потоки основного агента и субагента не смешиваются")
+    func parallelStreamsStaySeparate() {
+        var timeline = ChatTimeline()
+        timeline.apply(.messageStarted(messageID: "main", parentToolUseID: nil))
+        timeline.apply(.messageStarted(messageID: "sub", parentToolUseID: "task-1"))
+        timeline.apply(.textDelta(TextDelta(blockIndex: 0, text: "Основной", parentToolUseID: nil)))
+        timeline.apply(.textDelta(TextDelta(blockIndex: 0, text: "Субагент", parentToolUseID: "task-1")))
+        timeline.apply(.textDelta(TextDelta(blockIndex: 0, text: " агент", parentToolUseID: nil)))
+
+        let texts = timeline.items.compactMap { if case .assistant(let item) = $0 { item.text } else { nil } }
+        #expect(texts == ["Основной агент", "Субагент"])
+    }
+
+    @Test("кусок без начатого сообщения не теряет полный текст")
+    func deltaWithoutMessageStartFallsBack() {
+        var timeline = ChatTimeline()
+        timeline.apply(.textDelta(TextDelta(blockIndex: 0, text: "потерянный", parentToolUseID: nil)))
+        timeline.apply(.assistantText(AssistantText(text: "Полный ответ", messageID: "m1", parentToolUseID: nil)))
+
+        let texts = timeline.items.compactMap { if case .assistant(let item) = $0 { item.text } else { nil } }
+        #expect(texts == ["Полный ответ"])
+    }
+
     @Test("в ленте живых фикстур не остаётся зависших действий")
     func noActionLeftRunning() throws {
         for name in FixtureLoader.names {

@@ -19,7 +19,10 @@ public struct AgentEventNormalizer: Sendable {
         "hook_started",
         "hook_response",
         // Сводка хода для внутреннего пользования CLI; итог хода приходит в result.
-        "post_turn_summary"
+        "post_turn_summary",
+        // «requesting» — запрос к модели ушёл. Лента узнаёт об этом раньше,
+        // в момент отправки сообщения.
+        "status"
     ]
 
     public init() {}
@@ -38,6 +41,8 @@ public struct AgentEventNormalizer: Sendable {
             return normalizeRateLimit(payload).map { [$0] } ?? [.unknown(event)]
         case "result":
             return [normalizeResult(event)]
+        case "stream_event":
+            return normalizeStreamEvent(payload) ?? [.unknown(event)]
         default:
             return [.unknown(event)]
         }
@@ -159,6 +164,41 @@ public struct AgentEventNormalizer: Sendable {
             .joined(separator: "\n")
         default:
             return ""
+        }
+    }
+
+    // MARK: - stream_event
+
+    /// Куски, которые CLI отдаёт с `--include-partial-messages`. Внутри — события
+    /// потокового API как есть. Интерфейсу нужны только начало сообщения и куски
+    /// текста; куски аргументов инструментов не нужны — полный вызов приходит
+    /// следом одним событием `assistant`.
+    private func normalizeStreamEvent(_ payload: JSONValue) -> [AgentEvent]? {
+        guard let inner = payload["event"], let kind = inner["type"]?.stringValue else { return nil }
+        let parent = payload["parent_tool_use_id"]?.stringValue
+
+        switch kind {
+        case "message_start":
+            guard let id = inner.path("message", "id")?.stringValue else { return nil }
+            return [.messageStarted(messageID: id, parentToolUseID: parent)]
+
+        case "content_block_start":
+            // Размышление видно заранее — индикатор «думает» загорается сразу.
+            let blockType = inner.path("content_block", "type")?.stringValue
+            return blockType == "thinking" ? [.thinking(parentToolUseID: parent)] : []
+
+        case "content_block_delta":
+            guard inner.path("delta", "type")?.stringValue == "text_delta" else { return [] }
+            guard let index = inner["index"]?.intValue,
+                  let text = inner.path("delta", "text")?.stringValue
+            else { return nil }
+            return text.isEmpty ? [] : [.textDelta(TextDelta(blockIndex: index, text: text, parentToolUseID: parent))]
+
+        case "content_block_stop", "message_delta", "message_stop", "ping":
+            return []
+
+        default:
+            return nil
         }
     }
 

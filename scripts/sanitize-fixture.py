@@ -15,6 +15,7 @@ MCP-серверы, список навыков (в том числе рабоч
 личных данных. Это не формальность: так он и нашёл то, что пропустили правила.
 """
 
+import getpass
 import json
 import re
 import sys
@@ -37,10 +38,18 @@ FORBIDDEN_MARKERS = [
     "/Users/",
     "/home/",
     "/private/tmp/claude-",
+    # Так выглядят обрывки путей в потоковых кусках и в именах временных папок.
+    "-Users-",
     "claude.ai ",
     "@gmail",
     "@anthropic",
 ]
+
+# Имя пользователя, который снимает фикстуру. Ловит утечки, которые не похожи
+# на путь целиком: обрывки из потоковых событий, упоминания в тексте.
+_user = getpass.getuser()
+if len(_user) >= 3:
+    FORBIDDEN_MARKERS.append(_user)
 
 
 def scrub_string(value: str) -> str:
@@ -100,6 +109,19 @@ def sanitize_blocks(blocks):
     return blocks
 
 
+def sanitize_stream_event(event: dict) -> dict:
+    inner = event.get("event")
+    if not isinstance(inner, dict):
+        return event
+    delta = inner.get("delta")
+    # Аргументы инструмента приходят кусками JSON, порезанными где попало: путь
+    # к файлу разваливается на обрывки, которые не узнать шаблоном. Тестам они
+    # не нужны — полный ввод всё равно приходит в итоговом событии assistant.
+    if isinstance(delta, dict) and delta.get("type") == "input_json_delta":
+        delta["partial_json"] = ""
+    return event
+
+
 def sanitize(event: dict) -> dict:
     kind = event.get("type")
     subtype = event.get("subtype")
@@ -111,6 +133,8 @@ def sanitize(event: dict) -> dict:
         sanitize_init(event)
     elif kind == "system" and subtype in ("hook_started", "hook_response"):
         sanitize_hook(event)
+    elif kind == "stream_event":
+        sanitize_stream_event(event)
     elif kind in ("assistant", "user"):
         message = event.get("message")
         if isinstance(message, dict):

@@ -34,6 +34,8 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
     public var mcpConfigPaths: [String]
     /// Брать MCP только из переданных конфигураций, игнорируя пользовательские.
     public var strictMCPConfig: Bool
+    /// Отдавать текст ответа кусками по мере написания, а не целым блоком.
+    public var includePartialMessages: Bool
     public var additionalArguments: [String]
 
     public init(
@@ -43,6 +45,7 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
         permissionPromptTool: String? = nil,
         mcpConfigPaths: [String] = [],
         strictMCPConfig: Bool = false,
+        includePartialMessages: Bool = true,
         additionalArguments: [String] = []
     ) {
         self.session = session
@@ -51,6 +54,7 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
         self.permissionPromptTool = permissionPromptTool
         self.mcpConfigPaths = mcpConfigPaths
         self.strictMCPConfig = strictMCPConfig
+        self.includePartialMessages = includePartialMessages
         self.additionalArguments = additionalArguments
     }
 
@@ -63,6 +67,10 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
             // и системные события не видны, а именно они и есть «руки» в интерфейсе.
             "--verbose"
         ]
+
+        if includePartialMessages {
+            arguments.append("--include-partial-messages")
+        }
 
         switch session {
         case .new(let id):
