@@ -88,7 +88,7 @@ struct AttachmentButtons: View {
     let onCapture: () -> Void
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             button("paperclip", help: "Прикрепить файлы", action: onPickFiles)
             button("viewfinder", help: "Снимок области экрана", action: onCapture)
         }
@@ -99,7 +99,7 @@ struct AttachmentButtons: View {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.secondary)
-                .frame(width: 26, height: 26)
+                .frame(width: 24, height: 26)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

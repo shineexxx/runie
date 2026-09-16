@@ -660,23 +660,29 @@ private struct InputRow: View {
 
     /// Кнопка отправки — у ближнего к орбу конца поля, откуда пришёл свет.
     private var inputPill: some View {
-        HStack(spacing: 10) {
+        // Плотно: скрепка, снимок, модель и отправка делят поле с текстом, и тексту
+        // должно хватать ширины на подсказку в одну строку — иначе она переносится,
+        // и многострочное поле подпрыгивает над центром.
+        HStack(spacing: 4) {
             if layout.orbSide == .leading { sendButton }
             if layout.orbSide == .trailing { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture) }
 
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .lineLimit(1...3)
                 .focused($isFocused)
                 .onSubmit(onSubmitDraft)
+                .padding(.horizontal, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
 
             ModelMenu(session: session, settings: settings)
             if layout.orbSide == .leading { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture) }
             if layout.orbSide == .trailing { sendButton }
         }
-        .padding(.leading, layout.orbSide == .trailing ? 10 : 7)
-        .padding(.trailing, layout.orbSide == .trailing ? 7 : 10)
+        .padding(.leading, layout.orbSide == .trailing ? 8 : 7)
+        .padding(.trailing, layout.orbSide == .trailing ? 7 : 8)
         .frame(maxWidth: .infinity)
         .frame(height: ChatPanelController.inputHeight)
         .readableSurface(Capsule(), interactive: true)
@@ -688,9 +694,9 @@ private struct InputRow: View {
         let enabled = busy || layout.hasDraft
         return Button(action: busy ? onStop : onSubmitDraft) {
             Image(systemName: busy ? "stop.fill" : "arrow.up")
-                .font(.system(size: busy ? 13 : 16, weight: .bold))
+                .font(.system(size: busy ? 12 : 15, weight: .bold))
                 .foregroundStyle(.white)
-                .frame(width: 42, height: 42)
+                .frame(width: 38, height: 38)
                 .background(Circle().fill(OrbPalette.deep.gradient))
                 .opacity(enabled ? 1 : 0.35)
                 .contentShape(.circle)

@@ -28,7 +28,7 @@ struct ModelMenu: View {
                     .rotationEffect(.degrees(isOpen ? 180 : 0))
             }
             .foregroundStyle(isOpen ? .primary : .secondary)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, compact ? 5 : 8)
             .frame(height: 26)
             .background(.primary.opacity(isOpen ? 0.08 : 0), in: Capsule())
             .contentShape(Capsule())
