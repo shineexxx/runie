@@ -156,10 +156,17 @@ private struct EdgeGlow: View {
             let breath = reduceMotion ? 0.5 : (sin(time * 1.3) + 1) / 2
             let strength = (0.35 + 0.2 * breath) * (1 + 0.5 * energy)
 
-            OrbTether(edge: edge, extent: Self.extent)
-                .stroke(OrbPalette.cyan.opacity(min(strength, 1)), lineWidth: 2.5)
-                .blur(radius: 3.5)
-                .blendMode(.plusLighter)
+            ZStack {
+                // Широкий мягкий ореол — свет расходится от горбика наружу.
+                OrbTether(edge: edge, extent: Self.extent)
+                    .stroke(OrbPalette.cyan.opacity(min(strength * 0.7, 1)), lineWidth: 14)
+                    .blur(radius: 11)
+                // Ярче у самого края горбика.
+                OrbTether(edge: edge, extent: Self.extent)
+                    .stroke(OrbPalette.cyan.opacity(min(strength * 0.6, 1)), lineWidth: 3)
+                    .blur(radius: 4)
+            }
+            .blendMode(.plusLighter)
         }
         .allowsHitTesting(false)
     }
