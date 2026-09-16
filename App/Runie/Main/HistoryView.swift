@@ -9,6 +9,7 @@ struct ConversationDetail: View {
     /// Сохранённый разговор. `nil` — новый, ещё не начатый.
     let record: ConversationRecord?
     let session: ChatSession
+    let settings: AppSettings
     let onContinueAtOrb: (ConversationRecord) -> Void
     let onDelete: () -> Void
 
@@ -118,6 +119,8 @@ struct ConversationDetail: View {
                     .disabled(isBlockedByOther)
                     .padding(.vertical, 8)
 
+                ModelMenu(session: session, settings: settings, compact: false)
+                    .padding(.bottom, 5)
                 sendButton
             }
             .padding(.leading, 16)

@@ -15,6 +15,8 @@ public protocol AgentConnection: AnyObject, Sendable {
     func send(_ text: String) throws
     /// Отвечает на запрос разрешения. Агент ждёт этого ответа и без него не продолжит.
     func respond(to request: PermissionRequest, with decision: PermissionDecision) throws
+    /// Управляющий запрос. Ответ придёт событием `controlResponse` с тем же идентификатором.
+    func send(_ request: ControlRequest, requestID: String) throws
     func stop()
 }
 
@@ -109,6 +111,10 @@ final class ClaudeCodeConnection: AgentConnection {
 
     func respond(to request: PermissionRequest, with decision: PermissionDecision) throws {
         try runtime.send(PermissionResponse(request: request, decision: decision))
+    }
+
+    func send(_ request: ControlRequest, requestID: String) throws {
+        try runtime.send(request, requestID: requestID)
     }
 
     func stop() {

@@ -9,6 +9,7 @@ import SwiftUI
 struct ChatView: View {
 
     let session: ChatSession
+    let settings: AppSettings
     let layout: ChatLayout
     let tracker: FrontmostAppTracker
     let onSend: (String) -> Void
@@ -71,6 +72,7 @@ struct ChatView: View {
 
                     InputRow(
                         session: session,
+                        settings: settings,
                         layout: layout,
                         onSubmitDraft: submitDraft,
                         onStop: { session.stop() },
@@ -593,6 +595,7 @@ private struct PermissionButtonStyle: ButtonStyle {
 
 private struct InputRow: View {
     let session: ChatSession
+    let settings: AppSettings
     @Bindable var layout: ChatLayout
     let onSubmitDraft: () -> Void
     let onStop: () -> Void
@@ -623,6 +626,7 @@ private struct InputRow: View {
                 .focused($isFocused)
                 .onSubmit(onSubmitDraft)
 
+            ModelMenu(session: session, settings: settings)
             if layout.orbSide == .trailing { sendButton }
         }
         .padding(.leading, layout.orbSide == .trailing ? 22 : 7)

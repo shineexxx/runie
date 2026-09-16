@@ -47,6 +47,16 @@ public struct AgentEventNormalizer: Sendable {
             return normalizeStreamEvent(payload) ?? [.unknown(event)]
         case "control_request":
             return normalizeControlRequest(payload).map { [$0] } ?? [.unknown(event)]
+        case "control_response":
+            guard let response = payload["response"],
+                  let requestID = response["request_id"]?.stringValue
+            else { return [.unknown(event)] }
+            return [.controlResponse(ControlResponse(
+                requestID: requestID,
+                isSuccess: response["subtype"]?.stringValue == "success",
+                body: response["response"],
+                error: response["error"]?.stringValue
+            ))]
         case "control_cancel_request":
             guard let requestID = payload["request_id"]?.stringValue else { return [.unknown(event)] }
             return [.permissionRequestCancelled(requestID: requestID)]

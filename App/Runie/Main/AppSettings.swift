@@ -15,6 +15,24 @@ final class AppSettings {
 
     private enum Key {
         static let policy = "permissions.policy"
+        static let model = "model.selected"
+        static let models = "model.cache"
+    }
+
+    /// Выбранная модель. `nil` — как в Claude Code.
+    var selectedModel: String? {
+        didSet { UserDefaults.standard.set(selectedModel, forKey: Key.model) }
+    }
+
+    /// Последний список моделей от Claude Code — меню видно до его ответа.
+    var cachedModels: [AgentModel] {
+        get {
+            UserDefaults.standard.data(forKey: Key.models)
+                .flatMap { try? JSONDecoder().decode([AgentModel].self, from: $0) } ?? []
+        }
+        set {
+            UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: Key.models)
+        }
     }
 
     /// Какие группы действий разрешать без вопроса. Сессия получает правила сразу:
@@ -29,6 +47,7 @@ final class AppSettings {
     @ObservationIgnored var onPolicyChange: ((PermissionPolicy) -> Void)?
 
     init() {
+        selectedModel = UserDefaults.standard.string(forKey: Key.model)
         if let data = UserDefaults.standard.data(forKey: Key.policy),
            let stored = try? JSONDecoder().decode(PermissionPolicy.self, from: data) {
             policy = stored

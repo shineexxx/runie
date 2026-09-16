@@ -29,6 +29,16 @@ public final class ChatSession {
     /// Что человек разрешил «всегда» в этом разговоре. Такие запросы не показываются.
     @ObservationIgnored private var standingGrants: Set<String> = []
 
+    // MARK: Модель
+
+    /// Модели, которые предлагает Claude Code. Пусто, пока CLI не ответил и кэша нет.
+    public private(set) var availableModels: [AgentModel] = []
+    /// Выбранная модель (`value`). `nil` — как настроено в самом Claude Code.
+    public private(set) var selectedModel: String?
+    /// Список моделей обновился — приложение кэширует его.
+    @ObservationIgnored public var onModelsUpdate: (([AgentModel]) -> Void)?
+    @ObservationIgnored private var initializeRequestID: String?
+
     /// Правила из настроек: какие группы действий разрешать без вопроса.
     @ObservationIgnored public var policy = PermissionPolicy()
 
@@ -42,6 +52,46 @@ public final class ChatSession {
     }
 
     public var isBusy: Bool { timeline.isBusy }
+
+    /// Модели и выбор из прошлого запуска — чтобы меню было видно сразу, до ответа CLI.
+    public func restoreModels(_ models: [AgentModel], selected: String?) {
+        availableModels = models
+        selectedModel = selected
+    }
+
+    /// Выбирает модель. Живой сессии она передаётся сразу, новой — при подключении.
+    public func selectModel(_ value: String?) {
+        selectedModel = value
+        guard let connection else { return }
+        do {
+            try connection.send(.setModel(value ?? "default"), requestID: UUID().uuidString)
+        } catch {
+            diagnostics.append("set_model: \(error.localizedDescription)")
+        }
+    }
+
+    /// Поднимает агента заранее, не отправляя сообщения: так к открытию чата уже
+    /// известен свежий список моделей, а первый ответ приходит быстрее.
+    public func prepare() {
+        guard connection == nil else { return }
+        do {
+            try connect()
+        } catch {
+            diagnostics.append("prepare: \(error.localizedDescription)")
+        }
+    }
+
+    private func connect() throws {
+        let handle = try backend.connect(resuming: timeline.sessionID)
+        connection = handle.connection
+        consume(handle.stream)
+        let requestID = UUID().uuidString
+        initializeRequestID = requestID
+        try handle.connection.send(.initialize, requestID: requestID)
+        if let selectedModel {
+            try handle.connection.send(.setModel(selectedModel), requestID: UUID().uuidString)
+        }
+    }
 
     /// Вопрос о разрешении, который показывать сейчас.
     public var pendingPermission: PermissionRequest? { timeline.pendingPermissions.first }
@@ -77,9 +127,7 @@ public final class ChatSession {
 
         do {
             if connection == nil {
-                let handle = try backend.connect(resuming: timeline.sessionID)
-                connection = handle.connection
-                consume(handle.stream)
+                try connect()
             }
             try connection?.send(context?.decorate(trimmed) ?? trimmed)
         } catch {
@@ -151,6 +199,15 @@ public final class ChatSession {
             switch event {
             case .turnCompleted, .turnFailed, .sessionStarted: persist()
             default: break
+            }
+            if case .controlResponse(let response) = event,
+               response.requestID == initializeRequestID, response.isSuccess {
+                initializeRequestID = nil
+                let models = AgentModel.list(from: response.body)
+                if !models.isEmpty, models != availableModels {
+                    availableModels = models
+                    onModelsUpdate?(models)
+                }
             }
             if case .permissionRequested(let request) = event {
                 if policy.allows(request) || standingGrants.contains(PermissionGrant.key(for: request)) {

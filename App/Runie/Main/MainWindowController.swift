@@ -47,6 +47,7 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 
     func show(_ section: Section? = nil) {
         if let section { navigation.section = section }
+        session.prepare()
         let window = self.window ?? makeWindow()
         self.window = window
         NSApp.setActivationPolicy(.regular)

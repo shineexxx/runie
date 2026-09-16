@@ -207,6 +207,11 @@ public final class AgentRuntime: @unchecked Sendable {
         try write(try message.ndjsonLine())
     }
 
+    /// Отправляет управляющий запрос в stdin.
+    public func send(_ request: ControlRequest, requestID: String) throws {
+        try write(try request.ndjsonLine(requestID: requestID))
+    }
+
     /// Отправляет ответ на запрос разрешения в stdin.
     public func send(_ response: PermissionResponse) throws {
         try write(try response.ndjsonLine())

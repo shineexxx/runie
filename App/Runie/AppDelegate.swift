@@ -20,6 +20,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         session.store = store
         settings = AppSettings()
         session.policy = settings.policy
+        session.restoreModels(settings.cachedModels, selected: settings.selectedModel)
+        session.onModelsUpdate = { [weak self] models in
+            self?.settings.cachedModels = models
+        }
         settings.onPolicyChange = { [weak self] policy in
             self?.session.policy = policy
         }
@@ -32,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !chat.isVisible { openChat() }
         }
         tracker = FrontmostAppTracker()
-        chat = ChatPanelController(session: session, tracker: tracker)
+        chat = ChatPanelController(session: session, tracker: tracker, settings: settings)
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
         // Агент стоит, пока человек не ответит: вопрос должен быть на виду.
         session.onPermissionRequest = { [weak self] in
@@ -95,6 +99,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func openChat() {
+        // Агент поднимается, пока чат открывается: к первому сообщению список
+        // моделей уже свежий, а ответ приходит быстрее.
+        session.prepare()
         button.detach { [weak self] in
             guard let self else { return }
             chat.show(anchor: button.panel.frame)

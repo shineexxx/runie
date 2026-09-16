@@ -25,12 +25,13 @@ struct MainWindowView: View {
                 ConversationDetail(
                     record: record,
                     session: session,
+                    settings: settings,
                     onContinueAtOrb: onContinue,
                     onDelete: { pendingDelete = record }
                 )
             } else if navigation.selectedConversation == session.conversationID {
                 // Новый разговор: в истории его ещё нет, появится с первым сообщением.
-                ConversationDetail(record: nil, session: session, onContinueAtOrb: onContinue, onDelete: {})
+                ConversationDetail(record: nil, session: session, settings: settings, onContinueAtOrb: onContinue, onDelete: {})
             } else {
                 ContentUnavailableView(
                     records.isEmpty ? "Разговоров пока нет" : "Выберите разговор",

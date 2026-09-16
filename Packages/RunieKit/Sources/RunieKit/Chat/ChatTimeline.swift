@@ -152,7 +152,7 @@ public struct ChatTimeline: Sendable, Equatable {
             resetStreaming()
             activity = .idle
 
-        case .unknown:
+        case .unknown, .controlResponse:
             break
         }
     }

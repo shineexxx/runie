@@ -19,6 +19,18 @@ final class FakeBackend: AgentBackend, @unchecked Sendable {
         var sent: [String] { lock.withLock { _sent } }
         var responses: [(PermissionRequest, PermissionDecision)] { lock.withLock { _responses } }
 
+        private var _controls: [ControlRequest] = []
+        var controls: [ControlRequest] { lock.withLock { _controls } }
+        private var _controlIDs: [String] = []
+        var controlIDs: [String] { lock.withLock { _controlIDs } }
+
+        func send(_ request: ControlRequest, requestID: String) throws {
+            lock.withLock {
+                _controls.append(request)
+                _controlIDs.append(requestID)
+            }
+        }
+
         func respond(to request: PermissionRequest, with decision: PermissionDecision) throws {
             lock.withLock { _responses.append((request, decision)) }
         }

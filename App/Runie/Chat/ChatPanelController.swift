@@ -83,7 +83,7 @@ final class ChatPanelController {
     /// Чат начал закрываться — откуда бы ни пришла команда: орб, Esc, крестик.
     var onHide: (() -> Void)?
 
-    init(session: ChatSession, tracker: FrontmostAppTracker) {
+    init(session: ChatSession, tracker: FrontmostAppTracker, settings: AppSettings) {
         self.session = session
         self.tracker = tracker
         panel = FloatingPanel(size: Self.size, allowsKey: true)
@@ -91,6 +91,7 @@ final class ChatPanelController {
         let layout = self.layout
         let hosting = NSHostingView(rootView: ChatView(
             session: session,
+            settings: settings,
             layout: layout,
             tracker: tracker,
             onSend: { [weak self] text in self?.send(text) },

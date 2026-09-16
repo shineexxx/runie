@@ -32,6 +32,8 @@ public enum AgentEvent: Sendable, Equatable {
     case permissionRequested(PermissionRequest)
     /// Вопрос о разрешении снят самим CLI: ответ больше не нужен.
     case permissionRequestCancelled(requestID: String)
+    /// CLI ответил на управляющий запрос приложения.
+    case controlResponse(ControlResponse)
     /// Короткое описание того, чем агент занят прямо сейчас.
     case progress(String)
     /// Остаток подписки.
@@ -110,6 +112,80 @@ public struct PermissionRequest: Sendable, Equatable, Identifiable {
         self.toolName = toolName
         self.input = input
         self.reason = reason
+    }
+}
+
+/// Ответ CLI на управляющий запрос приложения (`initialize`, `set_model`…).
+public struct ControlResponse: Sendable, Equatable {
+    public let requestID: String
+    public let isSuccess: Bool
+    /// Тело ответа, если оно есть.
+    public let body: JSONValue?
+    public let error: String?
+
+    public init(requestID: String, isSuccess: Bool, body: JSONValue?, error: String?) {
+        self.requestID = requestID
+        self.isSuccess = isSuccess
+        self.body = body
+        self.error = error
+    }
+}
+
+/// Модель, которую предлагает Claude Code. Список приходит из самого CLI, поэтому
+/// новые модели появляются в Runie без его обновления.
+public struct AgentModel: Sendable, Equatable, Codable, Identifiable {
+    /// Что передавать CLI при выборе: `default`, `sonnet`, `opus[1m]`…
+    public let value: String
+    /// Во что это значение разворачивается сейчас: `claude-sonnet-5`.
+    public let resolvedModel: String?
+    public let displayName: String
+    public let description: String
+
+    public var id: String { value }
+
+    public init(value: String, resolvedModel: String?, displayName: String, description: String) {
+        self.value = value
+        self.resolvedModel = resolvedModel
+        self.displayName = displayName
+        self.description = description
+    }
+
+    /// Разбор списка `models` из ответа на `initialize`.
+    public static func list(from body: JSONValue?) -> [AgentModel] {
+        (body?["models"]?.arrayValue ?? []).compactMap { entry in
+            guard let value = entry["value"]?.stringValue else { return nil }
+            return AgentModel(
+                value: value,
+                resolvedModel: entry["resolvedModel"]?.stringValue,
+                displayName: entry["displayName"]?.stringValue ?? value,
+                description: entry["description"]?.stringValue ?? ""
+            )
+        }
+    }
+}
+
+/// Управляющий запрос приложения к CLI.
+public enum ControlRequest: Sendable, Equatable {
+    /// Знакомство: в ответе — модели, команды, учётная запись.
+    case initialize
+    /// Сменить модель для следующих ответов, не перезапуская сессию.
+    case setModel(String)
+
+    public func ndjsonLine(requestID: String) throws -> Data {
+        let request: JSONValue = switch self {
+        case .initialize:
+            .object(["subtype": .string("initialize")])
+        case .setModel(let model):
+            .object(["subtype": .string("set_model"), "model": .string(model)])
+        }
+        let payload: JSONValue = .object([
+            "type": .string("control_request"),
+            "request_id": .string(requestID),
+            "request": request
+        ])
+        var data = try JSONEncoder().encode(payload)
+        data.append(UInt8(ascii: "\n"))
+        return data
     }
 }
 
