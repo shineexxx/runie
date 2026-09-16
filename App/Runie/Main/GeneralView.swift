@@ -23,6 +23,8 @@ struct GeneralView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(BrandGlowBackground())
         
     }
 }

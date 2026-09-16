@@ -33,13 +33,17 @@ struct MainWindowView: View {
                 // Новый разговор: в истории его ещё нет, появится с первым сообщением.
                 ConversationDetail(record: nil, session: session, settings: settings, onContinueAtOrb: onContinue, onDelete: {})
             } else {
-                ContentUnavailableView(
-                    records.isEmpty ? "Разговоров пока нет" : "Выберите разговор",
-                    systemImage: "bubble.left.and.bubble.right",
-                    description: records.isEmpty ? Text("Нажмите на орб и напишите Руни — разговор появится здесь.") : nil
+                BrandEmptyState(
+                    title: records.isEmpty ? "Разговоров пока нет" : "Выберите разговор",
+                    subtitle: records.isEmpty
+                        ? "Нажмите на орб или ⌘N и напишите Руни — разговор появится здесь."
+                        : "Слева — недавние разговоры."
                 )
+                .background(BrandGlowBackground())
             }
         }
+        // Фирменный бирюзовый — выделение, переключатели, кнопки.
+        .tint(OrbPalette.teal)
         .onAppear(perform: reload)
         .onChange(of: session.historyRevision) { reload() }
         .confirmationDialog(
@@ -74,6 +78,9 @@ struct MainWindowView: View {
                         }
                 }
             }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            SidebarBrandHeader(session: session)
         }
         .searchable(text: $query, placement: .sidebar, prompt: "Поиск по разговорам")
         .toolbar {

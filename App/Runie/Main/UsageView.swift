@@ -26,6 +26,8 @@ struct UsageView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(BrandGlowBackground())
         
     }
 }

@@ -35,6 +35,7 @@ struct ConversationDetail: View {
             transcript
             composerArea
         }
+        .background(BrandGlowBackground())
         .navigationTitle(record?.title ?? "Новый разговор")
         .toolbar {
             if let record {
@@ -60,12 +61,10 @@ struct ConversationDetail: View {
     @ViewBuilder
     private var transcript: some View {
         if items.isEmpty {
-            ContentUnavailableView(
-                "Чем помочь?",
-                systemImage: "bubble.left.and.bubble.right",
-                description: Text("Напишите Руни внизу — ответ появится здесь.")
+            BrandEmptyState(
+                title: SuggestionSet.fallbackGreeting(),
+                subtitle: "Напишите Руни внизу — ответ появится здесь."
             )
-            .frame(maxHeight: .infinity)
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
@@ -126,8 +125,20 @@ struct ConversationDetail: View {
             .padding(.leading, 16)
             .padding(.trailing, 6)
             .padding(.vertical, 4)
-            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.separator))
+            // Стекло с бирюзовым оттенком, как блоки чата у орба; в фокусе — светящийся край.
+            .glassEffect(.regular.tint(OrbPalette.teal.opacity(0.10)), in: RoundedRectangle(cornerRadius: 20))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(
+                        isFocused
+                            ? AnyShapeStyle(LinearGradient(colors: [OrbPalette.cyan.opacity(0.7), OrbPalette.azure.opacity(0.5)],
+                                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                            : AnyShapeStyle(.separator),
+                        lineWidth: isFocused ? 1.5 : 1
+                    )
+            }
+            .shadow(color: OrbPalette.teal.opacity(isFocused ? 0.25 : 0), radius: 14)
+            .animation(.easeOut(duration: 0.2), value: isFocused)
         }
         .frame(maxWidth: 720)
         .padding(.horizontal, 24)

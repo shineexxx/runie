@@ -44,6 +44,8 @@ struct PermissionsSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(BrandGlowBackground())
         
     }
 }
@@ -58,7 +60,12 @@ private struct CategoryRow: View {
         let rule = settings.policy.rule(for: category)
 
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: category.symbol)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(category.isRisky && rule == .allow ? AnyShapeStyle(.orange) : AnyShapeStyle(OrbPalette.teal))
+                    .frame(width: 28, height: 28)
+                    .background(OrbPalette.teal.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(category.title)
                         .font(.system(size: 13, weight: .semibold))
