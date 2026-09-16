@@ -82,29 +82,51 @@ enum AttachmentStore {
 
 // MARK: - Кнопки и полоска вложений
 
-/// Скрепка и снимок области — у поля ввода.
+/// Скрепка у поля ввода. Нажатие открывает список: снимок области или файлы.
 struct AttachmentButtons: View {
     let onPickFiles: () -> Void
     let onCapture: () -> Void
 
-    var body: some View {
-        HStack(spacing: 0) {
-            button("paperclip", help: "Прикрепить файлы", action: onPickFiles)
-            button("viewfinder", help: "Снимок области экрана", action: onCapture)
-        }
-    }
+    @State private var anchor = WindowAnchor()
+    @State private var isOpen = false
 
-    private func button(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
+    var body: some View {
+        Button(action: toggle) {
+            Image(systemName: "paperclip")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 26)
+                .foregroundStyle(isOpen ? .primary : .secondary)
+                .frame(width: 26, height: 26)
+                .background(.primary.opacity(isOpen ? 0.08 : 0), in: Circle())
                 .contentShape(Circle())
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isOpen)
         }
         .buttonStyle(.plain)
-        .help(help)
-        .accessibilityLabel(help)
+        .background(WindowAnchorReader(anchor: anchor))
+        .help("Прикрепить")
+        .accessibilityLabel("Прикрепить")
+        #if DEBUG
+        .onReceive(NotificationCenter.default.publisher(for: .runieDebugOpenAttachMenu)) { _ in toggle() }
+        #endif
+    }
+
+    private func toggle() {
+        let dropdown = GlassDropdown.shared
+        if isOpen || dropdown.justClosed {
+            dropdown.close()
+            return
+        }
+        guard let rect = anchor.screenRect() else { return }
+        isOpen = true
+        dropdown.show(
+            below: rect,
+            items: [
+                DropdownItem(id: "capture", title: "Снимок области экрана",
+                             detail: "Выделите, что показать Руни", symbol: "viewfinder", action: onCapture),
+                DropdownItem(id: "files", title: "Файлы…",
+                             detail: "Документы, картинки, архивы", symbol: "doc", action: onPickFiles)
+            ],
+            onClose: { isOpen = false }
+        )
     }
 }
 

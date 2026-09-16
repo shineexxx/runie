@@ -131,6 +131,8 @@ final class ChatPanelController {
     func captureScreenshot() {
         panel.orderOut(nil)
         Task { @MainActor in
+            // Список со скрепки успевает уехать и не попадает в кадр.
+            try? await Task.sleep(for: .milliseconds(200))
             let shot = await AttachmentStore.captureArea()
             if layout.isOpen {
                 panel.orderFrontRegardless()
@@ -197,7 +199,7 @@ final class ChatPanelController {
         let generation = visibilityGeneration
         isHiding = true
         layout.isOpen = false
-        ModelDropdown.shared.close()
+        GlassDropdown.shared.close()
         onHide?()
 
         NSAnimationContext.runAnimationGroup { context in

@@ -76,6 +76,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.orbClicked()
             }
         }
+        if UserDefaults.standard.bool(forKey: "RunieOpenAttachMenu"), autoOpen > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1.5) {
+                NotificationCenter.default.post(name: .runieDebugOpenAttachMenu, object: nil)
+            }
+        }
         if UserDefaults.standard.bool(forKey: "RunieOpenModelMenu"), autoOpen > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1.5) {
                 NotificationCenter.default.post(name: .runieDebugOpenModelMenu, object: nil)

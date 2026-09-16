@@ -47,18 +47,26 @@ struct ModelMenu: View {
     }
 
     private func toggle() {
-        let dropdown = ModelDropdown.shared
+        let dropdown = GlassDropdown.shared
         if isOpen || dropdown.justClosed {
             dropdown.close()
             return
         }
         guard let rect = anchor.screenRect() else { return }
         isOpen = true
+        let selected = session.selectedModel ?? "default"
         dropdown.show(
             below: rect,
-            models: session.availableModels,
-            selected: session.selectedModel ?? "default",
-            onSelect: select,
+            items: session.availableModels.map { model in
+                DropdownItem(
+                    id: model.value,
+                    title: ModelNames.title(model),
+                    detail: ModelNames.detail(model),
+                    isSelected: model.value == selected,
+                    action: { select(model) }
+                )
+            },
+            emptyText: "Загружаю модели…",
             onClose: { isOpen = false }
         )
     }
@@ -83,16 +91,29 @@ struct ModelMenu: View {
 extension Notification.Name {
     /// `-RunieOpenModelMenu` — раскрыть список моделей без мыши, для снимков.
     static let runieDebugOpenModelMenu = Notification.Name("RunieDebugOpenModelMenu")
+    /// `-RunieOpenAttachMenu` — раскрыть список скрепки.
+    static let runieDebugOpenAttachMenu = Notification.Name("RunieDebugOpenAttachMenu")
 }
 #endif
 
 // MARK: - Выпадающий список
 
-/// Панель со списком моделей поверх всех окон Runie.
-@MainActor
-final class ModelDropdown {
+/// Пункт выпадающего списка.
+struct DropdownItem: Identifiable {
+    let id: String
+    let title: String
+    var detail: String? = nil
+    var symbol: String? = nil
+    var isSelected = false
+    let action: () -> Void
+}
 
-    static let shared = ModelDropdown()
+/// Закруглённый стеклянный список, выезжающий из кнопки, — поверх всех окон Runie.
+/// Один на приложение: открытие нового закрывает прежний.
+@MainActor
+final class GlassDropdown {
+
+    static let shared = GlassDropdown()
 
     private static let width: CGFloat = 250
     private static let rowHeight: CGFloat = 36
@@ -114,16 +135,15 @@ final class ModelDropdown {
 
     func show(
         below anchor: NSRect,
-        models: [AgentModel],
-        selected: String,
-        onSelect: @escaping (AgentModel) -> Void,
+        items: [DropdownItem],
+        emptyText: String = "",
         onClose: @escaping () -> Void
     ) {
         close()
         generation += 1
         self.onClose = onClose
 
-        let rows = max(models.count, 1)
+        let rows = max(items.count, 1)
         let listHeight = CGFloat(rows) * Self.rowHeight + Self.inset * 2
         let size = NSSize(width: Self.width + Self.margin * 2, height: listHeight + Self.margin * 2)
 
@@ -147,11 +167,11 @@ final class ModelDropdown {
         self.panel = panel
         let content = DropdownView(
             state: state,
-            models: models,
-            selected: selected,
-            onSelect: { [weak self] model in
-                onSelect(model)
+            items: items,
+            emptyText: emptyText,
+            onSelect: { [weak self] item in
                 self?.close()
+                item.action()
             }
         )
         // Сначала окно нужного размера и готовая раскладка в скрытом состоянии.
@@ -243,22 +263,20 @@ private final class DropdownState {
 
 private struct DropdownView: View {
     let state: DropdownState
-    let models: [AgentModel]
-    let selected: String
-    let onSelect: (AgentModel) -> Void
+    let items: [DropdownItem]
+    let emptyText: String
+    let onSelect: (DropdownItem) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            if models.isEmpty {
-                Text("Загружаю модели…")
+            if items.isEmpty {
+                Text(emptyText)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
-            ForEach(models) { model in
-                DropdownRow(model: model, isSelected: model.value == selected) {
-                    onSelect(model)
-                }
+            ForEach(items) { item in
+                DropdownRow(item: item) { onSelect(item) }
             }
         }
         .padding(5)
@@ -275,8 +293,7 @@ private struct DropdownView: View {
 }
 
 private struct DropdownRow: View {
-    let model: AgentModel
-    let isSelected: Bool
+    let item: DropdownItem
     let action: () -> Void
 
     @State private var isHovering = false
@@ -284,17 +301,25 @@ private struct DropdownRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
+                if let symbol = item.symbol {
+                    Image(systemName: symbol)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(OrbPalette.teal)
+                        .frame(width: 18)
+                }
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(ModelNames.title(model))
+                    Text(item.title)
                         .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
-                    Text(ModelNames.detail(model))
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if let detail = item.detail {
+                        Text(detail)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
                 Spacer(minLength: 4)
-                if isSelected {
+                if item.isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(OrbPalette.teal)
@@ -329,7 +354,7 @@ final class WindowAnchor {
     }
 }
 
-private struct WindowAnchorReader: NSViewRepresentable {
+struct WindowAnchorReader: NSViewRepresentable {
     let anchor: WindowAnchor
 
     func makeNSView(context: Context) -> NSView {
