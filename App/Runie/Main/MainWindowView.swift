@@ -22,7 +22,15 @@ struct MainWindowView: View {
             if navigation.section.isSettings {
                 SettingsView(navigation: navigation, session: session, settings: settings)
             } else if let record = records.first(where: { $0.id == navigation.selectedConversation }) {
-                ConversationDetail(record: record, onContinue: onContinue, onDelete: { pendingDelete = record })
+                ConversationDetail(
+                    record: record,
+                    session: session,
+                    onContinueAtOrb: onContinue,
+                    onDelete: { pendingDelete = record }
+                )
+            } else if navigation.selectedConversation == session.conversationID {
+                // Новый разговор: в истории его ещё нет, появится с первым сообщением.
+                ConversationDetail(record: nil, session: session, onContinueAtOrb: onContinue, onDelete: {})
             } else {
                 ContentUnavailableView(
                     records.isEmpty ? "Разговоров пока нет" : "Выберите разговор",
@@ -67,6 +75,16 @@ struct MainWindowView: View {
             }
         }
         .searchable(text: $query, placement: .sidebar, prompt: "Поиск по разговорам")
+        .toolbar {
+            ToolbarItem {
+                Button(action: startNewConversation) {
+                    Label("Новый разговор", systemImage: "square.and.pencil")
+                }
+                .help("Новый разговор (⌘N)")
+                .keyboardShortcut("n", modifiers: .command)
+                .disabled(session.isBusy)
+            }
+        }
         .overlay {
             if !query.isEmpty, filtered.isEmpty {
                 ContentUnavailableView.search(text: query)
@@ -101,9 +119,20 @@ struct MainWindowView: View {
         }
     }
 
+    private func startNewConversation() {
+        guard !session.isBusy else { return }
+        if !session.timeline.items.isEmpty {
+            session.startOver()
+        }
+        navigation.selectedConversation = session.conversationID
+        navigation.section = .history
+    }
+
     private func reload() {
         records = store.list()
-        if !records.contains(where: { $0.id == navigation.selectedConversation }) {
+        // Новый, ещё не сохранённый разговор — тоже законный выбор.
+        if navigation.selectedConversation != session.conversationID,
+           !records.contains(where: { $0.id == navigation.selectedConversation }) {
             navigation.selectedConversation = records.first?.id
         }
     }

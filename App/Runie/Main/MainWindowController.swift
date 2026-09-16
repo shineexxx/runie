@@ -33,6 +33,12 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         self.store = store
     }
 
+    /// Окно на экране и в нём открыт текущий разговор — вопросы агента видны здесь.
+    var isShowingCurrentConversation: Bool {
+        guard let window, window.isVisible, !window.isMiniaturized else { return false }
+        return navigation.section == .history && navigation.selectedConversation == session.conversationID
+    }
+
     /// Открывает окно на разговоре: он выделяется в истории.
     func showConversation(_ id: UUID) {
         navigation.selectedConversation = id

@@ -497,7 +497,7 @@ private struct ActionCapsule: View {
 
 /// Вопрос «можно?» перед действием, которое CLI сам не выполняет: команда, запись
 /// файла, страница в интернете. Человек видит, что именно сделает Руни, и решает.
-private struct PermissionCard: View {
+struct PermissionCard: View {
     let request: PermissionRequest
     let session: ChatSession
 

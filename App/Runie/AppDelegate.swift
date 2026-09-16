@@ -36,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
         // Агент стоит, пока человек не ответит: вопрос должен быть на виду.
         session.onPermissionRequest = { [weak self] in
-            guard let self, !chat.isVisible else { return }
+            guard let self, !chat.isVisible, !mainWindow.isShowingCurrentConversation else { return }
             openChat()
         }
         // Кнопка масштабирования в чате: разговор целиком — в окне Runie.
