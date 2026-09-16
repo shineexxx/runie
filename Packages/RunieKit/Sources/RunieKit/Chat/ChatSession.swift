@@ -12,6 +12,14 @@ public final class ChatSession {
 
     public private(set) var timeline = ChatTimeline()
 
+    /// Какой разговор сейчас в чате.
+    public private(set) var conversationID = UUID()
+    @ObservationIgnored private var conversationCreatedAt = Date()
+    /// Растёт при каждом сохранении — список истории по нему обновляется.
+    public private(set) var historyRevision = 0
+    /// Куда сохранять разговоры. `nil` — не сохранять.
+    @ObservationIgnored public var store: ChatHistoryStore?
+
     /// Последние служебные строки для отладки. Пользователю не показываются.
     public private(set) var diagnostics: [String] = []
 
@@ -65,6 +73,7 @@ public final class ChatSession {
         guard !trimmed.isEmpty, !timeline.isBusy else { return }
 
         timeline.appendUserMessage(trimmed)
+        persist()
 
         do {
             if connection == nil {
@@ -94,6 +103,35 @@ public final class ChatSession {
         timeline = ChatTimeline()
         diagnostics.removeAll()
         standingGrants.removeAll()
+        conversationID = UUID()
+        conversationCreatedAt = Date()
+    }
+
+    /// Открывает сохранённый разговор: следующее сообщение продолжит его сессию.
+    public func open(_ record: ConversationRecord) {
+        startOver()
+        timeline = ChatTimeline(restoring: record.items, sessionID: record.sessionID)
+        conversationID = record.id
+        conversationCreatedAt = record.createdAt
+    }
+
+    /// Сохраняет разговор, если в нём что-то есть.
+    private func persist() {
+        guard let store, !timeline.items.isEmpty else { return }
+        let record = ConversationRecord(
+            id: conversationID,
+            sessionID: timeline.sessionID,
+            title: ConversationRecord.title(for: timeline.items),
+            createdAt: conversationCreatedAt,
+            updatedAt: Date(),
+            items: timeline.items
+        )
+        do {
+            try store.save(record)
+            historyRevision += 1
+        } catch {
+            diagnostics.append("history: \(error.localizedDescription)")
+        }
     }
 
     private func consume(_ stream: AsyncStream<AgentStreamItem>) {
@@ -110,6 +148,10 @@ public final class ChatSession {
         switch item {
         case .event(let event):
             timeline.apply(event)
+            switch event {
+            case .turnCompleted, .turnFailed, .sessionStarted: persist()
+            default: break
+            }
             if case .permissionRequested(let request) = event {
                 if policy.allows(request) || standingGrants.contains(PermissionGrant.key(for: request)) {
                     answer(request, allow: true)
@@ -127,6 +169,7 @@ public final class ChatSession {
         case .ended(let exitCode, let stoppedByUser):
             timeline.markConnectionEnded(exitCode: exitCode, stoppedByUser: stoppedByUser)
             connection = nil
+            persist()
         }
     }
 }

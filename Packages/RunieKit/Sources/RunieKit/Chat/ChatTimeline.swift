@@ -45,6 +45,13 @@ public struct ChatTimeline: Sendable, Equatable {
 
     public init() {}
 
+    /// Лента сохранённого разговора. Потоковое состояние не сохраняется: разговор
+    /// сохраняется между ходами, когда агент свободен.
+    public init(restoring items: [TimelineItem], sessionID: String?) {
+        self.items = items
+        self.sessionID = sessionID
+    }
+
     public var isBusy: Bool { activity != .idle }
 
     // MARK: - Действия пользователя
@@ -281,7 +288,7 @@ public struct ChatTimeline: Sendable, Equatable {
 
 // MARK: - Элементы ленты
 
-public enum TimelineItem: Sendable, Equatable, Identifiable {
+public enum TimelineItem: Sendable, Equatable, Identifiable, Codable {
     case user(UserItem)
     case assistant(AssistantItem)
     case action(ActionItem)
@@ -297,12 +304,12 @@ public enum TimelineItem: Sendable, Equatable, Identifiable {
     }
 }
 
-public struct UserItem: Sendable, Equatable {
+public struct UserItem: Sendable, Equatable, Codable {
     public let id: UUID
     public let text: String
 }
 
-public struct AssistantItem: Sendable, Equatable {
+public struct AssistantItem: Sendable, Equatable, Codable {
     public let id: UUID
     public let messageID: String?
     public var text: String
@@ -314,9 +321,9 @@ public struct AssistantItem: Sendable, Equatable {
     }
 }
 
-public struct ActionItem: Sendable, Equatable {
+public struct ActionItem: Sendable, Equatable, Codable {
 
-    public enum Status: Sendable, Equatable {
+    public enum Status: String, Sendable, Equatable, Codable {
         case running
         /// Ждёт, пока человек разрешит или откажет.
         case awaitingApproval
@@ -339,9 +346,9 @@ public struct ActionItem: Sendable, Equatable {
     public let isNested: Bool
 }
 
-public struct NoticeItem: Sendable, Equatable {
+public struct NoticeItem: Sendable, Equatable, Codable {
 
-    public enum Kind: Sendable, Equatable {
+    public enum Kind: String, Sendable, Equatable, Codable {
         case info
         case error
     }
