@@ -21,6 +21,9 @@ public final class ChatSession {
     /// Что человек разрешил «всегда» в этом разговоре. Такие запросы не показываются.
     @ObservationIgnored private var standingGrants: Set<String> = []
 
+    /// Правила из настроек: какие группы действий разрешать без вопроса.
+    @ObservationIgnored public var policy = PermissionPolicy()
+
     /// Агент ждёт разрешения. Приложение, например, открывает чат, если он закрыт.
     @ObservationIgnored public var onPermissionRequest: (() -> Void)?
 
@@ -108,7 +111,7 @@ public final class ChatSession {
         case .event(let event):
             timeline.apply(event)
             if case .permissionRequested(let request) = event {
-                if standingGrants.contains(PermissionGrant.key(for: request)) {
+                if policy.allows(request) || standingGrants.contains(PermissionGrant.key(for: request)) {
                     answer(request, allow: true)
                 } else {
                     onPermissionRequest?()
