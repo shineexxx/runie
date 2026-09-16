@@ -67,7 +67,10 @@ struct EdgeButtonView: View {
             return forced
         }
         #endif
-        return state.isDragging ? .carried : RunieMood(activity: session.timeline.activity)
+        if state.isDragging { return .carried }
+        // Зовёт человека — свет живее, как когда Руни отвечает.
+        if state.isCalling, !session.isBusy { return .responding }
+        return RunieMood(activity: session.timeline.activity)
     }
 
     /// Открытый чат забирает свет из орба: из него и вытекает интерфейс. Пока агент

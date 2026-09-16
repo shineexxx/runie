@@ -6,6 +6,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case readFiles
     case browseFolders
     case systemInfo
+    case calendarRead
     case editFiles
     case moveDelete
     case openApps
@@ -13,6 +14,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case automation
     case install
     case sharing
+    case calendarEdit
     case contacts
     case services
     case otherCommands
@@ -24,6 +26,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .readFiles: "Чтение файлов"
         case .browseFolders: "Просмотр папок и поиск"
         case .systemInfo: "Сведения о системе"
+        case .calendarRead: "Просмотр календаря и напоминаний"
         case .editFiles: "Создание и правка файлов"
         case .moveDelete: "Перемещение и удаление"
         case .openApps: "Открытие приложений и ссылок"
@@ -31,6 +34,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .automation: "Управление другими приложениями"
         case .install: "Установка программ"
         case .sharing: "Отправка файлов"
+        case .calendarEdit: "Изменение календаря и напоминаний"
         case .contacts: "Контакты"
         case .services: "Подключённые сервисы"
         case .otherCommands: "Прочие команды"
@@ -48,6 +52,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .internet: "Открыть страницу, поискать в интернете, скачать файл."
         case .automation: "Выполнить действие в другом приложении через AppleScript или Быстрые команды."
         case .install: "Поставить или обновить программу через Homebrew, npm, pip."
+        case .calendarRead: "Посмотреть встречи и напоминания — например, чтобы разобрать день."
+        case .calendarEdit: "Добавить встречу или напоминание, отметить напоминание выполненным."
         case .sharing: "Подготовить письмо, сообщение или AirDrop с файлами. Отправляете вы сами — кнопкой в открывшемся окне."
         case .contacts: "Найти человека в Контактах, чтобы узнать почту или телефон."
         case .services: "Обратиться к подключённому сервису: Notion, Slack, календарю и другим."
@@ -58,7 +64,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     /// Можно ли испортить что-то необратимо. Такие группы в настройках помечаются.
     public var isRisky: Bool {
         switch self {
-        case .readFiles, .browseFolders, .systemInfo: false
+        case .readFiles, .browseFolders, .systemInfo, .calendarRead: false
         default: true
         }
     }
@@ -90,6 +96,10 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
             [("действие в другом приложении", "osascript"), ("запустить быструю команду", "shortcuts")]
         case .install:
             [("поставить программу", "brew, npm, pip")]
+        case .calendarRead:
+            [("встречи на сегодня или неделю", "Календарь"), ("список дел", "Напоминания")]
+        case .calendarEdit:
+            [("новая встреча", "Календарь"), ("новое напоминание", "Напоминания"), ("отметить выполненным", "Напоминания")]
         case .sharing:
             [("письмо с вложением", "Почта"), ("сообщение с файлом", "Сообщения"), ("передать рядом", "AirDrop")]
         case .contacts:
@@ -126,6 +136,9 @@ public enum PermissionClassifier {
         case "mcp__runie__compress_images", "mcp__runie__zip_files": return [.editFiles]
         case "mcp__runie__share_files": return [.sharing]
         case "mcp__runie__find_contact": return [.contacts]
+        case "mcp__runie__calendar_events", "mcp__runie__reminders": return [.calendarRead]
+        case "mcp__runie__create_event", "mcp__runie__create_reminder", "mcp__runie__complete_reminder":
+            return [.calendarEdit]
         default:
             if toolName.hasPrefix("mcp__runie__") { return [.otherCommands] }
             return toolName.hasPrefix("mcp__") ? [.services] : [.otherCommands]

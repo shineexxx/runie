@@ -112,6 +112,23 @@ public enum ToolDescriber {
             default: "меню «Поделиться»"
             }
             return Description(title: "Готовит отправку через \(via)", detail: filesDetail)
+        case "calendar_events":
+            let range = switch input["range"]?.stringValue {
+            case "tomorrow": "на завтра"
+            case "week": "на неделю"
+            default: "на сегодня"
+            }
+            return Description(title: "Смотрит встречи \(range)", detail: nil)
+        case "reminders":
+            return Description(title: "Смотрит напоминания", detail: input["list"]?.stringValue)
+        case "create_event":
+            return Description(title: "Добавляет встречу «\(input["title"]?.stringValue ?? "")»",
+                               detail: input["start"]?.stringValue)
+        case "create_reminder":
+            return Description(title: "Добавляет напоминание «\(input["title"]?.stringValue ?? "")»",
+                               detail: input["due"]?.stringValue)
+        case "complete_reminder":
+            return Description(title: "Отмечает напоминание выполненным", detail: input["title"]?.stringValue)
         case "find_contact":
             return Description(title: "Ищет контакт «\(input["name"]?.stringValue ?? "")»", detail: nil)
         default:

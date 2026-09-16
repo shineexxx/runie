@@ -13,6 +13,7 @@ struct ChatView: View {
     let layout: ChatLayout
     let tracker: FrontmostAppTracker
     let suggestions: SuggestionsModel
+    let briefing: MorningBriefing
     let onSend: (String) -> Void
     let onClose: () -> Void
     /// Открыть окно Runie на этом разговоре.
@@ -107,9 +108,12 @@ struct ChatView: View {
 
                     ChipsRow(
                         session: session,
-                        suggestions: suggestions.current,
+                        suggestions: chipSuggestions,
                         alignment: frameAlignment,
-                        onSend: onSend
+                        onSend: { text in
+                            if text == MorningBriefing.prompt { briefing.markDone() }
+                            onSend(text)
+                        }
                     )
                     .frame(height: ChatPanelController.chipsHeight)
                     .modifier(EmergeFromLight(progress: emergence, window: 0.26...0.72, anchor: orbCornerAnchor))
@@ -121,6 +125,12 @@ struct ChatView: View {
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
+    }
+
+    /// Утром, пока день не разобран, первая подсказка — «Разобрать день».
+    private var chipSuggestions: [Suggestion] {
+        guard briefing.isDue else { return suggestions.current }
+        return [MorningBriefing.suggestion] + suggestions.current.filter { $0 != MorningBriefing.suggestion }.prefix(1)
     }
 
     /// Ход появления от 0 до 1 с замедлением к концу.

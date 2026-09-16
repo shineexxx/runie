@@ -17,7 +17,12 @@ enum RunieTools {
         CompressImagesTool(),
         ZipFilesTool(),
         ShareFilesTool(),
-        FindContactTool()
+        FindContactTool(),
+        CalendarEventsTool(),
+        CreateEventTool(),
+        RemindersTool(),
+        CreateReminderTool(),
+        CompleteReminderTool()
     ])
 }
 

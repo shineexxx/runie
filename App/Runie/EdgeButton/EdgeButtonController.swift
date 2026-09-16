@@ -20,6 +20,8 @@ final class EdgeButtonState {
     var isDragging = false
     /// Прицепленный орб, которого давно не трогали, ушёл за край: торчит только горбик.
     var isRetracted = false
+    /// Руни зовёт человека: орб вышел из-за края и светится ярче.
+    var isCalling = false
 
     /// Держится за край тёмной перемычкой прямо сейчас.
     var isAttached: Bool { dock != nil && !isDetached && !isDragging }
@@ -145,6 +147,21 @@ final class EdgeButtonController {
         state.isRetracted = false
         state.isDetached = true
         layout(animated: true, duration: 0.22, completion: completion)
+    }
+
+    /// Позвать человека: выйти из-за края и посветиться, потом снова спрятаться.
+    func call() {
+        cancelRetract()
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            state.isRetracted = false
+            state.isCalling = true
+        }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(12))
+            guard let self else { return }
+            withAnimation(.easeOut(duration: 0.6)) { self.state.isCalling = false }
+            self.scheduleRetract()
+        }
     }
 
     /// Возвращает отошедший орб к краю.

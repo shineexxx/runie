@@ -36,5 +36,7 @@
 	<string>Runie работает с файлами в Загрузках, когда вы просите его найти, изменить или отправить их.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>MIT License. Copyright (c) 2026 Runie contributors.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Runie смотрит и добавляет напоминания, когда вы просите разобрать день или что-то не забыть.</string>
 </dict>
 </plist>

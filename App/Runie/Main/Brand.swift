@@ -101,6 +101,8 @@ extension PermissionCategory {
         case .install: "shippingbox"
         case .sharing: "paperplane"
         case .contacts: "person.crop.circle"
+        case .calendarRead: "calendar"
+        case .calendarEdit: "calendar.badge.plus"
         case .services: "puzzlepiece.extension"
         case .otherCommands: "terminal"
         }

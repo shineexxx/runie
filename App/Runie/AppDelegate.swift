@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var chat: ChatPanelController!
     private var settings: AppSettings!
     private var suggestions: SuggestionsModel!
+    private var briefing: MorningBriefing!
     private var mainWindow: MainWindowController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -40,7 +41,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         tracker = FrontmostAppTracker()
         suggestions = SuggestionsModel(store: store)
-        chat = ChatPanelController(session: session, tracker: tracker, settings: settings, suggestions: suggestions)
+        briefing = MorningBriefing()
+        chat = ChatPanelController(
+            session: session, tracker: tracker, settings: settings,
+            suggestions: suggestions, briefing: briefing
+        )
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
         // Агент стоит, пока человек не ответит: вопрос должен быть на виду.
         session.onPermissionRequest = { [weak self] in
@@ -56,6 +61,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         chat.onHide = { [weak self] in
             self?.button.reattach()
         }
+
+        // Утром при первой встрече с человеком орб выходит и зовёт разобрать день.
+        briefing.onNudge = { [weak self] in
+            guard let self, !chat.isVisible else { return }
+            button.call()
+        }
+        briefing.appLaunched()
 
         button.onClick = { [weak self] in
             self?.orbClicked()
@@ -232,7 +244,9 @@ private let runiePrompt = """
 zip_files упаковывает, reveal_in_finder показывает в Finder, find_contact находит почту и телефон, \
 share_files готовит письмо, сообщение или AirDrop. Предпочитай их командам оболочки. share_files сам \
 ничего не отправляет — человек нажимает «Отправить» в открывшемся окне; так и скажи. \
-После сжатия или архивации дай ссылки на получившиеся файлы.
+После сжатия или архивации дай ссылки на получившиеся файлы. \
+Для Календаря и Напоминаний тоже есть свои инструменты: calendar_events, create_event, reminders, \
+create_reminder, complete_reminder. Разбирая день, будь краток: главное, свободные окна, о чём не забыть.
 """
 
 /// Бэкенд на случай, когда Claude Code не установлен. Приложение при этом

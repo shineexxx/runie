@@ -134,6 +134,12 @@ struct RunieToolDescriptionTests {
         #expect(PermissionClassifier.categories(toolName: "mcp__runie__share_files", input: paths) == [.sharing])
         #expect(PermissionClassifier.categories(toolName: "mcp__runie__find_contact", input: paths) == [.contacts])
         #expect(PermissionClassifier.categories(toolName: "mcp__runie__unknown", input: paths) == [.otherCommands])
+        #expect(PermissionClassifier.categories(toolName: "mcp__runie__calendar_events", input: paths) == [.calendarRead])
+        #expect(PermissionClassifier.categories(toolName: "mcp__runie__create_reminder", input: paths) == [.calendarEdit])
+        #expect(!PermissionCategory.calendarRead.isRisky)
+        #expect(PermissionCategory.calendarEdit.isRisky)
+        #expect(ToolDescriber.describe(name: "mcp__runie__calendar_events", input: .object(["range": .string("week")])).title
+                == "Смотрит встречи на неделю")
         #expect(PermissionClassifier.categories(toolName: "mcp__notion__search", input: paths) == [.services])
     }
 }
