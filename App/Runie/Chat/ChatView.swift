@@ -522,9 +522,17 @@ private struct PermissionCard: View {
         let description = ToolDescriber.describe(name: request.toolName, input: request.input)
 
         VStack(alignment: .leading, spacing: 10) {
-            Label("Руни просит разрешения", systemImage: "hand.raised.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(OrbPalette.teal)
+            HStack(alignment: .firstTextBaseline) {
+                Label("Руни просит разрешения", systemImage: "hand.raised.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(OrbPalette.teal)
+                Spacer(minLength: 8)
+                // Группа — та же, что в настройках: там её можно разрешить заранее.
+                Text(categoryNames)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
 
             Text(description.title)
                 .font(.system(size: 14, weight: .semibold))
@@ -558,6 +566,13 @@ private struct PermissionCard: View {
         .readableSurface(RoundedRectangle(cornerRadius: 24))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Руни просит разрешения: \(description.title)")
+    }
+
+    private var categoryNames: String {
+        PermissionCategory.allCases
+            .filter { PermissionClassifier.categories(for: request).contains($0) }
+            .map(\.title)
+            .joined(separator: ", ")
     }
 
     private var alwaysHelp: String {
@@ -741,6 +756,10 @@ private struct Chip: View {
 private struct UsageChip: View {
     let usage: SubscriptionUsage
 
+    /// Системная подсказка `.help` у неактивной панели не появляется, поэтому
+    /// пояснение — своё, по наведению.
+    @State private var isHovering = false
+
     var body: some View {
         if let window = usage.window("five_hour") {
             Text("\(Int((window.utilization * 100).rounded()))%")
@@ -750,7 +769,13 @@ private struct UsageChip: View {
                 .padding(.horizontal, 11)
                 .frame(height: 32)
                 .readableSurface(Capsule())
-                .help(UsageChip.tooltip(usage))
+                .onHover { hovering in
+                    withAnimation(.easeOut(duration: 0.15)) { isHovering = hovering }
+                }
+                .popover(isPresented: $isHovering, arrowEdge: .top) {
+                    UsagePopover(usage: usage)
+                }
+                .accessibilityLabel(UsageChip.tooltip(usage))
         }
     }
 
@@ -764,6 +789,26 @@ private struct UsageChip: View {
             return "\(name): \(Int((window.utilization * 100).rounded()))%"
         }
         return "Использовано подписки — " + parts.joined(separator: ", ")
+    }
+}
+
+private struct UsagePopover: View {
+    let usage: SubscriptionUsage
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Лимит подписки Claude")
+                .font(.system(size: 13, weight: .semibold))
+            Text("Сколько уже потрачено. Когда лимит закончится, Руни не сможет отвечать до сброса.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(usage.windows.filter { $0.kind == "five_hour" || $0.kind == "seven_day" }, id: \.kind) { window in
+                UsageWindowRow(window: window)
+            }
+        }
+        .padding(14)
+        .frame(width: 260)
     }
 }
 

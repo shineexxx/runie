@@ -8,12 +8,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var tracker: FrontmostAppTracker!
     private var button: EdgeButtonController!
     private var chat: ChatPanelController!
+    private var settings: AppSettings!
+    private var mainWindow: MainWindowController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Дублирует LSUIElement из Info.plist: без иконки в Dock и без строки меню.
         NSApp.setActivationPolicy(.accessory)
 
         session = ChatSession(backend: Self.makeBackend())
+        let store = ChatHistoryStore.standard()
+        session.store = store
+        settings = AppSettings()
+        session.policy = settings.policy
+        settings.onPolicyChange = { [weak self] policy in
+            self?.session.policy = policy
+        }
+        mainWindow = MainWindowController(session: session, settings: settings, store: store)
+        mainWindow.onContinue = { [weak self] record in
+            guard let self else { return }
+            if session.conversationID != record.id {
+                session.open(record)
+            }
+            if !chat.isVisible { openChat() }
+        }
         tracker = FrontmostAppTracker()
         chat = ChatPanelController(session: session, tracker: tracker)
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
@@ -47,6 +64,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.orbClicked()
             }
         }
+        // `-RunieOpenWindow permissions` открывает окно Runie на нужном разделе.
+        if let section = UserDefaults.standard.string(forKey: "RunieOpenWindow") {
+            mainWindow.show(MainWindowController.Section(rawValue: section))
+        }
         // `-RunieAutoSend "текст"` вместе с `-RunieAutoOpen` отправляет сообщение после
         // открытия — чтобы проверять живые ходы агента без мыши.
         if let text = UserDefaults.standard.string(forKey: "RunieAutoSend"), autoOpen > 0 {
@@ -74,6 +95,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Клик по значку в Dock, пока открыто окно, — вернуть окно.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        mainWindow.show()
+        return true
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }
@@ -94,6 +121,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.openChat()
             })
         }
+
+        menu.addItem(ClosureMenuItem("Открыть Runie…", symbol: "macwindow") { [weak self] in
+            self?.mainWindow.show()
+        })
+        menu.addItem(ClosureMenuItem("Разрешения…", symbol: "hand.raised") { [weak self] in
+            self?.mainWindow.show(.permissions)
+        })
 
         menu.addItem(.separator())
 
