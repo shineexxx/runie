@@ -11,7 +11,7 @@ struct ModelMenu: View {
     var body: some View {
         Menu {
             if session.availableModels.isEmpty {
-                Text("Загружаю модели Claude Code…")
+                Text("Загружаю модели…")
             }
             ForEach(session.availableModels) { model in
                 Button {
@@ -95,20 +95,14 @@ enum ModelNames {
         return name.isEmpty ? model.displayName : name
     }
 
-    private static func hasLongContext(_ model: AgentModel) -> Bool {
-        model.description.contains("1M context") || model.value.contains("[1m]")
-    }
-
     /// Коротко для кнопки: «Opus 5».
     static func short(_ model: AgentModel) -> String {
         baseName(model)
     }
 
-    /// Строка меню: «По умолчанию — Opus 5, контекст 1M».
+    /// Строка меню: «По умолчанию» или «Sonnet 5». Коротко, чтобы меню было узким.
     static func title(_ model: AgentModel) -> String {
-        var name = baseName(model)
-        if hasLongContext(model) { name += ", контекст 1M" }
-        return model.value == "default" ? "Как в Claude Code — \(name)" : name
+        model.value == "default" ? "По умолчанию" : baseName(model)
     }
 
     static func detail(_ model: AgentModel) -> String {
