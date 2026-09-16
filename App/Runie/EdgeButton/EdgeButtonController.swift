@@ -32,10 +32,13 @@ final class EdgeButtonState {
 @MainActor
 final class EdgeButtonController {
 
-    static let panelSize = NSSize(width: 64, height: 64)
-    /// Отступ выдвинутой кнопки от края видимой области.
-    private static let margin: CGFloat = 6
-    /// Сколько задвинутой кнопки торчит из-за края.
+    /// Панель больше самого шара (48): вокруг нужно место для свечения, иначе оно
+    /// обрезается границей окна и вокруг орба проступает квадрат.
+    static let panelSize = NSSize(width: 80, height: 80)
+    /// Отступ панели от края видимой области. Отрицательный: прозрачное поле
+    /// вокруг шара и так отодвигает его от края.
+    private static let margin: CGFloat = -8
+    /// Сколько задвинутой панели торчит из-за края. Шар при этом прижат к полоске.
     private static let sliver: CGFloat = 22
     /// Смещение курсора, после которого нажатие считается перетаскиванием, а не кликом.
     private static let dragThreshold: CGFloat = 4

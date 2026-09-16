@@ -1,123 +1,385 @@
 import RunieKit
 import SwiftUI
 
-/// Минималистичный чат в стиле Liquid Glass.
+/// Чат без подложки, как у Eney: отдельные стеклянные блоки над рабочим столом.
+///
+/// Снизу вверх: подсказки, поле ввода с кнопкой «развернуть», над ними — текущие
+/// «руки» и пузырь с последним ответом. «Развернуть» заменяет пузырь всей перепиской.
+/// Блоки прижаты к стороне, где стоит орб.
 struct ChatView: View {
 
     let session: ChatSession
-    let focus: ChatFocusRequest
+    let layout: ChatLayout
     let onClose: () -> Void
 
     var body: some View {
-        GlassEffectContainer(spacing: 12) {
-            VStack(spacing: 0) {
-                ChatHeader(session: session, onClose: onClose)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 14)
-                    .padding(.bottom, 8)
+        GlassEffectContainer(spacing: 4) {
+            VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
+                Spacer(minLength: 0)
 
-                if session.timeline.items.isEmpty {
-                    EmptyChat(onPick: session.send)
-                        .frame(maxHeight: .infinity)
+                if layout.isExpanded {
+                    ConversationPanel(session: session, onCollapse: collapse)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
                 } else {
-                    TimelineView(timeline: session.timeline)
+                    CompactFeed(session: session, alignment: horizontalAlignment)
+                        .transition(.opacity)
                 }
 
-                Composer(session: session, focus: focus)
-                    .padding(12)
+                InputRow(session: session, layout: layout, onToggleExpanded: toggleExpanded)
+                    .frame(height: ChatPanelController.inputHeight)
+
+                ChipsRow(session: session, alignment: frameAlignment)
+                    .frame(height: ChatPanelController.chipsHeight)
             }
-            .frame(width: ChatPanelController.size.width, height: ChatPanelController.size.height)
-            .glassEffect(.regular, in: .rect(cornerRadius: 28))
+            .padding(.horizontal, 10)
+            .padding(.bottom, ChatPanelController.bottomInset)
+            .frame(width: ChatPanelController.size.width)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+    }
+
+    private var horizontalAlignment: HorizontalAlignment {
+        layout.orbSide == .trailing ? .trailing : .leading
+    }
+
+    private var frameAlignment: Alignment {
+        layout.orbSide == .trailing ? .trailing : .leading
+    }
+
+    private func toggleExpanded() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            layout.isExpanded.toggle()
+        }
+    }
+
+    private func collapse() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            layout.isExpanded = false
         }
     }
 }
 
-// MARK: - Шапка
+// MARK: - Текущий ход
 
-private struct ChatHeader: View {
+/// Всё, что случилось после последнего сообщения пользователя.
+private struct CurrentTurn {
+    let lastAction: ActionItem?
+    let lastAssistantText: String?
+    let lastNotice: NoticeItem?
+
+    init(_ items: [TimelineItem]) {
+        let start = (items.lastIndex { if case .user = $0 { true } else { false } }).map { $0 + 1 } ?? 0
+        var action: ActionItem?
+        var text: String?
+        var notice: NoticeItem?
+        for item in items[start...] {
+            switch item {
+            case .action(let value): action = value
+            case .assistant(let value): text = value.text
+            case .notice(let value): notice = value
+            case .user: break
+            }
+        }
+        lastAction = action
+        lastAssistantText = text
+        lastNotice = notice
+    }
+}
+
+// MARK: - Компактная лента
+
+private struct CompactFeed: View {
     let session: ChatSession
-    let onClose: () -> Void
+    let alignment: HorizontalAlignment
+
+    var body: some View {
+        let timeline = session.timeline
+        let turn = CurrentTurn(timeline.items)
+
+        VStack(alignment: alignment, spacing: 8) {
+            if let action = turn.lastAction, showsAction(action) {
+                ActionCapsule(action: action)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
+            if let notice = turn.lastNotice, notice.kind == .error {
+                Bubble { Text(notice.text).foregroundStyle(.red) }
+            } else if let text = turn.lastAssistantText {
+                Bubble { AssistantText(text: text) }
+            } else if timeline.isBusy {
+                Bubble {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text(ActivityLabel.text(timeline.activity))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else if timeline.items.isEmpty {
+                Bubble { Text("Чем помочь?") }
+            } else if let notice = turn.lastNotice {
+                Bubble { Text(notice.text).foregroundStyle(.secondary) }
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: turn.lastAction?.id)
+    }
+
+    /// «Руки» видны, пока агент работает, или если последнее действие не удалось.
+    private func showsAction(_ action: ActionItem) -> Bool {
+        session.isBusy || action.status == .denied || action.status == .failed
+    }
+}
+
+private struct Bubble<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .font(.system(size: 14, weight: .medium))
+            .textSelection(.enabled)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 13)
+            .frame(maxWidth: 360, alignment: .leading)
+            .fixedSize(horizontal: true, vertical: false)
+            .glassEffect(.regular, in: .rect(cornerRadius: 24))
+            .blockShadow()
+    }
+}
+
+/// Ответ помещается в пузырь целиком, а длинный — прокручивается и держится
+/// у последней строки, пока печатается.
+private struct AssistantText: View {
+    let text: String
+
+    var body: some View {
+        ViewThatFits(in: .vertical) {
+            label
+            ScrollView {
+                label.frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollIndicators(.hidden)
+            .defaultScrollAnchor(.bottom)
+        }
+        .frame(maxHeight: 280)
+    }
+
+    private var label: some View {
+        Text(MarkdownText.inline(text))
+            // Полужирный пузыря хорош для коротких реплик, а в абзаце тяжелит.
+            .fontWeight(.regular)
+            .lineSpacing(2)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct ActionCapsule: View {
+    let action: ActionItem
 
     var body: some View {
         HStack(spacing: 8) {
-            StatusIndicator(activity: session.timeline.activity)
-
-            Spacer(minLength: 8)
-
-            if let usage = session.timeline.usage {
-                UsageChip(usage: usage)
-            }
-
-            Button {
-                session.startOver()
-            } label: {
-                Image(systemName: "square.and.pencil")
-            }
-            .buttonStyle(.borderless)
-            .help("Новый разговор")
-            .disabled(session.timeline.items.isEmpty)
-
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-            }
-            .buttonStyle(.borderless)
-            .help("Закрыть (Esc)")
+            ActionStatusIcon(status: action.status)
+                .frame(width: 14)
+            Text(action.title)
+                .font(.system(size: 12.5, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.middle)
         }
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(.secondary)
+        .padding(.horizontal, 14)
+        .frame(height: 32)
+        .frame(maxWidth: 320)
+        .fixedSize(horizontal: true, vertical: false)
+        .glassEffect(.regular, in: .capsule)
+        .blockShadow()
     }
 }
 
-private struct StatusIndicator: View {
-    let activity: ChatTimeline.Activity
+// MARK: - Поле ввода
+
+private struct InputRow: View {
+    let session: ChatSession
+    let layout: ChatLayout
+    let onToggleExpanded: () -> Void
+
+    @State private var draft = ""
+    @FocusState private var isFocused: Bool
 
     var body: some View {
-        HStack(spacing: 6) {
-            if activity == .idle {
-                Circle()
-                    .fill(.green.opacity(0.8))
-                    .frame(width: 6, height: 6)
-            } else {
-                ProgressView()
-                    .controlSize(.mini)
-            }
-            Text(label)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .contentTransition(.opacity)
-                .animation(.easeOut(duration: 0.2), value: label)
+        HStack(spacing: 8) {
+            // Кнопка «развернуть» с дальней от орба стороны, как у Eney.
+            if layout.orbSide == .trailing { expandButton }
+            inputPill
+            if layout.orbSide == .leading { expandButton }
         }
+        .onAppear { isFocused = true }
+        .onChange(of: layout.focusGeneration) { isFocused = true }
     }
 
-    private var label: String {
-        switch activity {
-        case .idle: "Runie"
-        case .waiting: "Отправляю…"
-        case .thinking: "Думает…"
-        case .working(let detail): detail ?? "Работает…"
-        case .responding: "Отвечает…"
+    private var inputPill: some View {
+        HStack(spacing: 8) {
+            TextField("Опишите задачу…", text: $draft, axis: .vertical)
+                .textFieldStyle(.plain)
+                .font(.system(size: 15))
+                .lineLimit(1...3)
+                .focused($isFocused)
+                .onSubmit(send)
+
+            if session.isBusy {
+                CircleIconButton(symbol: "stop.fill", tint: nil, help: "Остановить", action: session.stop)
+            } else {
+                CircleIconButton(
+                    symbol: "arrow.up",
+                    tint: trimmedDraft.isEmpty ? nil : OrbPalette.teal,
+                    help: "Отправить (Return)",
+                    action: send
+                )
+                .disabled(trimmedDraft.isEmpty)
+            }
         }
+        .padding(.leading, 20)
+        .padding(.trailing, 7)
+        .frame(maxWidth: .infinity)
+        .frame(height: ChatPanelController.inputHeight)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .blockShadow()
+    }
+
+    private var expandButton: some View {
+        Button(action: onToggleExpanded) {
+            Image(systemName: layout.isExpanded
+                  ? "arrow.down.right.and.arrow.up.left"
+                  : "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 15, weight: .medium))
+                .frame(width: 44, height: 44)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .blockShadow()
+        .help(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
+        .accessibilityLabel(layout.isExpanded ? "Свернуть переписку" : "Вся переписка")
+    }
+
+    private var trimmedDraft: String {
+        draft.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func send() {
+        guard !trimmedDraft.isEmpty, !session.isBusy else { return }
+        session.send(draft)
+        draft = ""
     }
 }
 
-/// Остаток подписки за пять часов. Отдельный счётчик не нужен: цифра приходит
-/// из потока агента сама.
+private struct CircleIconButton: View {
+    let symbol: String
+    let tint: Color?
+    let help: String
+    let action: () -> Void
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(tint == nil ? AnyShapeStyle(.primary) : AnyShapeStyle(.white))
+                .frame(width: 36, height: 36)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(glass, in: .circle)
+        .opacity(isEnabled ? 1 : 0.45)
+        .help(help)
+        .accessibilityLabel(help)
+    }
+
+    private var glass: Glass {
+        if let tint { return .regular.tint(tint).interactive() }
+        return .regular.interactive()
+    }
+}
+
+// MARK: - Подсказки
+
+private struct ChipsRow: View {
+    let session: ChatSession
+    let alignment: Alignment
+
+    private let suggestions = [
+        "Календарь на сегодня",
+        "Вчерашние скриншоты"
+    ]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                    session.startOver()
+                }
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 32, height: 32)
+                    .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .blockShadow()
+            .disabled(session.timeline.items.isEmpty)
+            .opacity(session.timeline.items.isEmpty ? 0.45 : 1)
+            .help("Новый разговор")
+            .accessibilityLabel("Новый разговор")
+
+            if session.timeline.items.isEmpty {
+                ForEach(suggestions, id: \.self) { suggestion in
+                    Chip(title: suggestion) { session.send(suggestion) }
+                }
+            } else if let usage = session.timeline.usage {
+                UsageChip(usage: usage)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: alignment)
+    }
+}
+
+private struct Chip: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12.5, weight: .medium))
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 13)
+                .frame(height: 32)
+                .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .blockShadow()
+    }
+}
+
+/// Остаток подписки за пять часов. Цифра приходит из потока агента сама.
 private struct UsageChip: View {
     let usage: SubscriptionUsage
 
     var body: some View {
         if let window = usage.window("five_hour") {
             Text("\(Int((window.utilization * 100).rounded()))%")
+                .font(.system(size: 12, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(window.utilization >= 0.8 ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
-                .padding(.horizontal, 7)
-                .padding(.vertical, 2)
-                .background(.quaternary.opacity(0.5), in: .capsule)
-                .help(tooltip)
+                .padding(.horizontal, 11)
+                .frame(height: 32)
+                .glassEffect(.regular, in: .capsule)
+                .blockShadow()
+                .help(UsageChip.tooltip(usage))
         }
     }
 
-    private var tooltip: String {
+    static func tooltip(_ usage: SubscriptionUsage) -> String {
         let parts = usage.windows.map { window in
             let name = switch window.kind {
             case "five_hour": "за 5 часов"
@@ -130,43 +392,48 @@ private struct UsageChip: View {
     }
 }
 
-// MARK: - Пустой чат
+// MARK: - Развёрнутая переписка
 
-private struct EmptyChat: View {
-    let onPick: (String) -> Void
-
-    private let suggestions = [
-        "Что у меня сегодня в календаре?",
-        "Найди вчерашние скриншоты",
-        "Сколько свободного места на диске?"
-    ]
+private struct ConversationPanel: View {
+    let session: ChatSession
+    let onCollapse: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
-            Text("Чем помочь?")
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-
-            VStack(spacing: 8) {
-                ForEach(suggestions, id: \.self) { suggestion in
-                    Button {
-                        onPick(suggestion)
-                    } label: {
-                        Text(suggestion)
-                            .font(.system(size: 13))
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.glass)
-                    .controlSize(.large)
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                if session.isBusy {
+                    ProgressView().controlSize(.mini)
                 }
+                Text(session.isBusy ? ActivityLabel.text(session.timeline.activity) : "Переписка")
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Button(action: onCollapse) {
+                    Image(systemName: "chevron.down")
+                }
+                .buttonStyle(.borderless)
+                .help("Свернуть (Esc)")
             }
-            .padding(.horizontal, 28)
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
+            .padding(.bottom, 6)
+
+            if session.timeline.items.isEmpty {
+                Text("Пока пусто")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ConversationList(timeline: session.timeline)
+            }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .glassEffect(.regular, in: .rect(cornerRadius: 26))
+        .blockShadow()
     }
 }
 
-// MARK: - Лента
-
-private struct TimelineView: View {
+private struct ConversationList: View {
     let timeline: ChatTimeline
 
     var body: some View {
@@ -185,8 +452,7 @@ private struct TimelineView: View {
             .onChange(of: timeline.items) { old, items in
                 guard let last = items.last else { return }
                 // Новая реплика въезжает плавно. Дописывание текущей — без анимации:
-                // при потоковом выводе это десятки обновлений в секунду, и анимация
-                // на каждое превращает прокрутку в дрожь.
+                // при потоковом выводе это десятки обновлений в секунду.
                 if old.last?.id == last.id {
                     proxy.scrollTo(last.id, anchor: .bottom)
                 } else {
@@ -204,58 +470,35 @@ private struct TimelineView: View {
     }
 }
 
-// MARK: - Поле ввода
+// MARK: - Общее
 
-private struct Composer: View {
-    let session: ChatSession
-    let focus: ChatFocusRequest
+private extension View {
+    /// Мягкая тень под блоком. На светлом фоне стекло почти сливается со страницей,
+    /// и без тени блоки не отделяются от того, что под ними.
+    func blockShadow() -> some View {
+        shadow(color: .black.opacity(0.10), radius: 14, y: 5)
+    }
+}
 
-    @State private var draft = ""
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            TextField("Попросите Runie…", text: $draft, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.system(size: 14))
-                .lineLimit(1...6)
-                .focused($isFocused)
-                .onSubmit(send)
-                .padding(.vertical, 6)
-
-            if session.isBusy {
-                Button(action: session.stop) {
-                    Image(systemName: "stop.fill")
-                        .frame(width: 18, height: 18)
-                }
-                .buttonStyle(.glass)
-                .help("Остановить")
-            } else {
-                Button(action: send) {
-                    Image(systemName: "arrow.up")
-                        .fontWeight(.semibold)
-                        .frame(width: 18, height: 18)
-                }
-                .buttonStyle(.glass)
-                .disabled(trimmedDraft.isEmpty)
-                .help("Отправить (Return)")
-            }
+enum ActivityLabel {
+    static func text(_ activity: ChatTimeline.Activity) -> String {
+        switch activity {
+        case .idle: "Руни"
+        case .waiting: "Отправляю…"
+        case .thinking: "Думает…"
+        case .working(let detail): detail ?? "Работает…"
+        case .responding: "Отвечает…"
         }
-        .padding(.leading, 14)
-        .padding(.trailing, 6)
-        .padding(.vertical, 4)
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
-        .onAppear { isFocused = true }
-        .onChange(of: focus.generation) { isFocused = true }
     }
+}
 
-    private var trimmedDraft: String {
-        draft.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func send() {
-        guard !trimmedDraft.isEmpty, !session.isBusy else { return }
-        session.send(draft)
-        draft = ""
+enum MarkdownText {
+    /// Жирный, курсив, код и ссылки в строке. Блочную разметку — заголовки, списки —
+    /// показываем как есть: лучше честный текст, чем сломанная вёрстка.
+    static func inline(_ text: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace
+        )
+        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
     }
 }

@@ -31,7 +31,9 @@ private struct UserBubble: View {
                 .textSelection(.enabled)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .glassEffect(.regular.tint(.accentColor.opacity(0.35)), in: .rect(cornerRadius: 16))
+                // Заливка, а не стекло: строка лежит внутри стеклянной панели,
+                // и стекло на стекле мутнеет.
+                .background(OrbPalette.teal.opacity(0.22), in: .rect(cornerRadius: 16))
         }
     }
 }
@@ -40,7 +42,7 @@ private struct AssistantMessage: View {
     let text: String
 
     var body: some View {
-        Text(attributed)
+        Text(MarkdownText.inline(text))
             .font(.system(size: 14))
             .lineSpacing(2)
             .textSelection(.enabled)
@@ -48,14 +50,6 @@ private struct AssistantMessage: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// Жирный, курсив, код и ссылки в строке. Блочную разметку — заголовки, списки —
-    /// показываем как есть: лучше честный текст, чем сломанная вёрстка.
-    private var attributed: AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(
-            interpretedSyntax: .inlineOnlyPreservingWhitespace
-        )
-        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
-    }
 }
 
 // MARK: - Руки
@@ -71,7 +65,7 @@ private struct ActionRow: View {
                 withAnimation(.easeOut(duration: 0.15)) { isExpanded.toggle() }
             } label: {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    StatusIcon(status: action.status)
+                    ActionStatusIcon(status: action.status)
                         .frame(width: 14)
 
                     VStack(alignment: .leading, spacing: 1) {
@@ -133,7 +127,7 @@ private struct ActionRow: View {
     }
 }
 
-private struct StatusIcon: View {
+struct ActionStatusIcon: View {
     let status: ActionItem.Status
 
     var body: some View {

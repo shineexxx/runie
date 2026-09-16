@@ -1,37 +1,50 @@
 import RunieKit
 import SwiftUI
 
-/// Круглая стеклянная кнопка. Пока агент работает — знак медленно пульсирует,
-/// чтобы было видно, что Runie занят, даже когда чат закрыт.
+/// Кнопка у края — это орб Руни. Его настроение следует за агентом; задвинутый
+/// за край, шар сдвигается к видимой полоске.
 struct EdgeButtonView: View {
 
     let state: EdgeButtonState
     let session: ChatSession
 
-    private static let diameter: CGFloat = 48
-
     var body: some View {
-        ZStack {
-            Image(systemName: "sparkle")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.primary)
-                .symbolEffect(.pulse, options: .repeating, isActive: session.isBusy)
-                .contentTransition(.symbolEffect(.replace))
-        }
-        .frame(width: Self.diameter, height: Self.diameter)
-        .glassEffect(.regular.interactive(), in: .circle)
-        .scaleEffect(scale)
-        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: state.isPressed)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: state.isDragging)
-        .frame(width: EdgeButtonController.panelSize.width, height: EdgeButtonController.panelSize.height)
-        .help(session.isBusy ? "Runie работает" : "Runie")
-        .accessibilityLabel("Runie")
-        .accessibilityHint(state.isTucked ? "Выдвинуть кнопку" : "Открыть чат")
+        RunieOrb(mood: mood)
+            .offset(x: tuckOffset)
+            .scaleEffect(state.isPressed && !state.isDragging ? 0.92 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: state.isPressed)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: state.isTucked)
+            .frame(width: EdgeButtonController.panelSize.width, height: EdgeButtonController.panelSize.height)
+            .help(session.isBusy ? "Руни работает" : "Руни")
+            .accessibilityElement()
+            .accessibilityLabel("Руни")
+            .accessibilityValue(accessibilityStatus)
+            .accessibilityHint(state.isTucked ? "Выдвинуть" : "Открыть чат")
     }
 
-    private var scale: CGFloat {
-        if state.isDragging { return 1.08 }
-        if state.isPressed { return 0.92 }
-        return 1
+    private var mood: RunieMood {
+        #if DEBUG
+        // Для работы над внешним видом: `-RunieMood working` в аргументах запуска.
+        if let forced = UserDefaults.standard.string(forKey: "RunieMood").flatMap(RunieMood.init(rawValue:)) {
+            return forced
+        }
+        #endif
+        return state.isDragging ? .carried : RunieMood(activity: session.timeline.activity)
+    }
+
+    /// Задвинутый шар прижимается к видимой полоске, чтобы из-за края торчал свет,
+    /// а не пустое стекло.
+    private var tuckOffset: CGFloat {
+        guard state.isTucked, !state.isDragging else { return 0 }
+        return state.edge == .right ? -16 : 16
+    }
+
+    private var accessibilityStatus: String {
+        switch RunieMood(activity: session.timeline.activity) {
+        case .idle, .carried: "свободен"
+        case .thinking: "думает"
+        case .working: "работает"
+        case .responding: "отвечает"
+        }
     }
 }
