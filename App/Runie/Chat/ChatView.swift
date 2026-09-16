@@ -75,12 +75,6 @@ struct ChatView: View {
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
 
-                    if let current = tracker.current {
-                        ContextChip(current: current, layout: layout)
-                            .frame(maxWidth: .infinity, alignment: farAlignment)
-                            .modifier(EmergeFromLight(progress: emergence, window: 0.46...0.9, anchor: .center))
-                    }
-
                     InputRow(
                         session: session,
                         layout: layout,
@@ -162,11 +156,6 @@ struct ChatView: View {
 
     private var frameAlignment: Alignment {
         layout.orbSide == .trailing ? .trailing : .leading
-    }
-
-    /// Сторона, дальняя от орба.
-    private var farAlignment: Alignment {
-        layout.orbSide == .trailing ? .leading : .trailing
     }
 
     private var orbAnchor: UnitPoint {
@@ -689,41 +678,6 @@ private struct InputRow: View {
 // MARK: - Контекст
 
 /// Где человек сейчас. Клик выключает передачу контекста агенту.
-private struct ContextChip: View {
-    let current: FrontmostAppTracker.Current
-    @Bindable var layout: ChatLayout
-
-    var body: some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.15)) { layout.includesContext.toggle() }
-        } label: {
-            HStack(spacing: 6) {
-                Image(nsImage: current.icon)
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: 16, height: 16)
-                    .saturation(layout.includesContext ? 1 : 0)
-                Text(current.context.name)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                    .strikethrough(!layout.includesContext, color: .secondary)
-                    .foregroundStyle(layout.includesContext ? .primary : .secondary)
-            }
-            .padding(.leading, 8)
-            .padding(.trailing, 11)
-            .frame(height: 28)
-            .contentShape(.capsule)
-        }
-        .buttonStyle(.plain)
-        .readableSurface(Capsule(), interactive: true)
-        .help(layout.includesContext
-              ? "Руни знает, что вы в «\(current.context.name)». Нажмите, чтобы не сообщать."
-              : "Руни не знает, где вы. Нажмите, чтобы сообщать.")
-        .accessibilityLabel("Контекст: \(current.context.name)")
-        .accessibilityValue(layout.includesContext ? "включён" : "выключен")
-    }
-}
-
 // MARK: - Подсказки
 
 private struct ChipsRow: View {
