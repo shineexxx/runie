@@ -44,7 +44,7 @@ struct PermissionsSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Разрешения")
+        
     }
 }
 

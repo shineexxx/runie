@@ -14,6 +14,9 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         case permissions
         case usage
         case general
+
+        /// Вкладка настроек, а не раздел боковой панели.
+        var isSettings: Bool { self != .history }
     }
 
     private var window: NSWindow?
@@ -77,7 +80,11 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 @MainActor
 @Observable
 final class MainNavigation {
-    var section: MainWindowController.Section = .history
+    var section: MainWindowController.Section = .history {
+        didSet { if section.isSettings { lastSettingsTab = section } }
+    }
+    /// Настройки открываются на той вкладке, где их закрыли.
+    var lastSettingsTab: MainWindowController.Section = .permissions
     /// Какой разговор выделить в истории.
     var selectedConversation: UUID?
 }

@@ -26,7 +26,7 @@ struct UsageView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Лимит подписки")
+        
     }
 }
 

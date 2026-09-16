@@ -23,6 +23,6 @@ struct GeneralView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Общие")
+        
     }
 }
