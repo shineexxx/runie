@@ -17,7 +17,18 @@ final class AppSettings {
         static let policy = "permissions.policy"
         static let model = "model.selected"
         static let models = "model.cache"
+        static let disabledSkills = "skills.disabled"
     }
+
+    /// Навыки, выключенные в Runie.
+    var disabledSkills: Set<String> {
+        didSet {
+            UserDefaults.standard.set(Array(disabledSkills).sorted(), forKey: Key.disabledSkills)
+            onDisabledSkillsChange?(disabledSkills)
+        }
+    }
+
+    @ObservationIgnored var onDisabledSkillsChange: ((Set<String>) -> Void)?
 
     /// Выбранная модель. `nil` — как в Claude Code.
     var selectedModel: String? {
@@ -48,6 +59,7 @@ final class AppSettings {
 
     init() {
         selectedModel = UserDefaults.standard.string(forKey: Key.model)
+        disabledSkills = Set(UserDefaults.standard.stringArray(forKey: Key.disabledSkills) ?? [])
         if let data = UserDefaults.standard.data(forKey: Key.policy),
            let stored = try? JSONDecoder().decode(PermissionPolicy.self, from: data) {
             policy = stored

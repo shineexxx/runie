@@ -24,6 +24,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         session.store = store
         settings = AppSettings()
         session.policy = settings.policy
+        session.disabledSkills = settings.disabledSkills
+        settings.onDisabledSkillsChange = { [weak self] skills in
+            guard let self else { return }
+            session.disabledSkills = skills
+            // Навыки передаются при подключении — переподключаемся, пока Руни свободен.
+            session.reloadAgent()
+        }
         session.restoreModels(settings.cachedModels, selected: settings.selectedModel)
         session.onModelsUpdate = { [weak self] models in
             self?.settings.cachedModels = models
@@ -259,7 +266,7 @@ struct UnavailableBackend: AgentBackend {
         }
     }
 
-    func connect(resuming sessionID: String?) throws -> AgentConnectionHandle {
+    func connect(resuming sessionID: String?, disallowedTools: [String]) throws -> AgentConnectionHandle {
         throw NotInstalled()
     }
 }

@@ -67,7 +67,11 @@ final class FakeBackend: AgentBackend, @unchecked Sendable {
     var connections: [Connection] { lock.withLock { _connections } }
     var resumedWith: [String?] { lock.withLock { _resumedWith } }
 
-    func connect(resuming sessionID: String?) throws -> AgentConnectionHandle {
+    private var _disallowed: [[String]] = []
+    var disallowed: [[String]] { lock.withLock { _disallowed } }
+
+    func connect(resuming sessionID: String?, disallowedTools: [String]) throws -> AgentConnectionHandle {
+        lock.withLock { _disallowed.append(disallowedTools) }
         if failNextConnect {
             failNextConnect = false
             throw AgentRuntime.Failure.launchFailed("нет claude")

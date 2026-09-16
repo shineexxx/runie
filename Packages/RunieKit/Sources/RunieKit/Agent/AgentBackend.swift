@@ -39,7 +39,8 @@ public struct AgentConnectionHandle: Sendable {
 /// появится ещё одна реализация, а интерфейс и модель чата не изменятся.
 public protocol AgentBackend: Sendable {
     /// Поднимает соединение. `sessionID` — продолжить существующую сессию.
-    func connect(resuming sessionID: String?) throws -> AgentConnectionHandle
+    /// `disallowedTools` — правила запрета на эту сессию, например `Skill(имя)`.
+    func connect(resuming sessionID: String?, disallowedTools: [String]) throws -> AgentConnectionHandle
 }
 
 // MARK: - Claude Code
@@ -61,9 +62,10 @@ public struct ClaudeCodeBackend: AgentBackend {
         self.arguments = arguments
     }
 
-    public func connect(resuming sessionID: String?) throws -> AgentConnectionHandle {
+    public func connect(resuming sessionID: String?, disallowedTools: [String]) throws -> AgentConnectionHandle {
         var arguments = self.arguments
         arguments.session = sessionID.map { .resume(id: $0) } ?? .new(id: UUID())
+        arguments.disallowedTools += disallowedTools
 
         let runtime = AgentRuntime(configuration: .init(
             executable: executable,

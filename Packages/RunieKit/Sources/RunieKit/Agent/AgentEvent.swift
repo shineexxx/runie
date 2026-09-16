@@ -59,6 +59,69 @@ public struct SessionInfo: Sendable, Equatable {
     public let workingDirectory: String?
     public let permissionMode: String?
     public let cliVersion: String?
+    /// Навыки, доступные в сессии (имена).
+    public var skills: [String] = []
+    /// Установленные плагины: имя и папка — в ней лежат их навыки.
+    public var plugins: [PluginInfo] = []
+}
+
+public struct PluginInfo: Sendable, Equatable, Codable {
+    public let name: String
+    public let path: String
+
+    public init(name: String, path: String) {
+        self.name = name
+        self.path = path
+    }
+}
+
+/// MCP-сервер, как его видит Claude Code (ответ на `mcp_status`).
+public struct MCPServerInfo: Sendable, Equatable, Identifiable {
+    public enum Status: String, Sendable {
+        case connected
+        case pending
+        case needsAuth = "needs-auth"
+        case failed
+        case disabled
+        case unknown
+    }
+
+    public let name: String
+    public let status: Status
+    /// `user`, `project`, `local`, `claudeai`, `plugin`…
+    public let scope: String?
+    /// `stdio`, `http`, `sse`, `claudeai-proxy`, `sdk`…
+    public let transport: String?
+    /// Команда или адрес — для подписи.
+    public let target: String?
+
+    public var id: String { name }
+
+    public init(name: String, status: Status, scope: String?, transport: String?, target: String?) {
+        self.name = name
+        self.status = status
+        self.scope = scope
+        self.transport = transport
+        self.target = target
+    }
+
+    /// Разбор ответа `mcp_status`.
+    public static func list(from body: JSONValue?) -> [MCPServerInfo] {
+        (body?["mcpServers"]?.arrayValue ?? []).compactMap { entry in
+            guard let name = entry["name"]?.stringValue else { return nil }
+            let config = entry["config"]
+            let command = config?["command"]?.stringValue.map { command in
+                ([command] + (config?["args"]?.arrayValue ?? []).compactMap(\.stringValue)).joined(separator: " ")
+            }
+            return MCPServerInfo(
+                name: name,
+                status: Status(rawValue: entry["status"]?.stringValue ?? "") ?? .unknown,
+                scope: entry["scope"]?.stringValue,
+                transport: config?["type"]?.stringValue,
+                target: config?["url"]?.stringValue ?? command
+            )
+        }
+    }
 }
 
 public struct AssistantText: Sendable, Equatable {
@@ -188,6 +251,10 @@ public enum ControlRequest: Sendable, Equatable {
     case initializeWithHostServers([String])
     /// Сменить модель для следующих ответов, не перезапуская сессию.
     case setModel(String)
+    /// Состояние MCP-серверов: имя, статус, откуда, как подключён.
+    case mcpStatus
+    /// Включить или выключить MCP-сервер.
+    case mcpToggle(name: String, enabled: Bool)
 
     public func ndjsonLine(requestID: String) throws -> Data {
         let request: JSONValue = switch self {
@@ -197,6 +264,10 @@ public enum ControlRequest: Sendable, Equatable {
             .object(["subtype": .string("initialize"), "sdkMcpServers": .array(names.map(JSONValue.string))])
         case .setModel(let model):
             .object(["subtype": .string("set_model"), "model": .string(model)])
+        case .mcpStatus:
+            .object(["subtype": .string("mcp_status")])
+        case .mcpToggle(let name, let enabled):
+            .object(["subtype": .string("mcp_toggle"), "serverName": .string(name), "enabled": .bool(enabled)])
         }
         let payload: JSONValue = .object([
             "type": .string("control_request"),

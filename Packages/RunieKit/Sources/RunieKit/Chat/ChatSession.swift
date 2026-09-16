@@ -39,6 +39,19 @@ public final class ChatSession {
     @ObservationIgnored public var onModelsUpdate: (([AgentModel]) -> Void)?
     @ObservationIgnored private var initializeRequestID: String?
 
+    // MARK: Расширения
+
+    /// MCP-серверы по последнему `mcp_status`.
+    public private(set) var mcpServers: [MCPServerInfo] = []
+    /// Навыки и плагины из начала последней сессии.
+    public private(set) var skills: [String] = []
+    public private(set) var plugins: [PluginInfo] = []
+    /// Навыки с описаниями из ответа на `initialize` — известны сразу после подключения.
+    public private(set) var skillInfos: [SkillInfo] = []
+    /// Навыки, выключенные в Runie. Применяются при следующем подключении.
+    @ObservationIgnored public var disabledSkills: Set<String> = []
+    @ObservationIgnored private var mcpStatusRequestID: String?
+
     /// Встроенные инструменты приложения (MCP-сервер в процессе Runie).
     @ObservationIgnored public var hostTools: HostToolServer?
 
@@ -84,8 +97,43 @@ public final class ChatSession {
         }
     }
 
+    /// Запрашивает состояние MCP-серверов; поднимает агента, если его нет.
+    public func refreshExtensions() {
+        do {
+            if connection == nil { try connect() }
+            let requestID = UUID().uuidString
+            mcpStatusRequestID = requestID
+            try connection?.send(.mcpStatus, requestID: requestID)
+        } catch {
+            diagnostics.append("mcp_status: \(error.localizedDescription)")
+        }
+    }
+
+    /// Включает или выключает MCP-сервер в живой сессии и обновляет состояние.
+    public func setMCPServer(_ name: String, enabled: Bool) {
+        do {
+            if connection == nil { try connect() }
+            try connection?.send(.mcpToggle(name: name, enabled: enabled), requestID: UUID().uuidString)
+        } catch {
+            diagnostics.append("mcp_toggle: \(error.localizedDescription)")
+        }
+        refreshExtensions()
+    }
+
+    /// Переподключает агента, когда он свободен: так подхватываются новые серверы и
+    /// выключенные навыки. Разговор продолжается той же сессией.
+    public func reloadAgent() {
+        guard !isBusy, let current = connection else { return }
+        connection = nil
+        pump?.cancel()
+        pump = nil
+        current.stop()
+        prepare()
+    }
+
     private func connect() throws {
-        let handle = try backend.connect(resuming: timeline.sessionID)
+        let rules = disabledSkills.sorted().map { "Skill(\($0))" }
+        let handle = try backend.connect(resuming: timeline.sessionID, disallowedTools: rules)
         connection = handle.connection
         consume(handle.stream)
         let requestID = UUID().uuidString
@@ -214,9 +262,19 @@ public final class ChatSession {
             case .turnCompleted, .turnFailed, .sessionStarted: persist()
             default: break
             }
+            if case .sessionStarted(let info) = event {
+                if !info.skills.isEmpty { skills = info.skills }
+                plugins = info.plugins
+            }
+            if case .controlResponse(let response) = event, response.requestID == mcpStatusRequestID {
+                mcpStatusRequestID = nil
+                if response.isSuccess { mcpServers = MCPServerInfo.list(from: response.body) }
+            }
             if case .controlResponse(let response) = event,
                response.requestID == initializeRequestID, response.isSuccess {
                 initializeRequestID = nil
+                let foundSkills = SkillInfo.fromCommands(response.body)
+                if !foundSkills.isEmpty { skillInfos = foundSkills }
                 let models = AgentModel.list(from: response.body)
                 if !models.isEmpty, models != availableModels {
                     availableModels = models

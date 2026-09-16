@@ -36,6 +36,8 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
     /// MCP-серверы, которые живут в самом приложении: CLI обращается к ним через
     /// управляющий протокол. Серверы пользователя из настроек Claude Code остаются.
     public var hostToolServers: [String] = []
+    /// Правила запрета инструментов: `Skill(имя)`, `mcp__сервер`…
+    public var disallowedTools: [String] = []
     /// Брать MCP только из переданных конфигураций, игнорируя пользовательские.
     public var strictMCPConfig: Bool
     /// Отдавать текст ответа кусками по мере написания, а не целым блоком.
@@ -100,6 +102,9 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
                 servers[name] = .object(["type": .string("sdk"), "name": .string(name)])
             }
             arguments += ["--mcp-config", JSONValue.object(["mcpServers": .object(servers)]).jsonString()]
+        }
+        if !disallowedTools.isEmpty {
+            arguments += ["--disallowedTools", disallowedTools.joined(separator: ",")]
         }
         for path in mcpConfigPaths {
             arguments += ["--mcp-config", path]

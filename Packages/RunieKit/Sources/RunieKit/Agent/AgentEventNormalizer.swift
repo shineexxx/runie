@@ -76,14 +76,20 @@ public struct AgentEventNormalizer: Sendable {
         case "init":
             guard let sessionID = event.sessionID else { return [.unknown(event)] }
             let tools = payload["tools"]?.arrayValue?.compactMap(\.stringValue) ?? []
-            return [.sessionStarted(SessionInfo(
+            var info = SessionInfo(
                 sessionID: sessionID,
                 model: payload["model"]?.stringValue,
                 tools: tools,
                 workingDirectory: payload["cwd"]?.stringValue,
                 permissionMode: payload["permissionMode"]?.stringValue,
                 cliVersion: payload["claude_code_version"]?.stringValue
-            ))]
+            )
+            info.skills = payload["skills"]?.arrayValue?.compactMap(\.stringValue) ?? []
+            info.plugins = (payload["plugins"]?.arrayValue ?? []).compactMap { plugin in
+                guard let name = plugin["name"]?.stringValue, let path = plugin["path"]?.stringValue else { return nil }
+                return PluginInfo(name: name, path: path)
+            }
+            return [.sessionStarted(info)]
 
         case "permission_denied":
             guard let toolUseID = payload["tool_use_id"]?.stringValue,
