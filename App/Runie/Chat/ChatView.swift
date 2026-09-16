@@ -799,7 +799,7 @@ private struct UsagePopover: View {
 
 // MARK: - Общее
 
-private extension View {
+extension View {
     /// Поверхность блока — стекло, тонированное так, чтобы оставаться читаемым.
     ///
     /// Чистое `regular`-стекло над плотным текстом пропускает строки под собой.

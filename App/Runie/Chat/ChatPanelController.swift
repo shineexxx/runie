@@ -165,6 +165,7 @@ final class ChatPanelController {
         let generation = visibilityGeneration
         isHiding = true
         layout.isOpen = false
+        ModelDropdown.shared.close()
         onHide?()
 
         NSAnimationContext.runAnimationGroup { context in
