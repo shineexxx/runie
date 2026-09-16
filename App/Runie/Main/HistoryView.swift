@@ -55,6 +55,10 @@ struct ConversationDetail: View {
             }
         }
         .onAppear { isFocused = true }
+        .onReceive(NotificationCenter.default.publisher(for: .runiePasteAttachments)) { note in
+            guard let files = note.userInfo?["files"] as? [Attachment] else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments += files }
+        }
     }
 
     // MARK: Переписка
@@ -216,4 +220,9 @@ struct ConversationDetail: View {
         attachments = []
         session.send(text, attachments: files)
     }
+}
+
+extension Notification.Name {
+    /// Вставка картинок и файлов из буфера в поле ввода окна.
+    static let runiePasteAttachments = Notification.Name("RuniePasteAttachments")
 }

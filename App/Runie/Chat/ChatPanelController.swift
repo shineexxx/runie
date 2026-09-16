@@ -79,6 +79,7 @@ final class ChatPanelController {
     /// Меняется при каждом показе и скрытии. Анимация скрытия убирает панель, только
     /// если за время анимации её не открыли снова.
     private var visibilityGeneration = 0
+    private var pasteMonitor: Any?
     private var isHiding = false
 
     /// Кнопка масштабирования: открыть разговор в окне Runie.
@@ -110,6 +111,10 @@ final class ChatPanelController {
         hosting.autoresizingMask = [.width, .height]
         panel.contentView = hosting
         panel.onCancel = { [weak self] in self?.cancel() }
+        pasteMonitor = AttachmentStore.installPasteHandler(for: { [weak self] in self?.panel }) { [weak self] files in
+            guard let self else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { self.layout.attachments += files }
+        }
         // Орб решает по движению курсора, пропускать ли клики сквозь себя; над чатом
         // эти события приходят только в окно чата.
         panel.acceptsMouseMovedEvents = true

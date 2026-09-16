@@ -50,6 +50,32 @@ enum AttachmentStore {
         }
     }
 
+    /// В буфере картинка или файлы — то, что текстовое поле вставить не умеет.
+    static var clipboardHasAttachable: Bool {
+        let board = NSPasteboard.general
+        if board.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) { return true }
+        return board.canReadItem(withDataConformingToTypes: [UTType.image.identifier])
+    }
+
+    /// ⌘V с картинкой или файлами в буфере — во вложения, а не в пустоту.
+    /// Возвращает `true`, если нажатие обработано и текстовому полю не нужно.
+    static func installPasteHandler(for window: @escaping () -> NSWindow?, attach: @escaping ([Attachment]) -> Void) -> Any? {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+                  event.charactersIgnoringModifiers?.lowercased() == "v" || event.keyCode == 9
+            else { return event }
+            let windowNumber = event.windowNumber
+            let handled = MainActor.assumeIsolated { () -> Bool in
+                guard let target = window(), target.windowNumber == windowNumber, clipboardHasAttachable else { return false }
+                let files = readClipboard().attachments
+                guard !files.isEmpty else { return false }
+                attach(files)
+                return true
+            }
+            return handled ? nil : event
+        }
+    }
+
     /// Что лежит в буфере обмена — для подписи в списке.
     static func clipboardSummary() -> String {
         let board = NSPasteboard.general

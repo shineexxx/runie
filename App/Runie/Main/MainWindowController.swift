@@ -20,6 +20,7 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     private var window: NSWindow?
+    private var pasteMonitor: Any?
     private let session: ChatSession
     private let settings: AppSettings
     private let store: ChatHistoryStore
@@ -69,6 +70,10 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         window.setFrameAutosaveName("RunieMainWindow")
         if !window.setFrameUsingName("RunieMainWindow") { window.center() }
         window.delegate = self
+        // ⌘V с картинкой — во вложения разговора в окне.
+        pasteMonitor = AttachmentStore.installPasteHandler(for: { [weak self] in self?.window }) { files in
+            NotificationCenter.default.post(name: .runiePasteAttachments, object: nil, userInfo: ["files": files])
+        }
         window.contentView = NSHostingView(rootView: MainWindowView(
             navigation: navigation,
             session: session,
