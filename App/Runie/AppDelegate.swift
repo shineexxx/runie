@@ -154,6 +154,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NotificationCenter.default.post(name: .runieDebugOpenAttachMenu, object: nil)
             }
         }
+        if UserDefaults.standard.bool(forKey: "RunieOpenConversations"), autoOpen > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1.5) {
+                NotificationCenter.default.post(name: .runieDebugOpenConversations, object: nil)
+            }
+        }
         if UserDefaults.standard.bool(forKey: "RunieOpenModelMenu"), autoOpen > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1.5) {
                 NotificationCenter.default.post(name: .runieDebugOpenModelMenu, object: nil)

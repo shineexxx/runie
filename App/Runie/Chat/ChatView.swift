@@ -23,6 +23,8 @@ struct ChatView: View {
     let onCapture: () -> Void
     let onPaste: () -> Void
     let onRetry: () -> Void
+    /// Вернуть клавиатуру в поле ввода — после списка с поиском.
+    let onRefocus: () -> Void
 
     /// Когда началось появление. Ход считается от этого времени внутри `TimelineView`,
     /// а не интерполяцией SwiftUI: свечение на Canvas при анимируемом значении
@@ -114,7 +116,8 @@ struct ChatView: View {
                         layout: layout,
                         onSubmitDraft: submitDraft,
                         onStop: { session.stop() },
-                        onOpenWindow: onOpenWindow
+                        onOpenWindow: onOpenWindow,
+                        onRefocus: onRefocus
                     )
                     .frame(height: ChatPanelController.inputHeight)
                     // Поле первым вытягивается из света вдоль строки, от орба.
@@ -761,15 +764,24 @@ private struct InputRow: View {
     let onSubmitDraft: () -> Void
     let onStop: () -> Void
     let onOpenWindow: () -> Void
+    let onRefocus: () -> Void
 
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Кнопка «развернуть» с дальней от орба стороны.
-            if layout.orbSide == .trailing { expandButton }
+        // Плотно: две круглые кнопки и поле делят 380 точек, а подсказке в поле
+        // нужна одна строка.
+        HStack(spacing: 6) {
+            // Кнопки с дальней от орба стороны: разговоры, затем «развернуть».
+            if layout.orbSide == .trailing {
+                ConversationsButton(session: session, onDone: onRefocus)
+                expandButton
+            }
             inputPill
-            if layout.orbSide == .leading { expandButton }
+            if layout.orbSide == .leading {
+                expandButton
+                ConversationsButton(session: session, onDone: onRefocus)
+            }
         }
         .onAppear { isFocused = true }
         .onChange(of: layout.focusGeneration) { isFocused = true }
@@ -845,14 +857,93 @@ private struct InputRow: View {
     private var expandButton: some View {
         Button(action: onOpenWindow) {
             Image(systemName: "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 15, weight: .medium))
-                .frame(width: 44, height: 44)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 40, height: 40)
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
         .readableSurface(Circle(), interactive: true)
         .help("Открыть разговор в окне Runie")
         .accessibilityLabel("Открыть разговор в окне Runie")
+    }
+}
+
+// MARK: - Разговоры
+
+/// Круглая кнопка с часами: список прошлых разговоров с поиском и «Новый разговор».
+/// Выбранный разговор открывается прямо здесь и продолжается с того же места.
+private struct ConversationsButton: View {
+    let session: ChatSession
+    let onDone: () -> Void
+
+    @State private var anchor = WindowAnchor()
+    @State private var isOpen = false
+
+    var body: some View {
+        Button(action: toggle) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(isOpen ? AnyShapeStyle(OrbPalette.teal) : AnyShapeStyle(.primary))
+                .frame(width: 40, height: 40)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .readableSurface(Circle(), interactive: true)
+        .background(WindowAnchorReader(anchor: anchor))
+        .opacity(session.isBusy ? 0.45 : 1)
+        .disabled(session.isBusy)
+        .help(session.isBusy ? "Руни занят — дождитесь ответа" : "Другие разговоры")
+        .accessibilityLabel("Другие разговоры")
+        #if DEBUG
+        .onReceive(NotificationCenter.default.publisher(for: .runieDebugOpenConversations)) { _ in toggle() }
+        #endif
+    }
+
+    private func toggle() {
+        let dropdown = GlassDropdown.shared
+        if isOpen || dropdown.justClosed {
+            dropdown.close()
+            return
+        }
+        guard let rect = anchor.screenRect(), !session.isBusy else { return }
+        isOpen = true
+        let current = session.conversationID
+        let hasItems = !session.timeline.items.isEmpty
+        var items: [DropdownItem] = [
+            DropdownItem(
+                id: "new", title: "Новый разговор", detail: nil, symbol: "square.and.pencil",
+                alwaysVisible: true,
+                action: { if hasItems { session.startOver() } }
+            )
+        ]
+        let records = (session.store?.list() ?? []).prefix(50)
+        items += records.map { record in
+            DropdownItem(
+                id: record.id.uuidString,
+                title: record.title,
+                detail: Self.when(record.updatedAt),
+                isSelected: record.id == current,
+                action: { if record.id != session.conversationID { session.open(record) } }
+            )
+        }
+        dropdown.show(
+            below: rect,
+            items: items,
+            searchPrompt: "Найти разговор",
+            onClose: {
+                isOpen = false
+                onDone()
+            }
+        )
+    }
+
+    /// «сегодня, 14:20», «вчера, 09:05», «12 сентября».
+    private static func when(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let time = date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(.runie))
+        if calendar.isDateInToday(date) { return "сегодня, \(time)" }
+        if calendar.isDateInYesterday(date) { return "вчера, \(time)" }
+        return date.formatted(.dateTime.day().month(.wide).locale(.runie))
     }
 }
 

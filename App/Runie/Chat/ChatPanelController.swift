@@ -121,7 +121,12 @@ final class ChatPanelController {
             onPickFiles: { [weak self] in self?.pickFiles() },
             onCapture: { [weak self] in self?.captureScreenshot() },
             onPaste: { [weak self] in self?.pasteClipboard() },
-            onRetry: { [weak self] in self?.retry() }
+            onRetry: { [weak self] in self?.retry() },
+            onRefocus: { [weak self] in
+                guard let self, self.isVisible else { return }
+                self.panel.makeKey()
+                self.layout.requestFocus()
+            }
         ))
         hosting.frame = NSRect(origin: .zero, size: Self.size)
         hosting.autoresizingMask = [.width, .height]

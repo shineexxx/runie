@@ -93,6 +93,7 @@ extension Notification.Name {
     static let runieDebugOpenModelMenu = Notification.Name("RunieDebugOpenModelMenu")
     /// `-RunieOpenAttachMenu` — раскрыть список скрепки.
     static let runieDebugOpenAttachMenu = Notification.Name("RunieDebugOpenAttachMenu")
+    static let runieDebugOpenConversations = Notification.Name("RunieDebugOpenConversations")
 }
 #endif
 
@@ -105,6 +106,8 @@ struct DropdownItem: Identifiable {
     var detail: String? = nil
     var symbol: String? = nil
     var isSelected = false
+    /// Виден и при поиске — например, «Новый разговор».
+    var alwaysVisible = false
     let action: () -> Void
 }
 
@@ -116,6 +119,10 @@ final class GlassDropdown {
     static let shared = GlassDropdown()
 
     private static let width: CGFloat = 250
+    private static let searchWidth: CGFloat = 290
+    private static let searchHeight: CGFloat = 40
+    /// Сколько строк видно в списке с поиском — дальше прокрутка.
+    private static let visibleRows = 8
     private static let rowHeight: CGFloat = 36
     private static let inset: CGFloat = 5
     /// Прозрачное поле под тень, чтобы край окна её не срезал.
@@ -123,6 +130,9 @@ final class GlassDropdown {
     private static let gap: CGFloat = 6
 
     private var panel: FloatingPanel?
+    private var plainPanel: FloatingPanel?
+    /// Список с поиском принимает ввод с клавиатуры — это отдельное окно.
+    private var keyPanel: FloatingPanel?
     private var monitors: [Any] = []
     private var onClose: (() -> Void)?
     private var closedAt = Date.distantPast
@@ -137,23 +147,26 @@ final class GlassDropdown {
         below anchor: NSRect,
         items: [DropdownItem],
         emptyText: String = "",
+        searchPrompt: String? = nil,
         onClose: @escaping () -> Void
     ) {
         close()
         generation += 1
         self.onClose = onClose
 
-        let rows = max(items.count, 1)
-        let listHeight = CGFloat(rows) * Self.rowHeight + Self.inset * 2
-        let size = NSSize(width: Self.width + Self.margin * 2, height: listHeight + Self.margin * 2)
+        let searchable = searchPrompt != nil
+        let width = searchable ? Self.searchWidth : Self.width
+        let rows = searchable ? min(max(items.count, 1), Self.visibleRows) : max(items.count, 1)
+        let listHeight = CGFloat(rows) * Self.rowHeight + Self.inset * 2 + (searchable ? Self.searchHeight : 0)
+        let size = NSSize(width: width + Self.margin * 2, height: listHeight + Self.margin * 2)
 
         // Вниз от надписи; если внизу экрана не помещается — вверх.
         let screen = NSScreen.screens.first { $0.frame.intersects(anchor) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? .infinite
         let opensDown = anchor.minY - Self.gap - listHeight >= visible.minY
         let listTop = opensDown ? anchor.minY - Self.gap : anchor.maxY + Self.gap + listHeight
-        var x = anchor.midX - Self.width / 2
-        x = min(max(x, visible.minX + 8), visible.maxX - Self.width - 8)
+        var x = anchor.midX - width / 2
+        x = min(max(x, visible.minX + 8), visible.maxX - width - 8)
         let frame = NSRect(
             x: x - Self.margin,
             y: listTop - listHeight - Self.margin,
@@ -163,12 +176,22 @@ final class GlassDropdown {
 
         state.opensDown = opensDown
         state.isVisible = false
-        let panel = self.panel ?? makePanel()
+        let panel: FloatingPanel
+        if searchable {
+            panel = keyPanel ?? makePanel(allowsKey: true)
+            keyPanel = panel
+        } else {
+            panel = plainPanel ?? makePanel(allowsKey: false)
+            plainPanel = panel
+        }
         self.panel = panel
         let content = DropdownView(
             state: state,
             items: items,
             emptyText: emptyText,
+            searchPrompt: searchPrompt,
+            width: width,
+            listHeight: CGFloat(rows) * Self.rowHeight,
             onSelect: { [weak self] item in
                 self?.close()
                 item.action()
@@ -183,6 +206,7 @@ final class GlassDropdown {
         panel.contentView = hosting
         hosting.layoutSubtreeIfNeeded()
         panel.orderFrontRegardless()
+        if searchable { panel.makeKey() }
         let current = generation
         DispatchQueue.main.async { [weak self] in
             guard let self, current == self.generation else { return }
@@ -210,8 +234,8 @@ final class GlassDropdown {
         }
     }
 
-    private func makePanel() -> FloatingPanel {
-        let panel = FloatingPanel(size: NSSize(width: Self.width, height: Self.rowHeight), allowsKey: false)
+    private func makePanel(allowsKey: Bool) -> FloatingPanel {
+        let panel = FloatingPanel(size: NSSize(width: Self.width, height: Self.rowHeight), allowsKey: allowsKey)
         // Над чатом и орбом.
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
         return panel
@@ -265,22 +289,56 @@ private struct DropdownView: View {
     let state: DropdownState
     let items: [DropdownItem]
     let emptyText: String
+    var searchPrompt: String?
+    var width: CGFloat = 250
+    var listHeight: CGFloat = 0
     let onSelect: (DropdownItem) -> Void
+
+    @State private var query = ""
+    @FocusState private var searchFocused: Bool
+
+    private var filtered: [DropdownItem] {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return items }
+        return items.filter {
+            $0.alwaysVisible || $0.title.localizedCaseInsensitiveContains(trimmed)
+                || ($0.detail ?? "").localizedCaseInsensitiveContains(trimmed)
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            if items.isEmpty {
-                Text(emptyText)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 36)
-            }
-            ForEach(items) { item in
-                DropdownRow(item: item) { onSelect(item) }
+            if let searchPrompt {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    TextField(searchPrompt, text: $query)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 13))
+                        .focused($searchFocused)
+                        // Return открывает первый найденный.
+                        .onSubmit {
+                            if let first = filtered.first(where: { !$0.alwaysVisible }) ?? filtered.first {
+                                onSelect(first)
+                            }
+                        }
+                }
+                .padding(.horizontal, 10)
+                .frame(height: 40)
+                .onAppear { searchFocused = true }
+
+                ScrollView {
+                    rows
+                }
+                .scrollIndicators(.never)
+                .frame(height: listHeight)
+            } else {
+                rows
             }
         }
         .padding(5)
-        .frame(width: 250)
+        .frame(width: width)
         .readableSurface(RoundedRectangle(cornerRadius: 18))
         // Выезжает из надписи: растёт от края, ближнего к ней.
         .scaleEffect(x: state.isVisible ? 1 : 0.92, y: state.isVisible ? 1 : 0.4,
@@ -289,6 +347,26 @@ private struct DropdownView: View {
         .opacity(state.isVisible ? 1 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: state.opensDown ? .top : .bottom)
         .padding(24)
+    }
+
+    private var rows: some View {
+        VStack(spacing: 0) {
+            if items.isEmpty {
+                Text(emptyText)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+            }
+            ForEach(filtered) { item in
+                DropdownRow(item: item) { onSelect(item) }
+            }
+            if !items.isEmpty, filtered.allSatisfy(\.alwaysVisible), !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text("Ничего не нашлось")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+            }
+        }
     }
 }
 
