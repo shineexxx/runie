@@ -96,6 +96,13 @@ struct ChatView: View {
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
 
+                    // Набирается «/…» — свои команды прямо над полем.
+                    let commandMatches = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands)
+                    if !commandMatches.isEmpty {
+                        CommandSuggestions(matches: commandMatches) { layout.draft = "/\($0.command) " }
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+
                     if !layout.attachments.isEmpty {
                         AttachmentStrip(attachments: Binding(
                             get: { layout.attachments },
@@ -234,6 +241,12 @@ struct ChatView: View {
     }
 
     private func submitDraft() {
+        // Return на недописанной «/отч» подставляет команду, а не отправляет обрывок.
+        let matches = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands)
+        if let first = matches.first, QuickCommand.normalize(layout.draft) != QuickCommand.normalize(first.command) {
+            layout.draft = "/\(first.command) "
+            return
+        }
         guard layout.hasDraft, !session.isBusy, setup.isReady else { return }
         let text = layout.draft
         layout.draft = ""
@@ -806,6 +819,13 @@ private struct InputRow: View {
                 .lineLimit(1...3)
                 .focused($isFocused)
                 .onSubmit(onSubmitDraft)
+                // Tab на «/…» подставляет первую подходящую команду.
+                .onKeyPress(.tab) {
+                    guard let first = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands).first
+                    else { return .ignored }
+                    layout.draft = "/\(first.command) "
+                    return .handled
+                }
                 // ↑ в пустом поле — последнее сообщение, чтобы поправить и отправить заново.
                 .onKeyPress(.upArrow) {
                     guard layout.draft.isEmpty, layout.attachments.isEmpty, !session.isBusy,

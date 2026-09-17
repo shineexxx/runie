@@ -100,6 +100,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         chat.onHide = { [weak self] in
             self?.button.reattach()
         }
+        // `/команда` из настроек превращается в просьбу выполнить её навык.
+        session.expandMessage = { text in
+            QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)
+        }
         // Руни подключил сервис или сохранил навык — подхватить, как только освободится.
         RunieExtensions.onChange = { [weak self] in
             Task { @MainActor in
@@ -152,6 +156,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if UserDefaults.standard.bool(forKey: "RunieOpenAttachMenu"), autoOpen > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1.5) {
                 NotificationCenter.default.post(name: .runieDebugOpenAttachMenu, object: nil)
+            }
+        }
+        // `-RunieDraft "/от"` — текст в поле ввода, например чтобы увидеть подсказки команд.
+        if let draft = UserDefaults.standard.string(forKey: "RunieDraft"), autoOpen > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1) { [weak self] in
+                self?.chat.layout.draft = draft
+                // `-RunieTrace путь` — что получилось, без снимков экрана.
+                if let path = UserDefaults.standard.string(forKey: "RunieTrace"), let self {
+                    let matches = QuickCommand.matching(self.chat.layout.draft, in: QuickCommandsModel.shared.commands)
+                    let line = "draft=\(self.chat.layout.draft) commands=\(QuickCommandsModel.shared.commands.map(\.command)) matches=\(matches.map(\.command)) visible=\(self.chat.isVisible)"
+                    try? line.write(toFile: path, atomically: true, encoding: .utf8)
+                }
             }
         }
         if UserDefaults.standard.bool(forKey: "RunieOpenConversations"), autoOpen > 0 {

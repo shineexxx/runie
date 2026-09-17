@@ -14,12 +14,16 @@ struct ExtensionsView: View {
     @State private var showsAddServer = false
     @State private var pendingRemoval: MCPServerInfo?
     @State private var removalError: String?
+    @State private var savedRevision = 0
 
     var body: some View {
         Form {
             switch part {
             case .servers: serversSection
-            case .skills: skillsSection
+            case .skills:
+                QuickCommandsSection(model: QuickCommandsModel.shared)
+                savedByRunieSection
+                skillsSection
             }
         }
         .formStyle(.grouped)
@@ -132,8 +136,47 @@ struct ExtensionsView: View {
 
     // MARK: Навыки
 
+    /// Навыки, которые Руни сохранил сам по просьбе, — без команд и встроенных.
+    @ViewBuilder
+    private var savedByRunieSection: some View {
+        let commandNames = Set(QuickCommandsModel.shared.commands.map(\.name))
+        let saved = RunieExtensions.plugin.customSkills().filter { !commandNames.contains($0.name) }
+        if !saved.isEmpty {
+            Section {
+                ForEach(saved, id: \.name) { skill in
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(skill.name).font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            Text(skill.description)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+                        Spacer(minLength: 8)
+                        Button(role: .destructive) {
+                            try? RunieExtensions.plugin.removeSkill(named: skill.name)
+                            savedRevision += 1
+                            RunieExtensions.onChange?()
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Удалить навык")
+                    }
+                    .padding(.vertical, 2)
+                }
+            } header: {
+                Text("Сохранил Руни")
+            } footer: {
+                Text("Навыки, которые Руни записал сам, когда вы просили запомнить, как что-то делать.")
+            }
+            .id(savedRevision)
+        }
+    }
+
     private var skills: [SkillInfo] {
-        let all = session.skillInfos
+        // Навыки плагина Runie показаны выше — в командах и «Сохранил Руни».
+        let all = session.skillInfos.filter { !$0.name.hasPrefix("\(RuniePlugin.name):") }
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return all }
         return all.filter {

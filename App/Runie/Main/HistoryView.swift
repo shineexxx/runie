@@ -114,6 +114,12 @@ struct ConversationDetail: View {
                     .id(request.requestID)
             }
 
+            let commandMatches = QuickCommand.matching(draft, in: QuickCommandsModel.shared.commands)
+            if !commandMatches.isEmpty {
+                CommandSuggestions(matches: commandMatches) { draft = "/\($0.command) " }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             if isBlockedByOther {
                 Label("Руни сейчас занят другим разговором. Дождитесь ответа или остановите его.",
                       systemImage: "hourglass")
@@ -135,6 +141,12 @@ struct ConversationDetail: View {
                     .lineLimit(1...8)
                     .focused($isFocused)
                     .onSubmit(send)
+                    .onKeyPress(.tab) {
+                        guard let first = QuickCommand.matching(draft, in: QuickCommandsModel.shared.commands).first
+                        else { return .ignored }
+                        draft = "/\(first.command) "
+                        return .handled
+                    }
                     // ↑ в пустом поле — последнее сообщение этого разговора.
                     .onKeyPress(.upArrow) {
                         guard draft.isEmpty, attachments.isEmpty, !session.isBusy,
@@ -232,6 +244,11 @@ struct ConversationDetail: View {
     }
 
     private func send() {
+        let matches = QuickCommand.matching(draft, in: QuickCommandsModel.shared.commands)
+        if let first = matches.first, QuickCommand.normalize(draft) != QuickCommand.normalize(first.command) {
+            draft = "/\(first.command) "
+            return
+        }
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard hasDraft, !session.isBusy else { return }
         if let record, record.id != session.conversationID {

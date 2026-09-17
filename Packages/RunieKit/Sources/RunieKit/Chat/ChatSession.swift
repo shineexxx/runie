@@ -61,6 +61,10 @@ public final class ChatSession {
     /// Правила из настроек: какие группы действий разрешать без вопроса.
     @ObservationIgnored public var policy = PermissionPolicy()
 
+    /// Превращает сообщение перед отправкой агенту — например, `/отчёт` в вызов команды.
+    /// В ленте остаётся то, что человек написал.
+    @ObservationIgnored public var expandMessage: ((String) -> String?)?
+
     /// Агент ждёт разрешения. Приложение, например, открывает чат, если он закрыт.
     @ObservationIgnored public var onPermissionRequest: (() -> Void)?
 
@@ -212,7 +216,8 @@ public final class ChatSession {
             }
             // Картинки модель видит сама; путь к ним и к остальным файлам — в тексте,
             // чтобы агент мог с ними работать: переслать, переложить, прочитать.
-            let body = (context?.decorate(trimmed) ?? trimmed) + Attachment.agentNote(for: attachments)
+            let request = expandMessage?(trimmed) ?? trimmed
+            let body = (context?.decorate(request) ?? request) + Attachment.agentNote(for: attachments)
             let images = attachments.filter(\.isImage).compactMap { try? MessageImage.load(from: $0.url) }
             try connection?.send(UserMessage(body, images: images))
         } catch {
