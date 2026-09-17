@@ -25,6 +25,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings = AppSettings()
         session.policy = settings.policy
         session.disabledSkills = settings.disabledSkills
+        session.disabledMCPServers = settings.disabledMCPServers
+        settings.onDisabledMCPServersChange = { [weak self] servers in
+            guard let self else { return }
+            session.disabledMCPServers = servers
+            session.reloadAgent()
+        }
         settings.onDisabledSkillsChange = { [weak self] skills in
             guard let self else { return }
             session.disabledSkills = skills

@@ -18,7 +18,18 @@ final class AppSettings {
         static let model = "model.selected"
         static let models = "model.cache"
         static let disabledSkills = "skills.disabled"
+        static let disabledServers = "mcp.disabledInRunie"
     }
+
+    /// MCP-серверы, выключенные только в Runie.
+    var disabledMCPServers: Set<String> {
+        didSet {
+            UserDefaults.standard.set(Array(disabledMCPServers).sorted(), forKey: Key.disabledServers)
+            onDisabledMCPServersChange?(disabledMCPServers)
+        }
+    }
+
+    @ObservationIgnored var onDisabledMCPServersChange: ((Set<String>) -> Void)?
 
     /// Навыки, выключенные в Runie.
     var disabledSkills: Set<String> {
@@ -60,6 +71,7 @@ final class AppSettings {
     init() {
         selectedModel = UserDefaults.standard.string(forKey: Key.model)
         disabledSkills = Set(UserDefaults.standard.stringArray(forKey: Key.disabledSkills) ?? [])
+        disabledMCPServers = Set(UserDefaults.standard.stringArray(forKey: Key.disabledServers) ?? [])
         if let data = UserDefaults.standard.data(forKey: Key.policy),
            let stored = try? JSONDecoder().decode(PermissionPolicy.self, from: data) {
             policy = stored

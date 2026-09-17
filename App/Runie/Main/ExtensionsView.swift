@@ -60,7 +60,13 @@ struct ExtensionsView: View {
             ForEach(session.mcpServers) { server in
                 ServerRow(
                     server: server,
-                    onToggle: { session.setMCPServer(server.name, enabled: $0) },
+                    isEnabledInRunie: Binding(
+                        get: { !settings.disabledMCPServers.contains(server.name) },
+                        set: { enabled in
+                            if enabled { settings.disabledMCPServers.remove(server.name) }
+                            else { settings.disabledMCPServers.insert(server.name) }
+                        }
+                    ),
                     onRemove: server.isRemovable ? { pendingRemoval = server } : nil
                 )
             }
@@ -82,7 +88,7 @@ struct ExtensionsView: View {
                 .buttonStyle(.borderless)
             }
         } footer: {
-            Text("Серверы дают Руни новые возможности: Notion, GitHub, Slack и другие. Это настройки самого Claude Code — выключенный здесь сервер выключается и в Claude Code, запущенном из домашней папки. Коннекторы claude.ai подключаются на claude.ai в разделе «Коннекторы».")
+            Text("Серверы дают Руни новые возможности: Notion, GitHub, Slack и другие. Выключатель действует только в Runie — в Claude Code в терминале всё остаётся как есть. Изменения применяются, когда Руни свободен. Коннекторы claude.ai подключаются на claude.ai в разделе «Коннекторы».")
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -150,7 +156,7 @@ private extension MCPServerInfo {
 
 private struct ServerRow: View {
     let server: MCPServerInfo
-    let onToggle: (Bool) -> Void
+    @Binding var isEnabledInRunie: Bool
     let onRemove: (() -> Void)?
 
     var body: some View {
@@ -163,13 +169,22 @@ private struct ServerRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(displayName).font(.system(size: 13, weight: .semibold))
-                    StatusBadge(status: server.status)
+                    if isEnabledInRunie {
+                        StatusBadge(status: server.status)
+                    } else {
+                        StatusBadge(status: .disabled, title: "выключен в Runie")
+                    }
                 }
                 Text(subtitle)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                if server.status == .disabled, isEnabledInRunie {
+                    Text("Выключен в самом Claude Code. Включается в терминале: claude, затем /mcp.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
                 if server.status == .needsAuth {
                     Text("Нужно войти: откройте claude.ai → Настройки → Коннекторы.")
                         .font(.system(size: 11))
@@ -184,9 +199,16 @@ private struct ServerRow: View {
                 .buttonStyle(.borderless)
                 .help("Удалить сервер")
             }
-            Toggle("", isOn: Binding(get: { server.status != .disabled }, set: onToggle))
-                .toggleStyle(.switch)
-                .labelsHidden()
+            // Свои инструменты Runie не выключаются: без них не работают файлы и Календарь.
+            if !server.isRunie {
+                // Выключенный в самом Claude Code сервер Runie включить не может —
+                // выключатель стоит «выкл» и не нажимается.
+                let offInClaudeCode = server.status == .disabled && isEnabledInRunie
+                Toggle("", isOn: offInClaudeCode ? .constant(false) : $isEnabledInRunie)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(offInClaudeCode)
+            }
         }
         .padding(.vertical, 3)
     }
@@ -220,15 +242,16 @@ private struct ServerRow: View {
 
 private struct StatusBadge: View {
     let status: MCPServerInfo.Status
+    var title: String? = nil
 
     var body: some View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 6, height: 6)
-            Text(title).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+            Text(title ?? defaultTitle).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
         }
     }
 
-    private var title: String {
+    private var defaultTitle: String {
         switch status {
         case .connected: "подключён"
         case .pending: "подключается"

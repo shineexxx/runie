@@ -105,6 +105,14 @@ public struct MCPServerInfo: Sendable, Equatable, Identifiable {
         self.target = target
     }
 
+    /// Правило запрета всех инструментов сервера: Claude Code называет их
+    /// `mcp__<имя>__<инструмент>`, заменяя в имени всё, кроме букв, цифр, `_` и `-`,
+    /// на `_` («claude.ai Slack» → `mcp__claude_ai_Slack`). Снято с CLI 2.1.272.
+    public static func denyRule(forServer name: String) -> String {
+        let allowed = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+        return "mcp__" + String(name.map { allowed.contains($0) ? $0 : "_" })
+    }
+
     /// Разбор ответа `mcp_status`.
     public static func list(from body: JSONValue?) -> [MCPServerInfo] {
         (body?["mcpServers"]?.arrayValue ?? []).compactMap { entry in

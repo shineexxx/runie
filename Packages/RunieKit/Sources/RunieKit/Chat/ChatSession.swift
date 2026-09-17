@@ -50,6 +50,9 @@ public final class ChatSession {
     public private(set) var skillInfos: [SkillInfo] = []
     /// Навыки, выключенные в Runie. Применяются при следующем подключении.
     @ObservationIgnored public var disabledSkills: Set<String> = []
+    /// MCP-серверы, выключенные в Runie. Настройки Claude Code не трогаются: при
+    /// подключении инструменты сервера просто запрещаются.
+    @ObservationIgnored public var disabledMCPServers: Set<String> = []
     @ObservationIgnored private var mcpStatusRequestID: String?
 
     /// Встроенные инструменты приложения (MCP-сервер в процессе Runie).
@@ -109,17 +112,6 @@ public final class ChatSession {
         }
     }
 
-    /// Включает или выключает MCP-сервер в живой сессии и обновляет состояние.
-    public func setMCPServer(_ name: String, enabled: Bool) {
-        do {
-            if connection == nil { try connect() }
-            try connection?.send(.mcpToggle(name: name, enabled: enabled), requestID: UUID().uuidString)
-        } catch {
-            diagnostics.append("mcp_toggle: \(error.localizedDescription)")
-        }
-        refreshExtensions()
-    }
-
     /// Переподключает агента, когда он свободен: так подхватываются новые серверы и
     /// выключенные навыки. Разговор продолжается той же сессией.
     public func reloadAgent() {
@@ -133,6 +125,7 @@ public final class ChatSession {
 
     private func connect() throws {
         let rules = disabledSkills.sorted().map { "Skill(\($0))" }
+            + disabledMCPServers.sorted().map(MCPServerInfo.denyRule(forServer:))
         let handle = try backend.connect(resuming: timeline.sessionID, disallowedTools: rules)
         connection = handle.connection
         consume(handle.stream)

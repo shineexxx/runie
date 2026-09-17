@@ -78,8 +78,10 @@ struct ExtensionsTests {
         let backend = FakeBackend()
         let session = ChatSession(backend: backend)
         session.disabledSkills = ["careful", "brand"]
+        session.disabledMCPServers = ["claude.ai Slack"]
         session.prepare()
-        #expect(backend.disallowed.last == ["Skill(brand)", "Skill(careful)"])
+        #expect(backend.disallowed.last == ["Skill(brand)", "Skill(careful)", "mcp__claude_ai_Slack"])
+        #expect(MCPServerInfo.denyRule(forServer: "my-server_2") == "mcp__my-server_2")
 
         var arguments = ClaudeCodeArguments()
         arguments.disallowedTools = ["Skill(brand)"]
