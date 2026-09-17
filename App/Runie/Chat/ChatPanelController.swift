@@ -126,8 +126,10 @@ final class ChatPanelController {
         // и меню приложения её не видит, поэтому сочетание ловится здесь.
         let panel = self.panel
         settingsMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            // Сравниваем и символ, и физическую клавишу (код 43 — «,» на английской
+            // раскладке): на русской та же клавиша даёт «б», и по символу ⌘, не ловится.
             guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
-                  event.charactersIgnoringModifiers == ","
+                  event.keyCode == 43 || event.charactersIgnoringModifiers == ","
             else { return event }
             let windowNumber = event.windowNumber
             let handled = MainActor.assumeIsolated { () -> Bool in
