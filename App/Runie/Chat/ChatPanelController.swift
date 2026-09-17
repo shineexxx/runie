@@ -116,7 +116,8 @@ final class ChatPanelController {
             onOpenWindow: { [weak self] in self?.onOpenWindow?() },
             onPickFiles: { [weak self] in self?.pickFiles() },
             onCapture: { [weak self] in self?.captureScreenshot() },
-            onPaste: { [weak self] in self?.pasteClipboard() }
+            onPaste: { [weak self] in self?.pasteClipboard() },
+            onRetry: { [weak self] in self?.retry() }
         ))
         hosting.frame = NSRect(origin: .zero, size: Self.size)
         hosting.autoresizingMask = [.width, .height]
@@ -158,6 +159,12 @@ final class ChatPanelController {
         let context = layout.includesContext ? tracker.current?.context : nil
         session.send(text, context: context, attachments: layout.attachments)
         layout.attachments = []
+    }
+
+    /// Отправляет последнее сообщение ещё раз.
+    func retry() {
+        guard !session.isBusy else { return }
+        session.retry(context: layout.includesContext ? tracker.current?.context : nil)
     }
 
     /// Снимок области: чат прячется, чтобы не попасть в кадр и не мешать выделению,

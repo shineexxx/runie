@@ -3,6 +3,8 @@ import SwiftUI
 
 struct TimelineRow: View {
     let item: TimelineItem
+    /// «Повторить» у ошибки — только у последней строки живого разговора.
+    var onRetry: (() -> Void)?
 
     var body: some View {
         switch item {
@@ -13,7 +15,7 @@ struct TimelineRow: View {
         case .action(let action):
             ActionRow(action: action)
         case .notice(let notice):
-            NoticeRow(notice: notice)
+            NoticeRow(notice: notice, onRetry: notice.kind == .error ? onRetry : nil)
         }
     }
 }
@@ -58,8 +60,10 @@ private struct UserBubble: View {
 private struct AssistantMessage: View {
     let text: String
 
+    @State private var hovering = false
+
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom, spacing: 4) {
             RichMessageText(text: text, imageWidth: 420)
                 .font(.system(size: 14))
                 .lineSpacing(2)
@@ -68,8 +72,13 @@ private struct AssistantMessage: View {
                 .padding(.vertical, 8)
                 .background(.primary.opacity(0.07), in: MessageBubbleShape(tail: .leading))
                 .padding(.leading, MessageBubbleShape.tailReach)
+            // «Скопировать» рядом с облачком, пока над ним курсор.
+            CopyButton(text: text, label: "Скопировать ответ", size: 12)
+                .opacity(hovering ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: hovering)
             Spacer(minLength: 48)
         }
+        .onHover { hovering = $0 }
     }
 
 }
@@ -185,14 +194,21 @@ struct ActionStatusIcon: View {
 
 private struct NoticeRow: View {
     let notice: NoticeItem
+    var onRetry: (() -> Void)?
 
     var body: some View {
-        Text(notice.text)
-            .font(.system(size: 12))
-            .foregroundStyle(notice.kind == .error ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
-            .multilineTextAlignment(.center)
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
+        VStack(spacing: 6) {
+            Text(notice.text)
+                .font(.system(size: 12))
+                .foregroundStyle(notice.kind == .error ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+                .multilineTextAlignment(.center)
+                .textSelection(.enabled)
+            if let onRetry {
+                Button("Повторить", systemImage: "arrow.clockwise", action: onRetry)
+                    .controlSize(.small)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 4)
     }
 }

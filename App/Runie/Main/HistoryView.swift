@@ -74,7 +74,10 @@ struct ConversationDetail: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     ForEach(items) { item in
-                        TimelineRow(item: item)
+                        TimelineRow(
+                            item: item,
+                            onRetry: isLive && item.id == items.last?.id && !session.isBusy ? { session.retry() } : nil
+                        )
                     }
                     if isLive, session.isBusy, session.pendingPermission == nil {
                         HStack(spacing: 8) {
@@ -127,6 +130,13 @@ struct ConversationDetail: View {
                     .lineLimit(1...8)
                     .focused($isFocused)
                     .onSubmit(send)
+                    // ↑ в пустом поле — последнее сообщение этого разговора.
+                    .onKeyPress(.upArrow) {
+                        guard draft.isEmpty, attachments.isEmpty, !session.isBusy,
+                              let text = lastUserText else { return .ignored }
+                        draft = text
+                        return .handled
+                    }
                     .disabled(isBlockedByOther)
                     .padding(.vertical, 8)
 
@@ -166,6 +176,13 @@ struct ConversationDetail: View {
     private var placeholder: String {
         if isLive, session.isBusy { return "Руни работает…" }
         return record == nil ? "Напишите Руни…" : "Продолжить разговор…"
+    }
+
+    private var lastUserText: String? {
+        for item in items.reversed() {
+            if case .user(let user) = item { return user.text }
+        }
+        return nil
     }
 
     private var hasDraft: Bool {

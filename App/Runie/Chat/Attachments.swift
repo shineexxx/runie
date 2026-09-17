@@ -277,8 +277,7 @@ struct RichMessageText: View {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 switch segment {
                 case .text(let value):
-                    Text(MarkdownText.inline(value))
-                        .fixedSize(horizontal: false, vertical: true)
+                    MarkdownView(text: value)
                 case .image(let source, let alt):
                     MessageImageView(source: source, alt: alt, maxWidth: imageWidth)
                 case .file(let path, let name):

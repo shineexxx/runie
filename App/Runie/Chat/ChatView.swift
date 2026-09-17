@@ -21,6 +21,7 @@ struct ChatView: View {
     let onPickFiles: () -> Void
     let onCapture: () -> Void
     let onPaste: () -> Void
+    let onRetry: () -> Void
 
     /// Когда началось появление. Ход считается от этого времени внутри `TimelineView`,
     /// а не интерполяцией SwiftUI: свечение на Canvas при анимируемом значении
@@ -63,9 +64,12 @@ struct ChatView: View {
             // и игнорирует их прозрачность и масштаб — блоки не проступали бы из света.
             do {
                 VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
-                    Spacer(minLength: 0)
-
-                    CompactFeed(session: session, greeting: suggestions.greeting, alignment: horizontalAlignment)
+                    CompactFeed(
+                        session: session,
+                        greeting: suggestions.greeting,
+                        openGeneration: layout.openGeneration,
+                        onRetry: onRetry
+                    )
                         .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
 
                     // Агент стоит и ждёт ответа — вопрос прямо над полем ввода.
@@ -295,72 +299,148 @@ private struct EmergeFromLight: ViewModifier {
 // MARK: - Текущий ход
 
 /// Последнее сообщение пользователя и всё, что случилось после него.
-private struct CurrentTurn {
-    let userText: String?
-    let userAttachments: [Attachment]
-    let lastAction: ActionItem?
-    let lastAssistantText: String?
-    let lastNotice: NoticeItem?
-
-    init(_ items: [TimelineItem]) {
-        let userIndex = items.lastIndex { if case .user = $0 { true } else { false } }
-        if let userIndex, case .user(let user) = items[userIndex] {
-            userText = user.text
-            userAttachments = user.attachments ?? []
-        } else {
-            userText = nil
-            userAttachments = []
-        }
-        let start = userIndex.map { $0 + 1 } ?? 0
-        var action: ActionItem?
-        var text: String?
-        var notice: NoticeItem?
-        for item in items[start...] {
-            switch item {
-            case .action(let value): action = value
-            case .assistant(let value): text = value.text
-            case .notice(let value): notice = value
-            case .user: break
-            }
-        }
-        lastAction = action
-        lastAssistantText = text
-        lastNotice = notice
-    }
-}
-
 // MARK: - Компактная лента
 
 private struct CompactFeed: View {
     let session: ChatSession
     let greeting: String
-    let alignment: HorizontalAlignment
+    /// Меняется при каждом открытии чата — развёрнутая лента снова сворачивается.
+    let openGeneration: Int
+    let onRetry: () -> Void
+
+    /// Сколько места над полем ввода.
+    @State private var available: CGFloat = 0
+    /// Высота текущего хода — в свёрнутом виде видно только его.
+    @State private var currentHeight: CGFloat = 0
+    /// Человек прокрутил вверх: лента раскрывается на всю высоту с прошлыми репликами.
+    @State private var expanded = false
+
+    /// Запас вокруг облачков под их тень (радиус 16, сдвиг 6).
+    private static let shadowRoom: CGFloat = 28
+
+    var body: some View {
+        let turns = ChatTurn.split(session.timeline.items)
+        let past = turns.dropLast()
+
+        Color.clear
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { available = $0 }
+            .overlay(alignment: .bottom) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(past) { turn in
+                            PastTurnView(turn: turn)
+                        }
+                        CurrentTurnView(session: session, turn: turns.last, greeting: greeting, onRetry: onRetry)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { currentHeight = $0 }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // Поле под тень облачков: прокрутка обрезает всё, что за её краем.
+                    .padding(Self.shadowRoom)
+                }
+                .scrollIndicators(.never)
+                .scrollPosition($position)
+                .defaultScrollAnchor(.bottom)
+                // Прокручивает сам человек — раскрываемся и больше не тянем к последней строке.
+                .onScrollPhaseChange { _, phase in
+                    guard phase == .interacting, !expanded, past.count > 0 || currentHeight > available else { return }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { expanded = true }
+                }
+                // Пока ответ печатается, держимся у последней строки.
+                .onChange(of: currentHeight) { followBottom() }
+                .onChange(of: feedHeight) { followBottom() }
+                .frame(height: feedHeight + Self.shadowRoom * 2)
+                // Раскрытая лента уходит вверх в прозрачность, а не обрывается краем.
+                .mask {
+                    VStack(spacing: 0) {
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                            .frame(height: expanded || currentHeight > available ? Self.shadowRoom + 40 : 0)
+                        Color.black
+                    }
+                }
+                // Поле под тень выходит за блоки, а облачка остаются на своих местах.
+                .padding(-Self.shadowRoom)
+            }
+            .onChange(of: openGeneration) { collapse() }
+            .onChange(of: turns.count) { collapse() }
+    }
+
+    @State private var position = ScrollPosition(edge: .bottom)
+
+    private func followBottom() {
+        guard !expanded else { return }
+        position.scrollTo(edge: .bottom)
+    }
+
+    private func collapse() {
+        expanded = false
+        position.scrollTo(edge: .bottom)
+    }
+
+    private var feedHeight: CGFloat {
+        let limit = max(available, 1)
+        return expanded ? limit : min(max(currentHeight, 1), limit)
+    }
+}
+
+/// Прошлый ход: только облачка — моё сообщение и итог Руни.
+private struct PastTurnView: View {
+    let turn: ChatTurn
+
+    var body: some View {
+        if let user = turn.user {
+            UserMessageBubble(text: user.text, attachments: user.attachments ?? [])
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        if let failure = turn.failure {
+            Bubble(tail: .leading) { Text(failure.text).foregroundStyle(.red) }
+        } else if let reply = turn.reply {
+            ReplyBubble(text: reply)
+        }
+    }
+}
+
+/// Текущий ход: моё сообщение, «руки», ответ или приветствие.
+private struct CurrentTurnView: View {
+    let session: ChatSession
+    let turn: ChatTurn?
+    let greeting: String
+    let onRetry: () -> Void
 
     var body: some View {
         let timeline = session.timeline
-        let turn = CurrentTurn(timeline.items)
-
         // Пока висит вопрос о разрешении, всё про текущее действие уже в карточке.
         let asking = session.pendingPermission != nil
 
         // Как в мессенджере: моё сообщение справа, Руни отвечает слева.
         VStack(alignment: .leading, spacing: 8) {
-            if let userText = turn.userText {
-                UserMessageBubble(text: userText, attachments: turn.userAttachments)
+            if let user = turn?.user {
+                UserMessageBubble(text: user.text, attachments: user.attachments ?? [])
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
 
-            if let action = turn.lastAction, showsAction(action), !asking {
+            if let action = turn?.lastAction, showsAction(action), !asking {
                 ActionCapsule(action: action)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
-            if let notice = turn.lastNotice, notice.kind == .error {
-                Bubble(tail: tailEdge) { Text(notice.text).foregroundStyle(.red) }
-            } else if let text = turn.lastAssistantText {
-                Bubble(tail: tailEdge) { AssistantText(text: text) }
+            if let failure = turn?.failure, !timeline.isBusy {
+                Bubble(tail: .leading) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(failure.text).foregroundStyle(.red)
+                        if session.lastUserMessage != nil {
+                            Button(action: onRetry) {
+                                Label("Повторить", systemImage: "arrow.clockwise")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .buttonStyle(PermissionButtonStyle(kind: .secondary))
+                        }
+                    }
+                }
+            } else if let reply = turn?.reply {
+                ReplyBubble(text: reply, onRetry: timeline.isBusy ? nil : onRetry)
             } else if timeline.isBusy, !asking {
-                Bubble(tail: tailEdge) {
+                Bubble(tail: .leading) {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
                         Text(ActivityLabel.text(timeline.activity))
@@ -368,26 +448,63 @@ private struct CompactFeed: View {
                     }
                 }
             } else if timeline.items.isEmpty {
-                Bubble(tail: tailEdge) {
+                Bubble(tail: .leading) {
                     Text(greeting)
                         .fixedSize(horizontal: false, vertical: true)
                         .contentTransition(.opacity)
                         .animation(.easeInOut(duration: 0.35), value: greeting)
                 }
-            } else if let notice = turn.lastNotice {
-                Bubble(tail: tailEdge) { Text(notice.text).foregroundStyle(.secondary) }
+            } else if let notice = turn?.lastNotice {
+                Bubble(tail: .leading) { Text(notice.text).foregroundStyle(.secondary) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: turn.lastAction?.id)
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: turn?.lastAction?.id)
     }
-
-    /// Руни всегда отвечает слева.
-    private let tailEdge: HorizontalEdge = .leading
 
     /// «Руки» видны, пока агент работает, или если последнее действие не удалось.
     private func showsAction(_ action: ActionItem) -> Bool {
         session.isBusy || action.status == .denied || action.status == .failed
+    }
+}
+
+/// Ответ Руни. При наведении над углом облачка — «Скопировать» и «Повторить».
+private struct ReplyBubble: View {
+    let text: String
+    var onRetry: (() -> Void)?
+
+    @State private var hovering = false
+
+    var body: some View {
+        Bubble(tail: .leading) {
+            RichMessageText(text: text, imageWidth: 300)
+                // Полужирный пузыря хорош для коротких реплик, а в абзаце тяжелит.
+                .fontWeight(.regular)
+                .lineSpacing(2)
+        }
+        .overlay(alignment: .topTrailing) {
+            HStack(spacing: 0) {
+                CopyButton(text: text, label: "Скопировать ответ", size: 12)
+                if let onRetry {
+                    Button(action: onRetry) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 26, height: 26)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Спросить ещё раз")
+                    .accessibilityLabel("Спросить ещё раз")
+                }
+            }
+            .padding(.horizontal, 3)
+            .readableSurface(Capsule(), interactive: true)
+            .offset(x: -6, y: -12)
+            .opacity(hovering ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: hovering)
+        }
+        .onHover { hovering = $0 }
     }
 }
 
@@ -431,8 +548,6 @@ struct UserMessageBubble: View {
     private var bubble: some View {
         Text(text)
             .font(.system(size: 14, weight: .medium))
-            .lineLimit(4)
-            .truncationMode(.tail)
             .textSelection(.enabled)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
@@ -490,38 +605,6 @@ struct MessageBubbleShape: InsettableShape {
 
         guard tail == .leading else { return path }
         return path.applying(CGAffineTransform(translationX: rect.minX + rect.maxX, y: 0).scaledBy(x: -1, y: 1))
-    }
-}
-
-/// Ответ помещается в пузырь целиком, а длинный — прокручивается и держится
-/// у последней строки, пока печатается.
-private struct AssistantText: View {
-    let text: String
-
-    private static let maxHeight: CGFloat = 280
-
-    /// Высота текста целиком. `ViewThatFits` для этого не годится: он сравнивает с
-    /// высотой, которую предлагает стек, а та бывает меньше нужной, — и пузырь
-    /// с коротким ответом раздувался до полной высоты прокрутки.
-    @State private var contentHeight: CGFloat = 0
-
-    var body: some View {
-        ScrollView {
-            label
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
-        }
-        .scrollIndicators(.hidden)
-        .scrollDisabled(contentHeight <= Self.maxHeight)
-        .defaultScrollAnchor(.bottom)
-        .frame(height: min(max(contentHeight, 1), Self.maxHeight))
-    }
-
-    private var label: some View {
-        RichMessageText(text: text, imageWidth: 300)
-            // Полужирный пузыря хорош для коротких реплик, а в абзаце тяжелит.
-            .fontWeight(.regular)
-            .lineSpacing(2)
     }
 }
 
@@ -691,6 +774,14 @@ private struct InputRow: View {
                 .lineLimit(1...3)
                 .focused($isFocused)
                 .onSubmit(onSubmitDraft)
+                // ↑ в пустом поле — последнее сообщение, чтобы поправить и отправить заново.
+                .onKeyPress(.upArrow) {
+                    guard layout.draft.isEmpty, layout.attachments.isEmpty, !session.isBusy,
+                          let last = session.lastUserMessage else { return .ignored }
+                    layout.draft = last.text
+                    layout.attachments = last.attachments
+                    return .handled
+                }
                 .padding(.horizontal, 4)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(1)
@@ -949,8 +1040,8 @@ enum ActivityLabel {
 }
 
 enum MarkdownText {
-    /// Жирный, курсив, код и ссылки в строке. Блочную разметку — заголовки, списки —
-    /// показываем как есть: лучше честный текст, чем сломанная вёрстка.
+    /// Жирный, курсив, код и ссылки в строке. Блоки — заголовки, списки, код —
+    /// разбирает `MarkdownView`.
     static func inline(_ text: String) -> AttributedString {
         let options = AttributedString.MarkdownParsingOptions(
             interpretedSyntax: .inlineOnlyPreservingWhitespace
