@@ -535,8 +535,11 @@ private struct Bubble<Content: View>: View {
             .textSelection(.enabled)
             .padding(.horizontal, 18)
             .padding(.vertical, 13)
+            // Ширина — не больше 360 и не шире текста, высота — ровно под текст при этой
+            // ширине. «Идеальная» ширина здесь не годится: её меряют по самой длинной
+            // строке без переносов, а рисуют уже, и длинный ответ вылезал из облачка.
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: 360, alignment: .leading)
-            .fixedSize(horizontal: true, vertical: false)
             .readableSurface(MessageBubbleShape(tail: tail))
             // Хвостик выходит за рамку пузыря — место под него.
             .padding(tail == .trailing ? .trailing : .leading, MessageBubbleShape.tailReach)
