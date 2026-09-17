@@ -574,15 +574,20 @@ struct PermissionCard: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if let detail = description.detail {
-                Text(detail)
+                // Длинное (код JavaScript) — целиком, с прокруткой: разрешают именно его.
+                let text = Text(detail)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(.secondary)
-                    .lineLimit(4)
                     .textSelection(.enabled)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                ViewThatFits(in: .vertical) {
+                    text.fixedSize(horizontal: false, vertical: true)
+                    ScrollView { text }
+                }
+                .frame(maxHeight: 180)
+                .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
             }
 
             HStack(spacing: 8) {

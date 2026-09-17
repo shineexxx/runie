@@ -28,7 +28,8 @@ enum RunieTools {
         BrowserOpenTool(),
         BrowserSwitchTabTool(),
         BrowserClickTool(),
-        BrowserFillTool()
+        BrowserFillTool(),
+        BrowserRunJavaScriptTool()
     ])
 }
 

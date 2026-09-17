@@ -224,3 +224,33 @@ struct BrowserFillTool: HostTool {
         return result
     }
 }
+
+// MARK: - Свой JavaScript
+
+struct BrowserRunJavaScriptTool: HostTool {
+    let name = "browser_run_js"
+    let description = """
+    Выполняет твой JavaScript во вкладке Safari или Chrome и возвращает результат. code — тело функции: \
+    верни значение через return (строку или объект — он придёт как JSON). Синхронно: await и промисы \
+    не дождутся. Годится, чтобы разобрать устройство страницы, достать ссылки и таблицы, нажать элемент \
+    без надписи, прокрутить, выбрать в списке. Нельзя: cookie, localStorage и другие хранилища, поля \
+    паролей, fetch и отправка данных. Не нажимай «Купить», «Оплатить», «Отправить», «Удалить» без явной просьбы.
+    """
+    let inputSchema = browserSchema(windowTabFields.merging([
+        "code": field("Тело функции JavaScript с return")
+    ]) { $1 }, required: ["code"])
+
+    func call(_ arguments: JSONValue) async -> HostToolResult {
+        guard let code = arguments["code"]?.stringValue, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return HostToolResult("Нужен код.", isError: true)
+        }
+        if let reason = BrowserScript.forbiddenReason(inScript: code) {
+            return HostToolResult(reason, isError: true)
+        }
+        let result = await javaScript(arguments.browser, BrowserScript.wrapUserScript(code), arguments: arguments)
+        if !result.isError, result.text.hasPrefix("JS error: ") {
+            return HostToolResult("Ошибка в коде: " + result.text.dropFirst(10), isError: true)
+        }
+        return result
+    }
+}

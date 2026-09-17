@@ -194,3 +194,34 @@ public enum BrowserScript {
         """
     }
 }
+
+// MARK: - Свой JavaScript
+
+extension BrowserScript {
+
+    /// Что свой код трогать не может: cookie, хранилища сайта, поля паролей и отправку
+    /// данных в сеть. Проверка по тексту — от случайностей, а не от злого умысла; главная
+    /// защита — человек видит код в запросе разрешения.
+    public static func forbiddenReason(inScript code: String) -> String? {
+        let compact = code.lowercased().filter { !$0.isWhitespace }
+        let rules: [(needles: [String], reason: String)] = [
+            (["cookie"], "cookie сайта"),
+            (["localstorage", "sessionstorage", "indexeddb", "caches."], "хранилище сайта"),
+            (["password", "пароль"], "поля паролей"),
+            (["fetch(", "xmlhttprequest", "sendbeacon", "websocket", "eventsource", ".submit("], "отправку данных в сеть"),
+        ]
+        guard let hit = rules.first(where: { $0.needles.contains(where: compact.contains) }) else { return nil }
+        return "Такой код Руни не выполняет: он затрагивает \(hit.reason)."
+    }
+
+    /// Обёртка вокруг тела функции: результат всегда строка, ошибка — тоже строка.
+    public static func wrapUserScript(_ body: String, limit: Int = 20_000) -> String {
+        """
+        (function(){try{var __r=(function(){
+        \(body)
+        })();if(__r===undefined)return 'undefined';\
+        var __s=typeof __r==='string'?__r:JSON.stringify(__r,null,1);\
+        return String(__s).slice(0,\(limit));}catch(e){return 'JS error: '+e;}})()
+        """
+    }
+}

@@ -112,7 +112,7 @@ public enum ToolDescriber {
             default: "меню «Поделиться»"
             }
             return Description(title: "Готовит отправку через \(via)", detail: filesDetail)
-        case "browser_tabs", "browser_page_text", "browser_open", "browser_switch_tab", "browser_click", "browser_fill":
+        case "browser_tabs", "browser_page_text", "browser_open", "browser_switch_tab", "browser_click", "browser_fill", "browser_run_js":
             let browser = input["browser"]?.stringValue == "chrome" ? "Chrome" : "Safari"
             switch tool {
             case "browser_tabs": return Description(title: "Смотрит вкладки \(browser)", detail: nil)
@@ -121,6 +121,11 @@ public enum ToolDescriber {
                 let url = input["url"]?.stringValue
                 return Description(title: "Открывает \(url.flatMap { URL(string: $0)?.host() } ?? "страницу") в \(browser)", detail: url.map(clip))
             case "browser_switch_tab": return Description(title: "Переходит на вкладку в \(browser)", detail: nil)
+            case "browser_run_js":
+                // Код показывается целиком: человек разрешает именно его.
+                let code = input["code"]?.stringValue ?? ""
+                let shown = code.count > 2000 ? String(code.prefix(1999)) + "…" : code
+                return Description(title: "Выполняет JavaScript на странице в \(browser)", detail: shown)
             case "browser_click":
                 let target = input["text"]?.stringValue ?? input["selector"]?.stringValue ?? ""
                 return Description(title: "Нажимает «\(target)» в \(browser)", detail: nil)

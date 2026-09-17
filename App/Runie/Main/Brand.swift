@@ -105,6 +105,7 @@ extension PermissionCategory {
         case .calendarEdit: "calendar.badge.plus"
         case .browserRead: "safari"
         case .browserControl: "cursorarrow.click"
+        case .pageScript: "curlybraces"
         case .services: "puzzlepiece.extension"
         case .otherCommands: "terminal"
         }
