@@ -85,4 +85,13 @@ struct MCPSourcesTests {
         #expect(live.responses.map(\.1) == [.allow, .deny(message: "При сборе сводки можно только читать.")])
         #expect(live.sent.first?.contains("упоминания") == true)
     }
+
+    @Test("пустые сводки не уходят в подсказки")
+    func emptyDigest() {
+        #expect(MCPDigest.meaningful("**Нет.**") == nil)
+        #expect(MCPDigest.meaningful("Нет страниц, изменённых за последние сутки. Проверено 10 страниц.") == nil)
+        #expect(MCPDigest.meaningful("Ничего нового не нашлось.") == nil)
+        #expect(MCPDigest.meaningful("- Нет ответа от Анны по договору") != nil)
+        #expect(MCPDigest.meaningful("Изменены: «План запуска», «Бюджет»") != nil)
+    }
 }

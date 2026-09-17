@@ -110,6 +110,14 @@ final class SuggestionsModel {
             var enriched = context
             enriched.serviceNotes = notes
             let result = try? await generator.generate(enriched)
+            #if DEBUG
+            // `-RunieSuggestTrace путь` — что ушло в генератор и что вернулось.
+            if let path = UserDefaults.standard.string(forKey: "RunieSuggestTrace") {
+                let trace = notes.map { "[\($0.source)] \($0.summary)" }.joined(separator: "\n")
+                    + "\n---\n" + (result.map { "\($0.greeting ?? "") | " + $0.suggestions.map(\.label).joined(separator: " | ") } ?? "нет ответа")
+                try? trace.write(toFile: path, atomically: true, encoding: .utf8)
+            }
+            #endif
             guard let self else { return }
             self.task = nil
             self.isGenerating = false

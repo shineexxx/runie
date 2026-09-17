@@ -27,7 +27,8 @@ public struct MCPDigest: Sendable {
             "--system-prompt", """
             Ты собираешь краткую сводку для ИИ-помощника на Mac. Используй только инструменты, \
             которые читают данные. Ничего не отправляй и не меняй. Ответь по-русски списком \
-            до 5 коротких пунктов, только суть: кто, что, название. Если ничего нет — ответь «нет».
+            до 5 коротких пунктов, только суть: кто, что, название. Если ничего подходящего нет — ответь ровно одним словом «нет», \
+            не объясняя, что и где проверял.
             """
         ]
     }
@@ -106,10 +107,21 @@ public struct MCPDigest: Sendable {
         }
         connection.stop()
 
+        return Self.meaningful(result)
+    }
+
+    /// Сводка, если в ней что-то есть. «нет», «**нет**», «Нет.» и пояснения вроде
+    /// «Нет страниц за сутки: проверил 10…» без единого пункта — пусто: генератору
+    /// подсказок они только мешают.
+    static func meaningful(_ result: String?) -> String? {
         guard let summary = result?.trimmingCharacters(in: .whitespacesAndNewlines), !summary.isEmpty else { return nil }
-        // «нет», «**нет**», «Нет.» — пусто.
-        let bare = summary.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "*_. ").union(.whitespacesAndNewlines))
+        let bare = summary.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "*_.!: ").union(.whitespacesAndNewlines))
         guard bare != "нет" else { return nil }
+        let hasItems = summary.split(separator: "\n").contains {
+            let line = $0.trimmingCharacters(in: .whitespaces)
+            return line.hasPrefix("- ") || line.hasPrefix("• ") || line.hasPrefix("* ") || line.first?.isNumber == true
+        }
+        if !hasItems, bare.hasPrefix("нет ") || bare.hasPrefix("ничего") { return nil }
         return summary
     }
 }

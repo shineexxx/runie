@@ -203,7 +203,7 @@ struct RemindersTool: HostTool {
                         var line = "- \(reminder.title ?? "Без названия")"
                         if let due = reminder.dueDateComponents?.date {
                             let overdue = due < now ? " (просрочено)" : ""
-                            line += " — до \(When.day(due))\(reminder.dueDateComponents?.hour != nil ? ", " + When.time(due) : "")\(overdue)"
+                            line += " — срок: \(When.day(due))\(reminder.dueDateComponents?.hour != nil ? ", " + When.time(due) : "")\(overdue)"
                         }
                         line += " [\(reminder.calendar.title)] id: \(reminder.calendarItemIdentifier)"
                         return line
@@ -252,7 +252,7 @@ struct CreateReminderTool: HostTool {
             } catch {
                 return HostToolResult("Не удалось сохранить: \(error.localizedDescription)", isError: true)
             }
-            let when = due.map { " — до \(When.day($0.date))\($0.hasTime ? ", " + When.time($0.date) : "")" } ?? ""
+            let when = due.map { " — срок: \(When.day($0.date))\($0.hasTime ? ", " + When.time($0.date) : "")" } ?? ""
             return HostToolResult("Добавил напоминание «\(title)»\(when) [\(reminder.calendar?.title ?? "")].")
         }
     }
