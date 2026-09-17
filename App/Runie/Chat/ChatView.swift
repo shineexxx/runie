@@ -80,6 +80,13 @@ struct ChatView: View {
                     }
                         .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
 
+                    // Сервису нужен ключ — защищённое поле прямо над полем ввода.
+                    if let secret = SecretBroker.shared.pending {
+                        SecretCard(request: secret, broker: SecretBroker.shared)
+                            .id(secret.id)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
+                    }
+
                     // Агент стоит и ждёт ответа — вопрос прямо над полем ввода.
                     if let request = session.pendingPermission {
                         PermissionCard(request: request, session: session)

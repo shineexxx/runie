@@ -106,6 +106,7 @@ extension PermissionCategory {
         case .browserRead: "safari"
         case .browserControl: "cursorarrow.click"
         case .pageScript: "curlybraces"
+        case .extendRunie: "wand.and.sparkles"
         case .services: "puzzlepiece.extension"
         case .otherCommands: "terminal"
         }

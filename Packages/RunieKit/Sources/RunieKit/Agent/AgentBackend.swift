@@ -51,6 +51,10 @@ public struct ClaudeCodeBackend: AgentBackend {
     public var workingDirectory: URL?
     /// Базовые аргументы. Поле `session` перезаписывается при каждом подключении.
     public var arguments: ClaudeCodeArguments
+    /// Переменные, которые добавляются к окружению приложения при каждом подключении:
+    /// ключи серверов из Связки ключей, более полный PATH. Считаются заново — ключ,
+    /// введённый минуту назад, уже на месте.
+    public var extraEnvironment: (@Sendable () -> [String: String])?
 
     public init(
         executable: URL,
@@ -70,7 +74,10 @@ public struct ClaudeCodeBackend: AgentBackend {
         let runtime = AgentRuntime(configuration: .init(
             executable: executable,
             arguments: arguments.build(),
-            workingDirectory: workingDirectory
+            workingDirectory: workingDirectory,
+            environment: extraEnvironment.map { extra in
+                ProcessInfo.processInfo.environment.merging(extra()) { _, new in new }
+            }
         ))
         let raw = try runtime.start()
         let normalizer = AgentEventNormalizer()

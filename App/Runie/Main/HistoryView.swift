@@ -104,6 +104,11 @@ struct ConversationDetail: View {
 
     private var composerArea: some View {
         VStack(spacing: 10) {
+            if isLive, let secret = SecretBroker.shared.pending {
+                SecretCard(request: secret, broker: SecretBroker.shared)
+                    .id(secret.id)
+            }
+
             if isLive, let request = session.pendingPermission {
                 PermissionCard(request: request, session: session)
                     .id(request.requestID)

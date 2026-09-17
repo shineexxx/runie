@@ -29,7 +29,12 @@ enum RunieTools {
         BrowserSwitchTabTool(),
         BrowserClickTool(),
         BrowserFillTool(),
-        BrowserRunJavaScriptTool()
+        BrowserRunJavaScriptTool(),
+        AddServiceTool(),
+        RemoveServiceTool(),
+        SaveSkillTool(),
+        RemoveSkillTool(),
+        ListExtensionsTool()
     ])
 }
 

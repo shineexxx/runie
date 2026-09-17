@@ -17,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Дублирует LSUIElement из Info.plist: без иконки в Dock и без строки меню.
         NSApp.setActivationPolicy(.accessory)
+        // Плагин Руни: встроенные навыки обновляются вместе с приложением.
+        try? RunieExtensions.plugin.prepare()
 
         let backend = Self.makeBackend()
         session = ChatSession(backend: backend)
@@ -97,6 +99,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         chat.onHide = { [weak self] in
             self?.button.reattach()
+        }
+        // Руни подключил сервис или сохранил навык — подхватить, как только освободится.
+        RunieExtensions.onChange = { [weak self] in
+            Task { @MainActor in
+                self?.session.reloadWhenIdle()
+                self?.session.refreshExtensions()
+            }
+        }
+        // Сервису нужен ключ — карточка ввода должна быть на виду.
+        SecretBroker.shared.onRequest = { [weak self] in
+            guard let self, !chat.isVisible, !mainWindow.isShowingCurrentConversation else { return }
+            openChat()
         }
 
         // Утром при первой встрече с человеком орб выходит и зовёт разобрать день.
@@ -261,11 +275,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // а не про какой-то проект.
             var arguments = ClaudeCodeArguments(appendSystemPrompt: runiePrompt)
             arguments.hostToolServers = [RunieTools.server.name]
-            return ClaudeCodeBackend(
+            // Серверы и навыки, которые Руни подключил сам, — только для Runie.
+            let plugin = RunieExtensions.plugin
+            arguments.pluginDirectories = [plugin.root.path]
+            var backend = ClaudeCodeBackend(
                 executable: executable,
                 workingDirectory: FileManager.default.homeDirectoryForCurrentUser,
                 arguments: arguments
             )
+            backend.extraEnvironment = { SecretStore.environment(for: plugin) }
+            return backend
         } catch {
             return UnavailableBackend()
         }
@@ -298,7 +317,10 @@ browser_fill: «что у меня открыто», «прочитай эту �
 AppleScript через оболочку. Если готовых действий мало (нужно разобрать устройство страницы, достать \
 ссылки или таблицу, нажать то, что не находится по надписи, прокрутить, выбрать в списке) — browser_run_js \
 выполняет твой JavaScript во вкладке. Пиши короткий понятный код: человек видит его в запросе разрешения. \
-Не трогай cookie, хранилища, поля паролей и не отправляй данные страницы в сеть. Ничего не покупай, не оплачивай, не отправляй и не вводи пароли без явной просьбы.
+Не трогай cookie, хранилища, поля паролей и не отправляй данные страницы в сеть. \
+Если человек просит то, чего ты не умеешь (сервис или программа без инструментов), не отказывай сразу: \
+предложи подключить и действуй по навыку runie:connect-service. Когда человек просит запомнить, как \
+делать задачу, — навык runie:create-skill. Всё это работает только в Runie. Ничего не покупай, не оплачивай, не отправляй и не вводи пароли без явной просьбы.
 """
 
 /// Бэкенд на случай, когда Claude Code не установлен. Приложение при этом

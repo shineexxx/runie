@@ -105,6 +105,21 @@ struct ExtensionsView: View {
 
     private func remove(_ server: MCPServerInfo) {
         pendingRemoval = nil
+        // Сервер, который подключил сам Руни, живёт в его плагине, а не в Claude Code.
+        if let name = server.runieName {
+            let secrets = RunieExtensions.plugin.servers().first { $0.name == name }?.secrets ?? []
+            do {
+                try RunieExtensions.plugin.removeServer(named: name)
+                for secret in secrets {
+                    SecretStore.delete(RuniePlugin.environmentVariable(server: name, variable: secret.variable))
+                }
+            } catch {
+                removalError = error.localizedDescription
+            }
+            session.reloadWhenIdle()
+            session.refreshExtensions()
+            return
+        }
         Task {
             let result = await ClaudeCLI.run(["mcp", "remove", "--scope", server.scope ?? "user", server.name])
             if result.status != 0 {
@@ -158,9 +173,15 @@ private extension MCPServerInfo {
     /// Встроенный сервер Runie — тот, что живёт в самом приложении.
     var isRunie: Bool { transport == "sdk" || name == RunieTools.server.name }
 
-    /// Свои серверы можно удалить; коннекторы claude.ai и серверы плагинов — нет.
+    /// Свои серверы можно удалить; коннекторы claude.ai и серверы чужих плагинов — нет.
     var isRemovable: Bool {
-        scope == "user" || scope == "local" || scope == "project"
+        scope == "user" || scope == "local" || scope == "project" || runieName != nil
+    }
+
+    /// Имя сервера, который Руни подключил сам: `plugin:runie:todoist` → `todoist`.
+    var runieName: String? {
+        let prefix = "plugin:\(RuniePlugin.name):"
+        return name.hasPrefix(prefix) ? String(name.dropFirst(prefix.count)) : nil
     }
 }
 
@@ -262,6 +283,7 @@ private struct ServerRow: View {
 
     private var displayName: String {
         if server.isRunie { return "Инструменты Runie" }
+        if let name = server.runieName { return name }
         return server.name.hasPrefix("claude.ai ") ? String(server.name.dropFirst("claude.ai ".count)) : server.name
     }
 
@@ -280,7 +302,7 @@ private struct ServerRow: View {
         case "claudeai": "Коннектор claude.ai"
         case "user": "Мой сервер"
         case "project", "local": "Сервер проекта"
-        case "plugin": "Из плагина"
+        case "plugin": server.runieName != nil ? "Подключил Руни" : "Из плагина"
         default: server.isRunie ? "Файлы, Календарь, отправка — встроено в Runie" : (server.scope ?? "")
         }
         return [source, server.target].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")

@@ -55,11 +55,17 @@ final class SuggestionsModel {
     /// Claude Code найден — теперь подсказки может придумывать ИИ.
     func useClaude(at executable: URL) {
         generator = ClaudeSuggestionGenerator(executable: executable)
-        digest = MCPDigest(backend: ClaudeCodeBackend(
+        // Сводки берутся и из серверов, которые Руни подключил сам.
+        let plugin = RunieExtensions.plugin
+        var arguments = ClaudeCodeArguments(additionalArguments: MCPDigest.arguments())
+        arguments.pluginDirectories = [plugin.root.path]
+        var backend = ClaudeCodeBackend(
             executable: executable,
             workingDirectory: FileManager.default.homeDirectoryForCurrentUser,
-            arguments: ClaudeCodeArguments(additionalArguments: MCPDigest.arguments())
-        ))
+            arguments: arguments
+        )
+        backend.extraEnvironment = { SecretStore.environment(for: plugin) }
+        digest = MCPDigest(backend: backend)
     }
 
     /// Приветствие «Доброе утро» вечером неуместно: придуманное в другое время суток

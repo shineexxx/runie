@@ -134,6 +134,25 @@ public final class ChatSession {
         prepare()
     }
 
+    /// Подключиться заново, как только Руни освободится: появился новый сервер или
+    /// навык, а текущий процесс Claude Code о нём не знает.
+    public func reloadWhenIdle() {
+        if isBusy {
+            reloadPending = true
+        } else {
+            reloadAgent()
+        }
+    }
+
+    @ObservationIgnored private var reloadPending = false
+
+    private func reloadIfPending() {
+        guard reloadPending, !isBusy else { return }
+        reloadPending = false
+        // Не из обработки события: перезапуск отменяет тот самый поток, что её ведёт.
+        Task { @MainActor in self.reloadAgent() }
+    }
+
     private func connect() throws {
         let rules = disabledSkills.sorted().map { "Skill(\($0))" }
             + disabledMCPServers.sorted().map(MCPServerInfo.denyRule(forServer:))
@@ -263,7 +282,10 @@ public final class ChatSession {
         case .event(let event):
             timeline.apply(event)
             switch event {
-            case .turnCompleted, .turnFailed, .sessionStarted: persist()
+            case .turnCompleted, .turnFailed:
+                persist()
+                reloadIfPending()
+            case .sessionStarted: persist()
             default: break
             }
             if case .sessionStarted(let info) = event {
@@ -315,6 +337,8 @@ public final class ChatSession {
             timeline.markConnectionEnded(exitCode: exitCode, stoppedByUser: stoppedByUser)
             connection = nil
             persist()
+            // Соединения нет — следующее и так поднимется с новыми серверами.
+            reloadPending = false
         }
     }
 }

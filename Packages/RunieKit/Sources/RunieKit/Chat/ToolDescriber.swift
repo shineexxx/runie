@@ -133,6 +133,17 @@ public enum ToolDescriber {
                 let field = input["field"]?.stringValue ?? input["selector"]?.stringValue ?? "поле"
                 return Description(title: "Заполняет «\(field)» в \(browser)", detail: input["value"]?.stringValue.map(clip))
             }
+        case "add_service":
+            let name = input["name"]?.stringValue ?? "сервис"
+            return Description(title: "Подключает сервис «\(name)»", detail: input["url"]?.stringValue ?? input["command"]?.stringValue)
+        case "remove_service":
+            return Description(title: "Отключает сервис «\(input["name"]?.stringValue ?? "")»", detail: nil)
+        case "save_skill":
+            return Description(title: "Сохраняет навык «\(input["name"]?.stringValue ?? "")»", detail: input["description"]?.stringValue.map(clip))
+        case "remove_skill":
+            return Description(title: "Удаляет навык «\(input["name"]?.stringValue ?? "")»", detail: nil)
+        case "list_extensions":
+            return Description(title: "Смотрит подключённые сервисы и навыки", detail: nil)
         case "calendar_events":
             let range = switch input["range"]?.stringValue {
             case "tomorrow": "на завтра"

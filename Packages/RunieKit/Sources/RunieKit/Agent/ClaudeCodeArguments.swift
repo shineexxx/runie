@@ -36,6 +36,8 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
     /// MCP-серверы, которые живут в самом приложении: CLI обращается к ним через
     /// управляющий протокол. Серверы пользователя из настроек Claude Code остаются.
     public var hostToolServers: [String] = []
+    /// Папки плагинов только для этого запуска: навыки и серверы Runie.
+    public var pluginDirectories: [String] = []
     /// Правила запрета инструментов: `Skill(имя)`, `mcp__сервер`…
     public var disallowedTools: [String] = []
     /// Брать MCP только из переданных конфигураций, игнорируя пользовательские.
@@ -102,6 +104,9 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
                 servers[name] = .object(["type": .string("sdk"), "name": .string(name)])
             }
             arguments += ["--mcp-config", JSONValue.object(["mcpServers": .object(servers)]).jsonString()]
+        }
+        for directory in pluginDirectories {
+            arguments += ["--plugin-dir", directory]
         }
         if !disallowedTools.isEmpty {
             arguments += ["--disallowedTools", disallowedTools.joined(separator: ",")]

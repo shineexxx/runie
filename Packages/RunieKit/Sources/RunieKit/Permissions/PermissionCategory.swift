@@ -18,6 +18,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case calendarEdit
     case browserControl
     case pageScript
+    case extendRunie
     case contacts
     case services
     case otherCommands
@@ -41,6 +42,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .calendarEdit: "Изменение календаря и напоминаний"
         case .browserControl: "Управление браузером"
         case .pageScript: "JavaScript на странице"
+        case .extendRunie: "Новые возможности Руни"
         case .contacts: "Контакты"
         case .services: "Подключённые сервисы"
         case .otherCommands: "Прочие команды"
@@ -60,6 +62,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .install: "Поставить или обновить программу через Homebrew, npm, pip."
         case .browserRead: "Посмотреть открытые вкладки Safari и Chrome и прочитать текст страницы."
         case .browserControl: "Открыть ссылку, перейти на вкладку, нажать кнопку или заполнить поле на странице."
+        case .extendRunie: "Подключить сервис или сохранить навык. Работает только в Runie — Claude Code в терминале не меняется."
         case .pageScript: "Выполнить свой код на открытой странице: разобрать её устройство, достать данные, нажать то, что не нажимается по надписи. Код видно в запросе."
         case .calendarRead: "Посмотреть встречи и напоминания — например, чтобы разобрать день."
         case .calendarEdit: "Добавить встречу или напоминание, отметить напоминание выполненным."
@@ -109,6 +112,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
             [("список вкладок", "Safari, Chrome"), ("текст страницы", "Safari, Chrome")]
         case .browserControl:
             [("открыть ссылку", "Safari, Chrome"), ("нажать кнопку", "Safari, Chrome"), ("заполнить поле", "Safari, Chrome")]
+        case .extendRunie:
+            [("подключить сервис", "MCP-сервер"), ("запомнить, как делать задачу", "навык")]
         case .pageScript:
             [("найти элементы и ссылки", "Safari, Chrome"), ("достать таблицу с данными", "Safari, Chrome"), ("прокрутить, выбрать в списке", "Safari, Chrome")]
         case .calendarRead:
@@ -156,6 +161,9 @@ public enum PermissionClassifier {
         case "mcp__runie__browser_open", "mcp__runie__browser_switch_tab", "mcp__runie__browser_click", "mcp__runie__browser_fill":
             return [.browserControl]
         case "mcp__runie__browser_run_js": return [.pageScript]
+        case "mcp__runie__add_service", "mcp__runie__remove_service", "mcp__runie__save_skill", "mcp__runie__remove_skill":
+            return [.extendRunie]
+        case "mcp__runie__list_extensions": return [.systemInfo]
         case "mcp__runie__create_event", "mcp__runie__create_reminder", "mcp__runie__complete_reminder":
             return [.calendarEdit]
         default:
