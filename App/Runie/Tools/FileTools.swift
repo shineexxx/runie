@@ -22,7 +22,13 @@ enum RunieTools {
         CreateEventTool(),
         RemindersTool(),
         CreateReminderTool(),
-        CompleteReminderTool()
+        CompleteReminderTool(),
+        BrowserTabsTool(),
+        BrowserPageTextTool(),
+        BrowserOpenTool(),
+        BrowserSwitchTabTool(),
+        BrowserClickTool(),
+        BrowserFillTool()
     ])
 }
 

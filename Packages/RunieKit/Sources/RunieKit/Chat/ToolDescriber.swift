@@ -112,6 +112,22 @@ public enum ToolDescriber {
             default: "меню «Поделиться»"
             }
             return Description(title: "Готовит отправку через \(via)", detail: filesDetail)
+        case "browser_tabs", "browser_page_text", "browser_open", "browser_switch_tab", "browser_click", "browser_fill":
+            let browser = input["browser"]?.stringValue == "chrome" ? "Chrome" : "Safari"
+            switch tool {
+            case "browser_tabs": return Description(title: "Смотрит вкладки \(browser)", detail: nil)
+            case "browser_page_text": return Description(title: "Читает страницу в \(browser)", detail: nil)
+            case "browser_open":
+                let url = input["url"]?.stringValue
+                return Description(title: "Открывает \(url.flatMap { URL(string: $0)?.host() } ?? "страницу") в \(browser)", detail: url.map(clip))
+            case "browser_switch_tab": return Description(title: "Переходит на вкладку в \(browser)", detail: nil)
+            case "browser_click":
+                let target = input["text"]?.stringValue ?? input["selector"]?.stringValue ?? ""
+                return Description(title: "Нажимает «\(target)» в \(browser)", detail: nil)
+            default:
+                let field = input["field"]?.stringValue ?? input["selector"]?.stringValue ?? "поле"
+                return Description(title: "Заполняет «\(field)» в \(browser)", detail: input["value"]?.stringValue.map(clip))
+            }
         case "calendar_events":
             let range = switch input["range"]?.stringValue {
             case "tomorrow": "на завтра"

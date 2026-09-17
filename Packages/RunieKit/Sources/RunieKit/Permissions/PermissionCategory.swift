@@ -7,6 +7,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case browseFolders
     case systemInfo
     case calendarRead
+    case browserRead
     case editFiles
     case moveDelete
     case openApps
@@ -15,6 +16,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case install
     case sharing
     case calendarEdit
+    case browserControl
     case contacts
     case services
     case otherCommands
@@ -27,6 +29,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .browseFolders: "Просмотр папок и поиск"
         case .systemInfo: "Сведения о системе"
         case .calendarRead: "Просмотр календаря и напоминаний"
+        case .browserRead: "Просмотр браузера"
         case .editFiles: "Создание и правка файлов"
         case .moveDelete: "Перемещение и удаление"
         case .openApps: "Открытие приложений и ссылок"
@@ -35,6 +38,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .install: "Установка программ"
         case .sharing: "Отправка файлов"
         case .calendarEdit: "Изменение календаря и напоминаний"
+        case .browserControl: "Управление браузером"
         case .contacts: "Контакты"
         case .services: "Подключённые сервисы"
         case .otherCommands: "Прочие команды"
@@ -52,6 +56,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .internet: "Открыть страницу, поискать в интернете, скачать файл."
         case .automation: "Выполнить действие в другом приложении через AppleScript или Быстрые команды."
         case .install: "Поставить или обновить программу через Homebrew, npm, pip."
+        case .browserRead: "Посмотреть открытые вкладки Safari и Chrome и прочитать текст страницы."
+        case .browserControl: "Открыть ссылку, перейти на вкладку, нажать кнопку или заполнить поле на странице."
         case .calendarRead: "Посмотреть встречи и напоминания — например, чтобы разобрать день."
         case .calendarEdit: "Добавить встречу или напоминание, отметить напоминание выполненным."
         case .sharing: "Подготовить письмо, сообщение или AirDrop с файлами. Отправляете вы сами — кнопкой в открывшемся окне."
@@ -64,7 +70,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     /// Можно ли испортить что-то необратимо. Такие группы в настройках помечаются.
     public var isRisky: Bool {
         switch self {
-        case .readFiles, .browseFolders, .systemInfo, .calendarRead: false
+        case .readFiles, .browseFolders, .systemInfo, .calendarRead, .browserRead: false
         default: true
         }
     }
@@ -96,6 +102,10 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
             [("действие в другом приложении", "osascript"), ("запустить быструю команду", "shortcuts")]
         case .install:
             [("поставить программу", "brew, npm, pip")]
+        case .browserRead:
+            [("список вкладок", "Safari, Chrome"), ("текст страницы", "Safari, Chrome")]
+        case .browserControl:
+            [("открыть ссылку", "Safari, Chrome"), ("нажать кнопку", "Safari, Chrome"), ("заполнить поле", "Safari, Chrome")]
         case .calendarRead:
             [("встречи на сегодня или неделю", "Календарь"), ("список дел", "Напоминания")]
         case .calendarEdit:
@@ -137,6 +147,9 @@ public enum PermissionClassifier {
         case "mcp__runie__share_files": return [.sharing]
         case "mcp__runie__find_contact": return [.contacts]
         case "mcp__runie__calendar_events", "mcp__runie__reminders": return [.calendarRead]
+        case "mcp__runie__browser_tabs", "mcp__runie__browser_page_text": return [.browserRead]
+        case "mcp__runie__browser_open", "mcp__runie__browser_switch_tab", "mcp__runie__browser_click", "mcp__runie__browser_fill":
+            return [.browserControl]
         case "mcp__runie__create_event", "mcp__runie__create_reminder", "mcp__runie__complete_reminder":
             return [.calendarEdit]
         default:

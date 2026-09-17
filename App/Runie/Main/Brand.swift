@@ -103,6 +103,8 @@ extension PermissionCategory {
         case .contacts: "person.crop.circle"
         case .calendarRead: "calendar"
         case .calendarEdit: "calendar.badge.plus"
+        case .browserRead: "safari"
+        case .browserControl: "cursorarrow.click"
         case .services: "puzzlepiece.extension"
         case .otherCommands: "terminal"
         }
