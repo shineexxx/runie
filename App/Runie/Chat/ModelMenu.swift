@@ -379,10 +379,17 @@ enum ModelNames {
         "Fastest for quick answers": "самая быстрая — для коротких ответов",
     ]
 
-    /// «Opus 5 with 1M context» → «Opus 5».
-    private static func baseName(_ model: AgentModel) -> String {
-        let head = model.description.components(separatedBy: " · ").first ?? ""
-        let name = head.components(separatedBy: " with ").first?.trimmingCharacters(in: .whitespaces) ?? ""
+    /// «Opus 5 with 1M context» → «Opus 5»;
+    /// «Use the default model (currently Opus 5 (1M context))» → «Opus 5».
+    static func baseName(_ model: AgentModel) -> String {
+        var head = model.description.components(separatedBy: " · ").first ?? ""
+        if let range = head.range(of: "(currently ") {
+            head = String(head[range.upperBound...])
+        }
+        let name = head
+            .components(separatedBy: " with ").first?
+            .components(separatedBy: " (").first?
+            .trimmingCharacters(in: CharacterSet(charactersIn: " )")) ?? ""
         return name.isEmpty ? model.displayName : name
     }
 
@@ -398,6 +405,7 @@ enum ModelNames {
     }
 
     static func detail(_ model: AgentModel) -> String {
+        if model.value == "default" { return "Как настроено в Claude Code" }
         let parts = model.description.components(separatedBy: " · ")
         guard parts.count > 1 else { return model.description }
         let tail = parts.dropFirst().joined(separator: " · ")

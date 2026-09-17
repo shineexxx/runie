@@ -12,6 +12,7 @@ final class SetupModel {
     enum Stage: Equatable {
         case checking
         case needsClaude
+        case installing
         case needsLogin
         case loggingIn
         case chooseTrust
@@ -21,6 +22,10 @@ final class SetupModel {
     private(set) var stage: Stage = .checking
     /// Страница входа, если CLI её напечатал: на случай, если браузер не открылся.
     private(set) var loginURL: URL?
+    /// Последняя строка установщика — видно, что дело идёт.
+    private(set) var installProgress: String?
+    /// Чем закончилась неудачная установка.
+    private(set) var installError: String?
 
     var isReady: Bool { stage == .ready }
 
@@ -33,6 +38,7 @@ final class SetupModel {
     @ObservationIgnored private var executable: URL?
     @ObservationIgnored private var poll: Task<Void, Never>?
     @ObservationIgnored private var loginProcess: Process?
+    @ObservationIgnored private var installProcess: Process?
     @ObservationIgnored private var lastCheck = Date.distantPast
     @ObservationIgnored private var didFinishFirstCheck = false
 
@@ -55,11 +61,16 @@ final class SetupModel {
             isForced = true
             stage = switch forced {
             case "needsClaude": .needsClaude
+            case "installing": .installing
             case "needsLogin": .needsLogin
             case "loggingIn": .loggingIn
             case "chooseTrust": .chooseTrust
             default: .checking
             }
+        }
+        // `-RunieInstallNow YES` — сразу нажать «Установить» (вместе с HOME во временной папке).
+        if UserDefaults.standard.bool(forKey: "RunieInstallNow") {
+            Task { @MainActor in self.install() }
         }
         #endif
     }
@@ -84,7 +95,8 @@ final class SetupModel {
             onClaudeFound?(found)
         }
         guard let found else {
-            transition(to: .needsClaude)
+            // Установка идёт — не сбивать экран с ходом установки.
+            transition(to: installProcess == nil ? .needsClaude : .installing)
             return
         }
         let loggedIn = await Self.isLoggedIn(executable: found)
@@ -144,6 +156,58 @@ final class SetupModel {
     }
 
     // MARK: Установка
+
+    /// Ставит Claude Code официальным установщиком с claude.ai — по кнопке, без
+    /// Терминала. Он кладёт программу в `~/.local/bin`, где её и ищет Runie.
+    func install() {
+        guard installProcess == nil else { return }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = ["-c", "set -o pipefail; " + Self.installCommand]
+        process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+        var environment = ProcessInfo.processInfo.environment
+        // У приложения из Finder PATH короткий — curl и системные утилиты должны находиться.
+        environment["PATH"] = "/usr/bin:/bin:/usr/sbin:/sbin:" + (environment["PATH"] ?? "")
+        process.environment = environment
+        process.standardInput = FileHandle.nullDevice
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = output
+
+        let log = InstallLog()
+        output.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            let line = log.append(data)
+            Task { @MainActor in
+                if let line { self?.installProgress = line }
+            }
+        }
+        process.terminationHandler = { [weak self] process in
+            output.fileHandleForReading.readabilityHandler = nil
+            let status = process.terminationStatus
+            let tail = log.tail
+            Task { @MainActor in
+                guard let self else { return }
+                self.installProcess = nil
+                self.installProgress = nil
+                if status != 0 || (try? ClaudeCodeLocator().locate()) == nil {
+                    self.installError = tail.isEmpty ? "Установщик завершился с ошибкой (код \(status))." : tail
+                    self.stage = .needsClaude
+                }
+                await self.evaluate()
+            }
+        }
+        do {
+            try process.run()
+            installProcess = process
+            installError = nil
+            installProgress = nil
+            stage = .installing
+        } catch {
+            installError = error.localizedDescription
+        }
+    }
 
     func copyInstallCommand() {
         NSPasteboard.general.clearContents()
@@ -230,5 +294,34 @@ final class SetupModel {
         settings.policy = policy
         UserDefaults.standard.set(true, forKey: Self.trustKey)
         stage = .ready
+    }
+}
+
+/// Вывод установщика: копится из фонового потока, наружу — последняя осмысленная
+/// строка и хвост для сообщения об ошибке.
+private final class InstallLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var text = ""
+
+    /// Добавляет кусок вывода и возвращает последнюю непустую строку.
+    func append(_ data: Data) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        text += String(decoding: data, as: UTF8.self)
+        return Self.lines(text).last
+    }
+
+    var tail: String {
+        lock.lock()
+        defer { lock.unlock() }
+        return Self.lines(text).suffix(4).joined(separator: "\n")
+    }
+
+    private static func lines(_ text: String) -> [String] {
+        text.components(separatedBy: .newlines)
+            // Цветовые коды терминала и рамки прогресса в интерфейсе не нужны.
+            .map { $0.replacingOccurrences(of: #"\x{1B}\[[0-9;]*[A-Za-z]"#, with: "", options: .regularExpression) }
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
     }
 }

@@ -4,6 +4,8 @@ import SwiftUI
 struct SetupFeed: View {
     let setup: SetupModel
 
+    @State private var showsManual = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Spacer(minLength: 0)
@@ -16,31 +18,65 @@ struct SetupFeed: View {
                     }
                 }
             case .needsClaude:
-                SetupBubble(text: "Привет! Я Руни. Я работаю на Claude Code — его нужно один раз установить.")
+                SetupBubble(text: "Привет! Я Руни. Я работаю на Claude Code — его нужно один раз установить. Могу сделать это сам.")
                 SetupCard {
-                    Text("Откройте Терминал, вставьте команду и нажмите Return:")
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 4) {
-                        Text(SetupModel.installCommand)
-                            .font(.system(size: 12, design: .monospaced))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                    if let error = setup.installError {
+                        Text("Не получилось установить:")
+                            .foregroundStyle(.red)
+                        Text(error)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(4)
                             .textSelection(.enabled)
-                        Spacer(minLength: 0)
-                        CopyButton(text: SetupModel.installCommand, label: "Скопировать команду", size: 12)
+                    } else {
+                        Text("Скачаю официальный установщик с claude.ai. Нужен интернет и пара минут.")
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(.leading, 10)
-                    .padding(.vertical, 4)
-                    .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
                     HStack {
-                        Waiting(text: "Жду установку…")
-                        Spacer()
-                        Button("Открыть Терминал") {
-                            setup.copyInstallCommand()
-                            setup.openTerminal()
+                        Button(showsManual ? "Скрыть команду" : "Через Терминал") {
+                            withAnimation(.easeOut(duration: 0.2)) { showsManual.toggle() }
                         }
-                        .buttonStyle(SetupButtonStyle(primary: true))
-                        .help("Команда уже будет в буфере обмена")
+                        .buttonStyle(SetupButtonStyle(primary: false))
+                        Spacer()
+                        Button(setup.installError == nil ? "Установить" : "Попробовать снова", action: setup.install)
+                            .buttonStyle(SetupButtonStyle(primary: true))
+                    }
+                    if showsManual {
+                        // Запасной путь: та же команда вручную.
+                        HStack(spacing: 4) {
+                            Text(SetupModel.installCommand)
+                                .font(.system(size: 12, design: .monospaced))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .textSelection(.enabled)
+                            Spacer(minLength: 0)
+                            CopyButton(text: SetupModel.installCommand, label: "Скопировать команду", size: 12)
+                        }
+                        .padding(.leading, 10)
+                        .padding(.vertical, 4)
+                        .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+                        HStack {
+                            Waiting(text: "Жду установку…")
+                            Spacer()
+                            Button("Открыть Терминал") {
+                                setup.copyInstallCommand()
+                                setup.openTerminal()
+                            }
+                            .buttonStyle(SetupButtonStyle(primary: false))
+                            .help("Команда уже будет в буфере обмена")
+                        }
+                    }
+                }
+            case .installing:
+                SetupBubble(text: "Устанавливаю Claude Code. Как закончу — сразу продолжим.")
+                SetupCard {
+                    Waiting(text: "Скачиваю и устанавливаю… обычно пара минут")
+                    if let line = setup.installProgress {
+                        Text(line)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
                 }
             case .needsLogin:
