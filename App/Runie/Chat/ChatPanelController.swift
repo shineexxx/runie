@@ -80,6 +80,10 @@ final class ChatPanelController {
     /// если за время анимации её не открыли снова.
     private var visibilityGeneration = 0
     private var pasteMonitor: Any?
+    private var settingsMonitor: Any?
+
+    /// ⌘, в чате — открыть настройки Runie.
+    var onOpenSettings: (() -> Void)?
     private var isHiding = false
 
     /// Кнопка масштабирования: открыть разговор в окне Runie.
@@ -118,6 +122,21 @@ final class ChatPanelController {
         hosting.autoresizingMask = [.width, .height]
         panel.contentView = hosting
         panel.onCancel = { [weak self] in self?.cancel() }
+        // ⌘, — как в любом приложении Mac: настройки. Чат-панель не главное окно,
+        // и меню приложения её не видит, поэтому сочетание ловится здесь.
+        let panel = self.panel
+        settingsMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+                  event.charactersIgnoringModifiers == ","
+            else { return event }
+            let windowNumber = event.windowNumber
+            let handled = MainActor.assumeIsolated { () -> Bool in
+                guard windowNumber == panel.windowNumber, let open = self?.onOpenSettings else { return false }
+                open()
+                return true
+            }
+            return handled ? nil : event
+        }
         pasteMonitor = AttachmentStore.installPasteHandler(for: { [weak self] in self?.panel }) { [weak self] files in
             guard let self else { return }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { self.layout.attachments += files }

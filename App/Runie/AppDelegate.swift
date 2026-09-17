@@ -59,6 +59,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, !chat.isVisible, !mainWindow.isShowingCurrentConversation else { return }
             openChat()
         }
+        chat.onOpenSettings = { [weak self] in
+            guard let self else { return }
+            chat.hide()
+            mainWindow.showSettings()
+        }
         // Кнопка масштабирования в чате: разговор целиком — в окне Runie.
         chat.onOpenWindow = { [weak self] in
             guard let self else { return }

@@ -41,6 +41,11 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         return navigation.section == .history && navigation.selectedConversation == session.conversationID
     }
 
+    /// Открывает окно на настройках — на той вкладке, где их закрыли.
+    func showSettings() {
+        show(navigation.lastSettingsTab)
+    }
+
     /// Открывает окно на разговоре: он выделяется в истории.
     func showConversation(_ id: UUID) {
         navigation.selectedConversation = id
