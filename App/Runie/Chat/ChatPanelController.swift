@@ -75,6 +75,7 @@ final class ChatPanelController {
     let layout = ChatLayout()
     private let session: ChatSession
     private let tracker: FrontmostAppTracker
+    private let setup: SetupModel
 
     /// Меняется при каждом показе и скрытии. Анимация скрытия убирает панель, только
     /// если за время анимации её не открыли снова.
@@ -96,17 +97,20 @@ final class ChatPanelController {
         session: ChatSession,
         tracker: FrontmostAppTracker,
         settings: AppSettings,
+        setup: SetupModel,
         suggestions: SuggestionsModel,
         briefing: MorningBriefing
     ) {
         self.session = session
         self.tracker = tracker
+        self.setup = setup
         panel = FloatingPanel(size: Self.size, allowsKey: true)
 
         let layout = self.layout
         let hosting = NSHostingView(rootView: ChatView(
             session: session,
             settings: settings,
+            setup: setup,
             layout: layout,
             tracker: tracker,
             suggestions: suggestions,
@@ -155,7 +159,7 @@ final class ChatPanelController {
     /// Отправляет сообщение с контекстом приложения, если он включён. Черновик не
     /// трогает: подсказки уходят мимо него.
     func send(_ text: String) {
-        guard !session.isBusy else { return }
+        guard !session.isBusy, setup.isReady else { return }
         let context = layout.includesContext ? tracker.current?.context : nil
         session.send(text, context: context, attachments: layout.attachments)
         layout.attachments = []
@@ -163,7 +167,7 @@ final class ChatPanelController {
 
     /// Отправляет последнее сообщение ещё раз.
     func retry() {
-        guard !session.isBusy else { return }
+        guard !session.isBusy, setup.isReady else { return }
         session.retry(context: layout.includesContext ? tracker.current?.context : nil)
     }
 

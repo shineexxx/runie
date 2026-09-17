@@ -12,12 +12,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var suggestions: SuggestionsModel!
     private var briefing: MorningBriefing!
     private var mainWindow: MainWindowController!
+    private var setup: SetupModel!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Дублирует LSUIElement из Info.plist: без иконки в Dock и без строки меню.
         NSApp.setActivationPolicy(.accessory)
 
-        session = ChatSession(backend: Self.makeBackend())
+        let backend = Self.makeBackend()
+        session = ChatSession(backend: backend)
         // Встроенные инструменты для файлов: поиск, Finder, сжатие, архив, отправка.
         session.hostTools = RunieTools.server
         let store = ChatHistoryStore.standard()
@@ -63,9 +65,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         briefing = MorningBriefing()
+        setup = SetupModel(settings: settings)
+        var needsBackend = backend is UnavailableBackend
+        // Claude Code поставили, пока Runie открыт: подключаемся без перезапуска.
+        setup.onClaudeFound = { [weak self] executable in
+            guard let self, needsBackend else { return }
+            needsBackend = false
+            session.replaceBackend(Self.makeBackend())
+            suggestions.useClaude(at: executable)
+        }
         chat = ChatPanelController(
             session: session, tracker: tracker, settings: settings,
-            suggestions: suggestions, briefing: briefing
+            setup: setup, suggestions: suggestions, briefing: briefing
         )
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
         // Агент стоит, пока человек не ответит: вопрос должен быть на виду.
@@ -94,6 +105,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.call()
         }
         briefing.appLaunched()
+
+        // Первый запуск или что-то сломалось (нет Claude Code, не выполнен вход) —
+        // орб выходит и зовёт: знакомство идёт прямо в чате.
+        setup.onNeedsAttention = { [weak self] in
+            guard let self, !chat.isVisible else { return }
+            button.call()
+        }
+        setup.check()
 
         button.onClick = { [weak self] in
             self?.orbClicked()
@@ -171,6 +190,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func openChat() {
+        setup.check(force: false)
         // Агент поднимается, пока чат открывается: к первому сообщению список
         // моделей уже свежий, а ответ приходит быстрее.
         session.prepare()

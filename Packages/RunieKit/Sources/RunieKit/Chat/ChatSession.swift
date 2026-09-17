@@ -23,7 +23,7 @@ public final class ChatSession {
     /// Последние служебные строки для отладки. Пользователю не показываются.
     public private(set) var diagnostics: [String] = []
 
-    @ObservationIgnored private let backend: any AgentBackend
+    @ObservationIgnored private var backend: any AgentBackend
     @ObservationIgnored private var connection: (any AgentConnection)?
     @ObservationIgnored private var pump: Task<Void, Never>?
     /// Что человек разрешил «всегда» в этом разговоре. Такие запросы не показываются.
@@ -71,6 +71,17 @@ public final class ChatSession {
     }
 
     public var isBusy: Bool { timeline.isBusy }
+
+    /// Подменяет бэкенд — например, когда Claude Code установили уже после запуска.
+    /// Текущее соединение закрывается: следующее сообщение поднимет новое.
+    public func replaceBackend(_ newBackend: any AgentBackend) {
+        guard !isBusy else { return }
+        pump?.cancel()
+        pump = nil
+        connection?.stop()
+        connection = nil
+        backend = newBackend
+    }
 
     /// Модели и выбор из прошлого запуска — чтобы меню было видно сразу, до ответа CLI.
     public func restoreModels(_ models: [AgentModel], selected: String?) {

@@ -10,6 +10,7 @@ struct ChatView: View {
 
     let session: ChatSession
     let settings: AppSettings
+    let setup: SetupModel
     let layout: ChatLayout
     let tracker: FrontmostAppTracker
     let suggestions: SuggestionsModel
@@ -64,12 +65,19 @@ struct ChatView: View {
             // и игнорирует их прозрачность и масштаб — блоки не проступали бы из света.
             do {
                 VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
-                    CompactFeed(
-                        session: session,
-                        greeting: suggestions.greeting,
-                        openGeneration: layout.openGeneration,
-                        onRetry: onRetry
-                    )
+                    Group {
+                        if setup.isReady {
+                            CompactFeed(
+                                session: session,
+                                greeting: suggestions.greeting,
+                                openGeneration: layout.openGeneration,
+                                onRetry: onRetry
+                            )
+                        } else {
+                            // Пока Руни не готов, вместо ленты — знакомство по шагам.
+                            SetupFeed(setup: setup)
+                        }
+                    }
                         .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
 
                     // Агент стоит и ждёт ответа — вопрос прямо над полем ввода.
@@ -119,6 +127,8 @@ struct ChatView: View {
                             onSend(text)
                         }
                     )
+                    .opacity(setup.isReady ? 1 : 0)
+                    .allowsHitTesting(setup.isReady)
                     .frame(height: ChatPanelController.chipsHeight)
                     .modifier(EmergeFromLight(progress: emergence, window: 0.26...0.72, anchor: orbCornerAnchor))
                 }
@@ -214,7 +224,7 @@ struct ChatView: View {
     }
 
     private func submitDraft() {
-        guard layout.hasDraft, !session.isBusy else { return }
+        guard layout.hasDraft, !session.isBusy, setup.isReady else { return }
         let text = layout.draft
         layout.draft = ""
         onSend(text)

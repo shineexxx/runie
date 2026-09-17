@@ -17,7 +17,7 @@ final class SuggestionsModel {
     private(set) var greeting: String
     private(set) var isGenerating = false
 
-    @ObservationIgnored private let generator: ClaudeSuggestionGenerator?
+    @ObservationIgnored private var generator: ClaudeSuggestionGenerator?
     @ObservationIgnored private let store: ChatHistoryStore
     @ObservationIgnored private var cache: [String: Generated] = [:]
     @ObservationIgnored private var task: Task<Void, Never>?
@@ -34,28 +34,32 @@ final class SuggestionsModel {
 
     /// Источники из MCP-серверов: имя сервера → запрос. Задаёт приложение.
     @ObservationIgnored var sources: () -> [(server: String, query: String)] = { [] }
-    @ObservationIgnored private let digest: MCPDigest?
+    @ObservationIgnored private var digest: MCPDigest?
     /// Сводки по источникам — не чаще раза в полчаса на сервер и запрос.
     @ObservationIgnored private var noteCache: [String: (date: Date, note: SuggestionContext.ServiceNote?)] = [:]
     private static let noteInterval: TimeInterval = 30 * 60
 
     init(store: ChatHistoryStore) {
         self.store = store
-        let executable = try? ClaudeCodeLocator().locate()
-        generator = executable.map { ClaudeSuggestionGenerator(executable: $0) }
-        digest = executable.map { executable in
-            MCPDigest(backend: ClaudeCodeBackend(
-                executable: executable,
-                workingDirectory: FileManager.default.homeDirectoryForCurrentUser,
-                arguments: ClaudeCodeArguments(additionalArguments: MCPDigest.arguments())
-            ))
-        }
         let saved = UserDefaults.standard.data(forKey: Self.lastKey)
             .flatMap { try? JSONDecoder().decode(Generated.self, from: $0) }
         last = saved
         current = saved?.set.suggestions ?? Suggestion.fixed(ContextSuggestions.fallback)
         greeting = saved.flatMap { Self.stillFits($0) ? $0.set.greeting : nil }
             ?? SuggestionSet.fallbackGreeting()
+        if let executable = try? ClaudeCodeLocator().locate() {
+            useClaude(at: executable)
+        }
+    }
+
+    /// Claude Code найден — теперь подсказки может придумывать ИИ.
+    func useClaude(at executable: URL) {
+        generator = ClaudeSuggestionGenerator(executable: executable)
+        digest = MCPDigest(backend: ClaudeCodeBackend(
+            executable: executable,
+            workingDirectory: FileManager.default.homeDirectoryForCurrentUser,
+            arguments: ClaudeCodeArguments(additionalArguments: MCPDigest.arguments())
+        ))
     }
 
     /// Приветствие «Доброе утро» вечером неуместно: придуманное в другое время суток
