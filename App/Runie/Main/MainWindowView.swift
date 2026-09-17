@@ -218,22 +218,25 @@ private struct SettingsView: View {
             }
         }
         .navigationTitle("Настройки")
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Picker("Раздел", selection: Binding(
-                    get: { navigation.section },
-                    set: { navigation.section = $0 }
-                )) {
-                    Text("Разрешения").tag(MainWindowController.Section.permissions)
-                    Text("Серверы").tag(MainWindowController.Section.servers)
-                    Text("Навыки").tag(MainWindowController.Section.skills)
-                    Text("Лимит подписки").tag(MainWindowController.Section.usage)
-                    Text("Общие").tag(MainWindowController.Section.general)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
+        // Вкладки — над содержимым, а не в панели инструментов: там пять вкладок
+        // не помещаются в узком окне и прячутся за «>>».
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Picker("Раздел", selection: Binding(
+                get: { navigation.section },
+                set: { navigation.section = $0 }
+            )) {
+                Text("Разрешения").tag(MainWindowController.Section.permissions)
+                Text("Серверы").tag(MainWindowController.Section.servers)
+                Text("Навыки").tag(MainWindowController.Section.skills)
+                Text("Лимит").tag(MainWindowController.Section.usage)
+                Text("Общие").tag(MainWindowController.Section.general)
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(maxWidth: 520)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
         }
     }
 }
