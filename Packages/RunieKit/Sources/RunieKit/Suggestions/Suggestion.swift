@@ -82,6 +82,18 @@ public struct SuggestionContext: Sendable, Equatable {
     public var recentConversations: [String]
     /// Что уже предлагали — чтобы не повторяться.
     public var previousSuggestions: [String]
+    /// Свежее из подключённых сервисов: источник и краткая сводка.
+    public var serviceNotes: [ServiceNote] = []
+
+    public struct ServiceNote: Sendable, Equatable {
+        public let source: String
+        public let summary: String
+
+        public init(source: String, summary: String) {
+            self.source = source
+            self.summary = summary
+        }
+    }
 
     public init(
         date: Date = Date(),
@@ -161,6 +173,9 @@ public struct SuggestionContext: Sendable, Equatable {
         }
         if !recentConversations.isEmpty {
             lines.append("Недавно просил Руни: " + recentConversations.prefix(5).map { "«\($0)»" }.joined(separator: ", ") + ".")
+        }
+        for note in serviceNotes.prefix(6) {
+            lines.append("Из \(note.source):\n\(note.summary.prefix(600))")
         }
         if !previousSuggestions.isEmpty {
             lines.append("Не повторяй эти подсказки: " + previousSuggestions.map { "«\($0)»" }.joined(separator: ", ") + ".")

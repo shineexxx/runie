@@ -19,6 +19,16 @@ final class AppSettings {
         static let models = "model.cache"
         static let disabledSkills = "skills.disabled"
         static let disabledServers = "mcp.disabledInRunie"
+        static let sources = "mcp.suggestionSources"
+    }
+
+    /// Какие серверы и что именно учитывать в подсказках — по имени сервера.
+    var mcpSources: [String: MCPSource] {
+        didSet {
+            if let data = try? JSONEncoder().encode(mcpSources) {
+                UserDefaults.standard.set(data, forKey: Key.sources)
+            }
+        }
     }
 
     /// MCP-серверы, выключенные только в Runie.
@@ -72,6 +82,8 @@ final class AppSettings {
         selectedModel = UserDefaults.standard.string(forKey: Key.model)
         disabledSkills = Set(UserDefaults.standard.stringArray(forKey: Key.disabledSkills) ?? [])
         disabledMCPServers = Set(UserDefaults.standard.stringArray(forKey: Key.disabledServers) ?? [])
+        mcpSources = UserDefaults.standard.data(forKey: Key.sources)
+            .flatMap { try? JSONDecoder().decode([String: MCPSource].self, from: $0) } ?? [:]
         if let data = UserDefaults.standard.data(forKey: Key.policy),
            let stored = try? JSONDecoder().decode(PermissionPolicy.self, from: data) {
             policy = stored

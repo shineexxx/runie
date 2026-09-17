@@ -54,6 +54,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         tracker = FrontmostAppTracker()
         suggestions = SuggestionsModel(store: store)
+        suggestions.sources = { [weak self] in
+            guard let self else { return [] }
+            return settings.mcpSources.compactMap { name, source in
+                guard source.enabled, !settings.disabledMCPServers.contains(name),
+                      let query = source.effectiveQuery(forServer: name) else { return nil }
+                return (name, query)
+            }
+        }
         briefing = MorningBriefing()
         chat = ChatPanelController(
             session: session, tracker: tracker, settings: settings,

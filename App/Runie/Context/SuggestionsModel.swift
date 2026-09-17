@@ -32,9 +32,24 @@ final class SuggestionsModel {
     private static let refreshInterval: TimeInterval = 20 * 60
     private static let lastKey = "suggestions.lastSet"
 
+    /// Источники из MCP-серверов: имя сервера → запрос. Задаёт приложение.
+    @ObservationIgnored var sources: () -> [(server: String, query: String)] = { [] }
+    @ObservationIgnored private let digest: MCPDigest?
+    /// Сводки по источникам — не чаще раза в полчаса на сервер и запрос.
+    @ObservationIgnored private var noteCache: [String: (date: Date, note: SuggestionContext.ServiceNote?)] = [:]
+    private static let noteInterval: TimeInterval = 30 * 60
+
     init(store: ChatHistoryStore) {
         self.store = store
-        generator = (try? ClaudeCodeLocator().locate()).map { ClaudeSuggestionGenerator(executable: $0) }
+        let executable = try? ClaudeCodeLocator().locate()
+        generator = executable.map { ClaudeSuggestionGenerator(executable: $0) }
+        digest = executable.map { executable in
+            MCPDigest(backend: ClaudeCodeBackend(
+                executable: executable,
+                workingDirectory: FileManager.default.homeDirectoryForCurrentUser,
+                arguments: ClaudeCodeArguments(additionalArguments: MCPDigest.arguments())
+            ))
+        }
         let saved = UserDefaults.standard.data(forKey: Self.lastKey)
             .flatMap { try? JSONDecoder().decode(Generated.self, from: $0) }
         last = saved
@@ -80,6 +95,7 @@ final class SuggestionsModel {
             // Файлы и история — не в главном потоке: первый доступ к Загрузкам
             // вызывает системный запрос, и чат не должен его ждать.
             let events = await Self.todayEvents()
+            let notes = await self?.serviceNotes() ?? []
             let context = await Task.detached(priority: .utility) {
                 SuggestionContext(
                     date: Date(),
@@ -91,7 +107,9 @@ final class SuggestionsModel {
                     previousSuggestions: previous
                 )
             }.value
-            let result = try? await generator.generate(context)
+            var enriched = context
+            enriched.serviceNotes = notes
+            let result = try? await generator.generate(enriched)
             guard let self else { return }
             self.task = nil
             self.isGenerating = false
@@ -107,6 +125,39 @@ final class SuggestionsModel {
     }
 
     // MARK: - Данные
+
+    /// Сводки из включённых источников — параллельно, из кэша, если свежие.
+    private func serviceNotes() async -> [SuggestionContext.ServiceNote] {
+        guard let digest else { return [] }
+        let now = Date()
+        var notes: [SuggestionContext.ServiceNote] = []
+        var stale: [(key: String, server: String, query: String)] = []
+        for source in sources() {
+            let key = source.server + "\u{1F}" + source.query
+            if let cached = noteCache[key], now.timeIntervalSince(cached.date) < Self.noteInterval {
+                if let note = cached.note { notes.append(note) }
+            } else {
+                stale.append((key, source.server, source.query))
+            }
+        }
+        let fresh = await withTaskGroup(of: (String, SuggestionContext.ServiceNote?).self) { group in
+            for item in stale {
+                group.addTask {
+                    let summary = await digest.collect(server: item.server, query: item.query)
+                    let title = item.server.hasPrefix("claude.ai ") ? String(item.server.dropFirst(10)) : item.server
+                    return (item.key, summary.map { SuggestionContext.ServiceNote(source: title, summary: $0) })
+                }
+            }
+            var results: [(String, SuggestionContext.ServiceNote?)] = []
+            for await result in group { results.append(result) }
+            return results
+        }
+        for (key, note) in fresh {
+            noteCache[key] = (now, note)
+            if let note { notes.append(note) }
+        }
+        return notes
+    }
 
     /// Открытые программы с окнами — без фоновых служб, самого Runie и той, что впереди.
     private static func runningApps(excluding frontmost: String?) -> [String] {

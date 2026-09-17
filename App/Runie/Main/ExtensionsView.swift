@@ -73,6 +73,10 @@ struct ExtensionsView: View {
                             else { settings.disabledMCPServers.insert(server.name) }
                         }
                     ),
+                    source: Binding(
+                        get: { settings.mcpSources[server.name] ?? MCPSource() },
+                        set: { settings.mcpSources[server.name] = $0 }
+                    ),
                     onRemove: server.isRemovable ? { pendingRemoval = server } : nil
                 )
             }
@@ -163,7 +167,13 @@ private extension MCPServerInfo {
 private struct ServerRow: View {
     let server: MCPServerInfo
     @Binding var isEnabledInRunie: Bool
+    @Binding var source: MCPSource
     let onRemove: (() -> Void)?
+
+    /// Сервер может быть источником: работает в Runie, подключён или подключается.
+    private var canBeSource: Bool {
+        !server.isRunie && isEnabledInRunie && server.status != .disabled && server.status != .needsAuth
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -196,6 +206,9 @@ private struct ServerRow: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.orange)
                 }
+                if canBeSource {
+                    sourceSettings
+                }
             }
             Spacer(minLength: 8)
             if let onRemove {
@@ -217,6 +230,34 @@ private struct ServerRow: View {
             }
         }
         .padding(.vertical, 3)
+    }
+
+    /// «Учитывать в подсказках» и что именно брать.
+    private var sourceSettings: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: $source.enabled) {
+                Label("Учитывать в подсказках", systemImage: "sparkles")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .toggleStyle(.checkbox)
+            if source.enabled {
+                let preset = MCPSourcePresets.query(forServer: server.name)
+                TextField("Что брать", text: $source.query, prompt: Text(preset ?? "Например: задачи на меня со сроком на этой неделе"), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 11))
+                    .lineLimit(1...3)
+                if preset == nil, source.query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Text("Напишите, что брать из этого сервера, — иначе он не учитывается.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                } else {
+                    Text("Руни раз в полчаса смотрит это, только читая, — ничего не отправляет и не меняет.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.top, 4)
     }
 
     private var displayName: String {
