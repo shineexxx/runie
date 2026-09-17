@@ -12,7 +12,8 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     enum Section: String, Hashable, CaseIterable {
         case history
         case permissions
-        case extensions
+        case servers
+        case skills
         case usage
         case general
 

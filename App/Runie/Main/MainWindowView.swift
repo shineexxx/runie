@@ -211,7 +211,8 @@ private struct SettingsView: View {
         Group {
             switch navigation.section {
             case .usage: UsageView(usage: session.timeline.usage)
-            case .extensions: ExtensionsView(session: session, settings: settings)
+            case .servers: ExtensionsView(session: session, settings: settings, part: .servers)
+            case .skills: ExtensionsView(session: session, settings: settings, part: .skills)
             case .general: GeneralView()
             default: PermissionsSettingsView(settings: settings)
             }
@@ -224,7 +225,8 @@ private struct SettingsView: View {
                     set: { navigation.section = $0 }
                 )) {
                     Text("Разрешения").tag(MainWindowController.Section.permissions)
-                    Text("Расширения").tag(MainWindowController.Section.extensions)
+                    Text("Серверы").tag(MainWindowController.Section.servers)
+                    Text("Навыки").tag(MainWindowController.Section.skills)
                     Text("Лимит подписки").tag(MainWindowController.Section.usage)
                     Text("Общие").tag(MainWindowController.Section.general)
                 }

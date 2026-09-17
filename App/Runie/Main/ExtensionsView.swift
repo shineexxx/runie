@@ -2,9 +2,13 @@ import RunieKit
 import SwiftUI
 
 /// Навыки и MCP-серверы Claude Code — посмотреть, включить, выключить, добавить.
+/// Серверы и навыки — на разных вкладках настроек.
 struct ExtensionsView: View {
+    enum Part { case servers, skills }
+
     let session: ChatSession
     let settings: AppSettings
+    let part: Part
 
     @State private var query = ""
     @State private var showsAddServer = false
@@ -13,8 +17,10 @@ struct ExtensionsView: View {
 
     var body: some View {
         Form {
-            serversSection
-            skillsSection
+            switch part {
+            case .servers: serversSection
+            case .skills: skillsSection
+            }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
