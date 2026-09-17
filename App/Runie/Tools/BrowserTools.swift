@@ -67,7 +67,7 @@ private func explain(_ error: String, browser: Browser) -> String {
     }
     if error.lowercased().contains("javascript") {
         return browser == .safari
-            ? "В Safari выключен JavaScript из Apple Events. Включите: Safari → Настройки → Дополнительно → «Показывать функции для веб-разработчиков», затем меню «Разработка» → «Разрешить JavaScript из Apple Events»."
+            ? "В Safari выключен JavaScript из Apple Events. Включите: Safari → Настройки → Дополнения → «Показывать функции для веб-разработчиков», затем меню «Разработка» → «Разрешить JavaScript из Apple Events»."
             : "В Chrome выключен JavaScript из Apple Events. Включите: меню «Вид» → «Разработчик» → «Разрешить JavaScript из Apple Events»."
     }
     return "\(browser.title) ответил ошибкой: \(error)"
