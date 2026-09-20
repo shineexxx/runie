@@ -131,6 +131,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.call()
         }
         setup.check()
+        // Самообновление: раз в сутки Runie смотрит выпуски на GitHub.
+        _ = UpdaterModel.shared
 
         button.onClick = { [weak self] in
             self?.orbClicked()
@@ -271,6 +273,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         })
         menu.addItem(ClosureMenuItem("Разрешения…", symbol: "hand.raised") { [weak self] in
             self?.mainWindow.show(.permissions)
+        })
+        menu.addItem(ClosureMenuItem("Проверить обновления…", symbol: "arrow.down.circle") {
+            UpdaterModel.shared.check()
         })
 
         menu.addItem(.separator())

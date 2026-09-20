@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Runie</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Sun, 20 Sep 2026 21:51:11 +0300</pubDate>
+            <link>https://github.com/shineexxx/runie</link>
+            <sparkle:version>71</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/shineexxx/runie/releases/download/v0.1.0/Runie-0.1.0.zip" length="4178494" type="application/octet-stream" sparkle:edSignature="OLL3vuLEfrBpLDkdNBznbw9sBET3R+YOLrQfUwTrIn2j5OxojEcs1uxKa01E6Isks9/V/uZ7jTRzvZXVifHGDw=="/>
+        </item>
+    </channel>
+</rss>
