@@ -172,6 +172,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        // `-RunieCheckUpdates YES` — сразу спросить GitHub про новую версию.
+        if UserDefaults.standard.bool(forKey: "RunieCheckUpdates") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                UpdaterModel.shared.check()
+            }
+        }
         if UserDefaults.standard.bool(forKey: "RunieOpenConversations"), autoOpen > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + autoOpen + 1.5) {
                 NotificationCenter.default.post(name: .runieDebugOpenConversations, object: nil)
