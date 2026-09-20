@@ -103,12 +103,12 @@ rm -f "$RELEASES/appcast.xml"
     --link "$REPO_URL" \
     --maximum-deltas 0 \
     "$RELEASES"
-cp -f "$RELEASES/appcast.xml" "$ROOT/appcast.xml"
-
 if [[ "$DRY_RUN" == "--dry-run" ]]; then
+    # Ленту обновлений сухой прогон не трогает: в ней должно быть только то, что выложено.
     echo "▸ Сухой прогон: готово. Архив: $RELEASES/$ZIP_NAME"
     exit 0
 fi
+cp -f "$RELEASES/appcast.xml" "$ROOT/appcast.xml"
 
 # 7. Релиз на GitHub и коммит версии с appcast
 echo "▸ Релиз $TAG"
