@@ -4,6 +4,15 @@
         <title>Runie</title>
         <item>
             <title>0.1.0</title>
+            <pubDate>Sun, 20 Sep 2026 21:53:09 +0300</pubDate>
+            <link>https://github.com/shineexxx/runie</link>
+            <sparkle:version>72</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/shineexxx/runie/releases/download/v0.1.0/Runie-0.1.0.zip" length="4178500" type="application/octet-stream" sparkle:edSignature="aUBHDcNeXxWIU8msZkamVvN4VCTua7KslDxF6FTbqGVDBXpjtb5DQGERb6Z4DBQS+/dxXdpRW6eyaUqHIPV4DA=="/>
+        </item>
+        <item>
+            <title>0.1.0</title>
             <pubDate>Sun, 20 Sep 2026 21:51:11 +0300</pubDate>
             <link>https://github.com/shineexxx/runie</link>
             <sparkle:version>71</sparkle:version>
