@@ -1,1645 +1,1658 @@
 {
-  "sourceLanguage": "ru",
-  "strings": {
-    " и ещё %lld": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": " and %lld more"
+  "sourceLanguage" : "ru",
+  "strings" : {
+    " и ещё %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " and %lld more"
           }
         }
       }
     },
-    "%@ в %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ in %@"
+    "«%@» — встроенный навык Руни, его нельзя заменить или удалить." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” is a built-in Runie skill; it can’t be replaced or deleted."
           }
         }
       }
     },
-    "JavaScript на странице": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "JavaScript on the page"
+    "«%@» не найден." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” not found."
           }
         }
       }
     },
-    "MCP-сервер": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP server"
+    "%@ в %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in %@"
           }
         }
       }
     },
-    "«%@» не найден.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“%@” not found."
+    "JavaScript на странице" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript on the page"
           }
         }
       }
     },
-    "«%@» — встроенный навык Руни, его нельзя заменить или удалить.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“%@” is a built-in Runie skill; it can’t be replaced or deleted."
+    "MCP-сервер" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP server"
           }
         }
       }
     },
-    "Агент неожиданно завершился (код %lld)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The agent quit unexpectedly (code %lld)"
+    "Агент неожиданно завершился (код %d)" : {
+
+    },
+    "Агент неожиданно завершился (код %lld)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The agent quit unexpectedly (code %lld)"
+          }
+        }
+      }
+    },
+    "версия macOS" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS version"
           }
         }
       }
     },
-    "Выполнить действие в другом приложении через AppleScript или Быстрые команды.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Do something in another app through AppleScript or Shortcuts."
+    "встречи на сегодня или неделю" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "meetings today or this week"
           }
         }
       }
     },
-    "Выполнить свой код на открытой странице: разобрать её устройство, достать данные, нажать то, что не нажимается по надписи. Код видно в запросе.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run its own code on the open page: work out the page’s structure, pull out data, click what has no label to click. You see the code in the request."
+    "Выполнить действие в другом приложении через AppleScript или Быстрые команды." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do something in another app through AppleScript or Shortcuts."
           }
         }
       }
     },
-    "Выполняет JavaScript на странице в %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runs JavaScript on the page in %@"
+    "Выполнить свой код на открытой странице: разобрать её устройство, достать данные, нажать то, что не нажимается по надписи. Код видно в запросе." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run its own code on the open page: work out the page’s structure, pull out data, click what has no label to click. You see the code in the request."
           }
         }
       }
     },
-    "Выполняет команду": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runs a command"
+    "Выполняет JavaScript на странице в %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runs JavaScript on the page in %@"
           }
         }
       }
     },
-    "Готовит отправку через %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepares sending via %@"
+    "Выполняет команду" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runs a command"
           }
         }
       }
     },
-    "Добавить встречу или напоминание, отметить напоминание выполненным.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add a meeting or a reminder, mark a reminder as done."
+    "Готовит отправку через %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepares sending via %@"
           }
         }
       }
     },
-    "Добавляет встречу «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adds the meeting “%@”"
+    "действие в другом приложении" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "do something in another app"
           }
         }
       }
     },
-    "Добавляет напоминание «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adds the reminder “%@”"
+    "действие в подключённом сервисе" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "do something in a connected service"
           }
         }
       }
     },
-    "Заполняет «%@» в %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fills in “%@” in %@"
+    "Добавить встречу или напоминание, отметить напоминание выполненным." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a meeting or a reminder, mark a reminder as done."
           }
         }
       }
     },
-    "Запустить приложение, открыть файл или ссылку.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Launch an app, open a file or a link."
+    "Добавляет встречу «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds the meeting “%@”"
           }
         }
       }
     },
-    "Изменение календаря и напоминаний": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Changing calendar and reminders"
+    "Добавляет напоминание «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds the reminder “%@”"
           }
         }
       }
     },
-    "Имя «%@» не подходит: только латинские строчные буквы, цифры и дефис, до 40 символов.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The name “%@” won’t do: lowercase Latin letters, digits and hyphens only, up to 40 characters."
+    "достать таблицу с данными" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pull out a table of data"
           }
         }
       }
     },
-    "Имя переменной «%@» не подходит: латиница, цифры и _.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The variable name “%@” won’t do: Latin letters, digits and _ only."
+    "заполнить поле" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fill in a field"
           }
         }
       }
     },
-    "Интернет": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Internet"
+    "Заполняет «%@» в %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fills in “%@” in %@"
           }
         }
       }
     },
-    "Ищет «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Searches for “%@”"
+    "запомнить, как делать задачу" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "remember how a task is done"
           }
         }
       }
     },
-    "Ищет в интернете": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Searches the web"
+    "запустить быструю команду" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "run a shortcut"
           }
         }
       }
     },
-    "Ищет контакт «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Looks up the contact “%@”"
+    "Запустить приложение, открыть файл или ссылку." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Launch an app, open a file or a link."
           }
         }
       }
     },
-    "Ищет файлы": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Searches for files"
+    "заряд батареи" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "battery level"
           }
         }
       }
     },
-    "Календарь": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendar"
+    "Изменение календаря и напоминаний" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changing calendar and reminders"
           }
         }
       }
     },
-    "Команда /%@ уже есть.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The command /%@ already exists."
+    "Имя «%@» не подходит: только латинские строчные буквы, цифры и дефис, до 40 символов." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The name “%@” won’t do: lowercase Latin letters, digits and hyphens only, up to 40 characters."
           }
         }
       }
     },
-    "Команда — одно слово из букв и цифр, например «отчёт».": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A command is one word of letters and digits, for example “report”."
+    "Имя переменной «%@» не подходит: латиница, цифры и _." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The variable name “%@” won’t do: Latin letters, digits and _ only."
           }
         }
       }
     },
-    "Команде нужно название.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The command needs a title."
+    "Интернет" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Internet"
           }
         }
       }
     },
-    "Контакты": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contacts"
+    "Ищет «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searches for “%@”"
           }
         }
       }
     },
-    "Локальному серверу нужна команда запуска.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A local server needs a command to run."
+    "Ищет в интернете" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searches the web"
           }
         }
       }
     },
-    "Любая команда, которая не попала в группы выше.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Any command that did not fall into the groups above."
+    "Ищет контакт «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks up the contact “%@”"
           }
         }
       }
     },
-    "Навыку нужны описание и инструкция.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A skill needs a description and instructions."
+    "Ищет файлы" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searches for files"
           }
         }
       }
     },
-    "Нажимает «%@» в %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clicks “%@” in %@"
+    "Календарь" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
           }
         }
       }
     },
-    "Найти человека в Контактах, чтобы узнать почту или телефон.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Find someone in Contacts to get their email or phone number."
+    "Команда — одно слово из букв и цифр, например «отчёт»." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A command is one word of letters and digits, for example “report”."
           }
         }
       }
     },
-    "Напишите, что делать по этой команде.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write what this command should do."
+    "Команда /%@ уже есть." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The command /%@ already exists."
           }
         }
       }
     },
-    "Напоминания": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reminders"
+    "Команде нужно название." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The command needs a title."
           }
         }
       }
     },
-    "Не получилось: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Didn’t work: %@"
+    "Контакты" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contacts"
           }
         }
       }
     },
-    "Новые возможности Руни": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New abilities for Runie"
+    "Локальному серверу нужна команда запуска." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A local server needs a command to run."
           }
         }
       }
     },
-    "Обновляет план": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Updates the plan"
+    "Любая команда, которая не попала в группы выше." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Any command that did not fall into the groups above."
           }
         }
       }
     },
-    "Обратиться к подключённому сервису: Notion, Slack, календарю и другим.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reach a connected service: Notion, Slack, a calendar and others."
+    "меню «Поделиться»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the Share menu"
           }
         }
       }
     },
-    "Остановлено": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stopped"
+    "на завтра" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for tomorrow"
           }
         }
       }
     },
-    "Отключает сервис «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disconnects the service “%@”"
+    "на неделю" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for the week"
           }
         }
       }
     },
-    "Открывает %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opens %@"
+    "на сегодня" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for today"
           }
         }
       }
     },
-    "Открывает страницу": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opens a page"
+    "навык" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "skill"
           }
         }
       }
     },
-    "Открывает файлы": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opens files"
+    "Навыку нужны описание и инструкция." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A skill needs a description and instructions."
           }
         }
       }
     },
-    "Открытие приложений и ссылок": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opening apps and links"
+    "нажать кнопку" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "click a button"
           }
         }
       }
     },
-    "Открыть ссылку, перейти на вкладку, нажать кнопку или заполнить поле на странице.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open a link, switch tabs, click a button or fill in a field on a page."
+    "Нажимает «%@» в %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clicks “%@” in %@"
           }
         }
       }
     },
-    "Открыть страницу, поискать в интернете, скачать файл.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open a page, search the web, download a file."
+    "найти почту или телефон" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "find an email or phone number"
           }
         }
       }
     },
-    "Открыть файл и прочитать, что в нём: текст, таблицу, документ.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open a file and read what is inside: text, a table, a document."
+    "найти текст внутри файлов" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "find text inside files"
           }
         }
       }
     },
-    "Отмечает напоминание выполненным": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marks a reminder as done"
+    "найти файл по имени" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "find a file by name"
           }
         }
       }
     },
-    "Отправка файлов": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sending files"
+    "Найти человека в Контактах, чтобы узнать почту или телефон." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find someone in Contacts to get their email or phone number."
           }
         }
       }
     },
-    "Переименовать, перенести или удалить файл или папку.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rename, move or delete a file or folder."
+    "найти элементы и ссылки" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "find elements and links"
           }
         }
       }
     },
-    "Перемещение и удаление": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moving and deleting"
+    "Напишите, что делать по этой команде." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write what this command should do."
           }
         }
       }
     },
-    "Переходит на вкладку в %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Switches tabs in %@"
+    "Напоминания" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders"
           }
         }
       }
     },
-    "Подготовить письмо, сообщение или AirDrop с файлами. Отправляете вы сами — кнопкой в открывшемся окне.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepare an email, a message or an AirDrop with files. You send it yourself, with the button in the window that opens."
+    "Не получилось: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Didn’t work: %@"
           }
         }
       }
     },
-    "Подключает сервис «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connects the service “%@”"
+    "новая встреча" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "new meeting"
           }
         }
       }
     },
-    "Подключить сервис или сохранить навык. Работает только в Runie — Claude Code в терминале не меняется.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect a service or save a skill. Runie only — Claude Code in Terminal stays as it is."
+    "новое напоминание" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "new reminder"
           }
         }
       }
     },
-    "Подключённые сервисы": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connected services"
+    "Новые возможности Руни" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New abilities for Runie"
           }
         }
       }
     },
-    "Показывает в Finder": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shows in Finder"
+    "Обновляет план" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates the plan"
           }
         }
       }
     },
-    "Поручает задачу помощнику": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hands the task to a helper"
+    "Обратиться к подключённому сервису: Notion, Slack, календарю и другим." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reach a connected service: Notion, Slack, a calendar and others."
           }
         }
       }
     },
-    "Посмотреть встречи и напоминания — например, чтобы разобрать день.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Look at meetings and reminders — to plan your day, for instance."
+    "Остановлено" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopped"
           }
         }
       }
     },
-    "Посмотреть открытые вкладки Safari и Chrome и прочитать текст страницы.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "See the open tabs in Safari and Chrome and read a page’s text."
+    "Отключает сервис «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnects the service “%@”"
           }
         }
       }
     },
-    "Посмотреть, что лежит в папке, найти файл по имени, узнать размер папки.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "See what is in a folder, find a file by name, check a folder’s size."
+    "Открывает %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens %@"
           }
         }
       }
     },
-    "Поставить или обновить программу через Homebrew, npm, pip.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Install or update software through Homebrew, npm, pip."
+    "Открывает %@ в %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Открывает %1$@ в %2$@"
           }
         }
       }
     },
-    "Почта": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mail"
+    "Открывает страницу" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens a page"
           }
         }
       }
     },
-    "Почту": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mail"
+    "Открывает файлы" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens files"
           }
         }
       }
     },
-    "Правит": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edits"
+    "Открытие приложений и ссылок" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opening apps and links"
           }
         }
       }
     },
-    "Правит блокнот": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edits a notebook"
+    "открыть приложение, файл или ссылку" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "open an app, a file or a link"
           }
         }
       }
     },
-    "Правит файл": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edits a file"
+    "открыть ссылку" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "open a link"
           }
         }
       }
     },
-    "Просмотр браузера": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reading the browser"
+    "Открыть ссылку, перейти на вкладку, нажать кнопку или заполнить поле на странице." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a link, switch tabs, click a button or fill in a field on a page."
           }
         }
       }
     },
-    "Просмотр календаря и напоминаний": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reading calendar and reminders"
+    "открыть страницу" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "open a page"
           }
         }
       }
     },
-    "Просмотр папок и поиск": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Browsing folders and search"
+    "Открыть страницу, поискать в интернете, скачать файл." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a page, search the web, download a file."
           }
         }
       }
     },
-    "Прочие команды": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Other commands"
+    "Открыть файл и прочитать, что в нём: текст, таблицу, документ." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a file and read what is inside: text, a table, a document."
           }
         }
       }
     },
-    "Сведения о системе": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System info"
+    "отметить выполненным" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mark as done"
           }
         }
       }
     },
-    "Сжимает картинки (%lld)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compresses images (%lld)"
+    "Отмечает напоминание выполненным" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marks a reminder as done"
           }
         }
       }
     },
-    "Смотрит вкладки %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Looks at %@ tabs"
+    "Отправка файлов" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending files"
           }
         }
       }
     },
-    "Смотрит встречи %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Looks at meetings %@"
+    "первые или последние строки" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "first or last lines"
           }
         }
       }
     },
-    "Смотрит напоминания": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Looks at reminders"
+    "передать рядом" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "send to someone nearby"
           }
         }
       }
     },
-    "Смотрит подключённые сервисы и навыки": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Looks at connected services and skills"
+    "переименовать или перенести" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rename or move"
           }
         }
       }
     },
-    "Создание и правка файлов": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Creating and editing files"
+    "Переименовать, перенести или удалить файл или папку." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename, move or delete a file or folder."
           }
         }
       }
     },
-    "Создать новый файл или папку, изменить или скопировать файл.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Create a new file or folder, change or copy a file."
+    "Перемещение и удаление" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving and deleting"
           }
         }
       }
     },
-    "Создаёт": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Creates"
+    "Переходит на вкладку в %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switches tabs in %@"
           }
         }
       }
     },
-    "Создаёт файл": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Creates a file"
+    "письмо с вложением" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "email with an attachment"
           }
         }
       }
     },
-    "Сообщения": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Messages"
+    "Подготовить письмо, сообщение или AirDrop с файлами. Отправляете вы сами — кнопкой в открывшемся окне." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepare an email, a message or an AirDrop with files. You send it yourself, with the button in the window that opens."
           }
         }
       }
     },
-    "Сохраняет навык «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saves the skill “%@”"
+    "Подключает сервис «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connects the service “%@”"
           }
         }
       }
     },
-    "Удаляет навык «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deletes the skill “%@”"
+    "Подключённые сервисы" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected services"
           }
         }
       }
     },
-    "Удалённому серверу нужен адрес https://.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A remote server needs an https:// address."
+    "подключить сервис" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "connect a service"
           }
         }
       }
     },
-    "Узнать версию macOS, свободное место на диске, заряд батареи, дату.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Check the macOS version, free disk space, battery level, the date."
+    "Подключить сервис или сохранить навык. Работает только в Runie — Claude Code в терминале не меняется." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect a service or save a skill. Runie only — Claude Code in Terminal stays as it is."
           }
         }
       }
     },
-    "Упаковывает в архив": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zips into an archive"
+    "поиск в интернете" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "search the web"
           }
         }
       }
     },
-    "Управление браузером": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Controlling the browser"
+    "показать содержимое файла" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "show what is in a file"
           }
         }
       }
     },
-    "Управление другими приложениями": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Controlling other apps"
+    "Показывает в Finder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows in Finder"
           }
         }
       }
     },
-    "Установка программ": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Installing software"
+    "поле" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the field"
           }
         }
       }
     },
-    "Читает": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reads"
+    "Поручает задачу помощнику" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hands the task to a helper"
           }
         }
       }
     },
-    "Читает страницу в %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reads the page in %@"
+    "Посмотреть встречи и напоминания — например, чтобы разобрать день." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look at meetings and reminders — to plan your day, for instance."
           }
         }
       }
     },
-    "Читает файл": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reads a file"
+    "Посмотреть открытые вкладки Safari и Chrome и прочитать текст страницы." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the open tabs in Safari and Chrome and read a page’s text."
           }
         }
       }
     },
-    "Чтение файлов": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reading files"
+    "Посмотреть, что лежит в папке, найти файл по имени, узнать размер папки." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See what is in a folder, find a file by name, check a folder’s size."
           }
         }
       }
     },
-    "версия macOS": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS version"
+    "Поставить или обновить программу через Homebrew, npm, pip." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install or update software through Homebrew, npm, pip."
           }
         }
       }
     },
-    "встречи на сегодня или неделю": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "meetings today or this week"
+    "поставить программу" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "install software"
           }
         }
       }
     },
-    "действие в другом приложении": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "do something in another app"
+    "посчитать строки и слова" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "count lines and words"
           }
         }
       }
     },
-    "действие в подключённом сервисе": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "do something in a connected service"
+    "Почта" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mail"
           }
         }
       }
     },
-    "достать таблицу с данными": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "pull out a table of data"
+    "Почту" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mail"
           }
         }
       }
     },
-    "заполнить поле": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "fill in a field"
+    "Правит" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edits"
           }
         }
       }
     },
-    "запомнить, как делать задачу": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "remember how a task is done"
+    "Правит блокнот" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edits a notebook"
           }
         }
       }
     },
-    "запустить быструю команду": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "run a shortcut"
+    "Правит файл" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edits a file"
           }
         }
       }
     },
-    "заряд батареи": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "battery level"
+    "прокрутить, выбрать в списке" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "scroll, pick from a list"
           }
         }
       }
     },
-    "меню «Поделиться»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "the Share menu"
+    "Просмотр браузера" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading the browser"
           }
         }
       }
     },
-    "на завтра": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "for tomorrow"
+    "Просмотр календаря и напоминаний" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading calendar and reminders"
           }
         }
       }
     },
-    "на неделю": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "for the week"
+    "Просмотр папок и поиск" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsing folders and search"
           }
         }
       }
     },
-    "на сегодня": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "for today"
+    "Прочие команды" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other commands"
           }
         }
       }
     },
-    "навык": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "skill"
+    "прочитать файл" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "read a file"
           }
         }
       }
     },
-    "нажать кнопку": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "click a button"
+    "размер папки" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "folder size"
           }
         }
       }
     },
-    "найти почту или телефон": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "find an email or phone number"
+    "сведения о компьютере" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "about this Mac"
           }
         }
       }
     },
-    "найти текст внутри файлов": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "find text inside files"
+    "Сведения о системе" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System info"
           }
         }
       }
     },
-    "найти файл по имени": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "find a file by name"
+    "свободное место на диске" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "free disk space"
           }
         }
       }
     },
-    "найти элементы и ссылки": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "find elements and links"
+    "сервис" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "service"
           }
         }
       }
     },
-    "новая встреча": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "new meeting"
+    "Сжимает картинки (%lld)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compresses images (%lld)"
           }
         }
       }
     },
-    "новое напоминание": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "new reminder"
+    "скачать файл" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "download a file"
           }
         }
       }
     },
-    "открыть приложение, файл или ссылку": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "open an app, a file or a link"
+    "скопировать" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "copy"
           }
         }
       }
     },
-    "открыть ссылку": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "open a link"
+    "Смотрит вкладки %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks at %@ tabs"
           }
         }
       }
     },
-    "открыть страницу": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "open a page"
+    "Смотрит встречи %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks at meetings %@"
           }
         }
       }
     },
-    "отметить выполненным": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "mark as done"
+    "Смотрит напоминания" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks at reminders"
           }
         }
       }
     },
-    "первые или последние строки": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "first or last lines"
+    "Смотрит подключённые сервисы и навыки" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks at connected services and skills"
           }
         }
       }
     },
-    "передать рядом": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "send to someone nearby"
+    "Создаёт" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creates"
           }
         }
       }
     },
-    "переименовать или перенести": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "rename or move"
+    "Создаёт файл" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creates a file"
           }
         }
       }
     },
-    "письмо с вложением": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "email with an attachment"
+    "Создание и правка файлов" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creating and editing files"
           }
         }
       }
     },
-    "подключить сервис": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "connect a service"
+    "создать или изменить файл" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "create or change a file"
           }
         }
       }
     },
-    "поиск в интернете": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "search the web"
+    "Создать новый файл или папку, изменить или скопировать файл." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a new file or folder, change or copy a file."
           }
         }
       }
     },
-    "показать содержимое файла": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "show what is in a file"
+    "создать папку" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "create a folder"
           }
         }
       }
     },
-    "поле": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "the field"
+    "сообщение с файлом" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "message with a file"
           }
         }
       }
     },
-    "поставить программу": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "install software"
+    "Сообщения" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages"
           }
         }
       }
     },
-    "посчитать строки и слова": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "count lines and words"
+    "Сохраняет навык «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saves the skill “%@”"
           }
         }
       }
     },
-    "прокрутить, выбрать в списке": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "scroll, pick from a list"
+    "список вкладок" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "list of tabs"
           }
         }
       }
     },
-    "прочитать файл": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "read a file"
+    "список дел" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "to-do list"
           }
         }
       }
     },
-    "размер папки": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "folder size"
+    "список файлов в папке" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "list files in a folder"
           }
         }
       }
     },
-    "сведения о компьютере": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "about this Mac"
+    "текст страницы" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "page text"
           }
         }
       }
     },
-    "свободное место на диске": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "free disk space"
+    "Удалённому серверу нужен адрес https://." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A remote server needs an https:// address."
           }
         }
       }
     },
-    "сервис": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "service"
+    "удалить" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "delete"
           }
         }
       }
     },
-    "скачать файл": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "download a file"
+    "Удаляет навык «%@»" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletes the skill “%@”"
           }
         }
       }
     },
-    "скопировать": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "copy"
+    "Узнать версию macOS, свободное место на диске, заряд батареи, дату." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the macOS version, free disk space, battery level, the date."
           }
         }
       }
     },
-    "создать или изменить файл": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "create or change a file"
+    "упаковать или распаковать архив" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zip or unzip an archive"
           }
         }
       }
     },
-    "создать папку": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "create a folder"
+    "Упаковывает в архив" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zips into an archive"
           }
         }
       }
     },
-    "сообщение с файлом": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "message with a file"
+    "Управление браузером" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlling the browser"
           }
         }
       }
     },
-    "список вкладок": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "list of tabs"
+    "Управление другими приложениями" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlling other apps"
           }
         }
       }
     },
-    "список дел": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "to-do list"
+    "Установка программ" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installing software"
           }
         }
       }
     },
-    "список файлов в папке": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "list files in a folder"
+    "Читает" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads"
           }
         }
       }
     },
-    "текст страницы": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "page text"
+    "Читает страницу в %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads the page in %@"
           }
         }
       }
     },
-    "удалить": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "delete"
+    "Читает файл" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads a file"
           }
         }
       }
     },
-    "упаковать или распаковать архив": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "zip or unzip an archive"
+    "Чтение файлов" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading files"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

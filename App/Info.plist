@@ -28,6 +28,8 @@
 	<true/>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
+	<key>CFBundleIconFile</key>
+	<string>Runie</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>

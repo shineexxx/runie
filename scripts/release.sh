@@ -25,11 +25,14 @@ fi
 
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
-IDENTITY="${RUNIE_SIGN_IDENTITY:-Runie Local Signing}"
+# Подпись: если в Связке ключей есть Developer ID — берём его, иначе локальный сертификат.
+DEVELOPER_ID="$(security find-identity -v -p codesigning 2>/dev/null | grep -o 'Developer ID Application: [^"]*' | head -1)"
+IDENTITY="${RUNIE_SIGN_IDENTITY:-${DEVELOPER_ID:-Runie Local Signing}}"
 DIST="$ROOT/dist"
 RELEASES="$DIST/releases"
 APP_NAME="Runie.app"
 ZIP_NAME="Runie-$VERSION.zip"
+DMG_NAME="Runie-$VERSION.dmg"
 TAG="v$VERSION"
 REPO_URL="https://github.com/shineexxx/runie"
 # Номер сборки должен расти от выпуска к выпуску: Sparkle сравнивает именно его.
@@ -103,33 +106,49 @@ rm -f "$RELEASES/appcast.xml"
     --link "$REPO_URL" \
     --maximum-deltas 0 \
     "$RELEASES"
+# 7. Установщик для людей: DMG с нашим оформлением.
+RUNIE_SIGN_IDENTITY="$IDENTITY" "$ROOT/scripts/make-dmg.sh" "$DIST/$APP_NAME" "$VERSION" "$RELEASES/$DMG_NAME"
+
 if [[ "$DRY_RUN" == "--dry-run" ]]; then
     # Ленту обновлений сухой прогон не трогает: в ней должно быть только то, что выложено.
-    echo "▸ Сухой прогон: готово. Архив: $RELEASES/$ZIP_NAME"
+    echo "▸ Сухой прогон: готово. $RELEASES/$DMG_NAME и $RELEASES/$ZIP_NAME"
     exit 0
 fi
 cp -f "$RELEASES/appcast.xml" "$ROOT/appcast.xml"
 
-# 7. Релиз на GitHub и коммит версии с appcast
+# 8. Релиз на GitHub и коммит версии с appcast
 echo "▸ Релиз $TAG"
 git add Runie.xcodeproj/project.pbxproj appcast.xml
 git commit -m "Runie $VERSION" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 git tag -f "$TAG"
 git push origin HEAD
 git push -f origin "$TAG"
-gh release create "$TAG" "$RELEASES/$ZIP_NAME" \
-    --title "Runie $VERSION" \
-    --notes-file <(cat <<NOTES
-Скачайте \`$ZIP_NAME\`, распакуйте и перенесите Runie в «Программы».
-
-**Первый запуск.** Приложение подписано локально, поэтому macOS сначала не даст его открыть.
+# Первый запуск зависит от того, чем подписано: у Developer ID без нотаризации
+# macOS просит открыть через меню, у локального сертификата — снять карантин.
+if [[ "$IDENTITY" == Developer\ ID* && -z "${RUNIE_NOTARY_PROFILE:-}" ]]; then
+    FIRST_RUN='**Первый запуск.** Приложение подписано сертификатом Developer ID, но ещё не прошло нотаризацию Apple,
+поэтому macOS в первый раз скажет, что не может проверить разработчика. Откройте его через контекстное меню:
+правый клик по Runie → «Открыть» → «Открыть». Дальше оно запускается обычным двойным щелчком.'
+elif [[ "$IDENTITY" == Developer\ ID* ]]; then
+    FIRST_RUN='**Первый запуск.** Приложение подписано и нотаризовано — просто откройте его двойным щелчком.'
+else
+    FIRST_RUN='**Первый запуск.** Приложение подписано локальным сертификатом, поэтому macOS сначала не даст его открыть.
 Выполните в Терминале одну команду:
 
-\`\`\`
+```
 xattr -dr com.apple.quarantine /Applications/Runie.app
-\`\`\`
+```'
+fi
 
-Дальше Runie обновляется сам: новые версии он ставит без Терминала.
+gh release create "$TAG" "$RELEASES/$DMG_NAME" "$RELEASES/$ZIP_NAME" \
+    --title "Runie $VERSION" \
+    --notes-file <(cat <<NOTES
+Скачайте \`$DMG_NAME\`, откройте и перетащите Runie в «Программы».
+
+$FIRST_RUN
+
+Дальше Runie обновляется сам: новые версии он ставит без Терминала. Архив \`$ZIP_NAME\` — тот же
+выпуск для самообновления, скачивать его вручную не нужно.
 
 **Нужен Claude Code** с подпиской Claude. Если его нет, Runie предложит установить всё сам при первом запуске.
 NOTES

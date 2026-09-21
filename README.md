@@ -1,93 +1,104 @@
 # Runie
 
-**Ассистент для Mac поверх Claude Code.**
+**A Mac assistant that runs on Claude Code.**
 
-Runie — нативное macOS-приложение: орб у края экрана, стеклянный чат над рабочим столом
-и агент, который умеет работать с вашими файлами, календарём, напоминаниями и браузером.
-Весь интеллект берётся из установленного Claude Code и вашей подписки Claude. Своей
-модели, своего облака, своего аккаунта у Runie нет.
+Runie is a native macOS app: an orb at the edge of the screen, a glass chat above your desktop,
+and an agent that works with your files, calendar, reminders and browser. All the intelligence
+comes from the Claude Code you already have and your own Claude subscription. Runie has no model
+of its own, no cloud of its own, no account of its own.
 
-## Установка
+[Русская версия](README.ru.md)
 
-1. Скачайте `Runie-<версия>.zip` со страницы [релизов](https://github.com/shineexxx/runie/releases),
-   распакуйте и перенесите Runie в «Программы».
-2. Приложение подписано локальным сертификатом, поэтому macOS сначала не даст его открыть.
-   Выполните в Терминале одну команду:
+<p align="center">
+  <img src="docs/screenshots/chat-en.png" width="540" alt="Runie chat at the orb">
+</p>
 
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/Runie.app
-   ```
+## Install
 
-3. Откройте Runie. Если Claude Code ещё не установлен или вы не вошли в аккаунт, Руни
-   проведёт по шагам прямо в чате — установит Claude Code сам и откроет страницу входа.
+1. Download `Runie-<version>.dmg` from the [releases page](https://github.com/shineexxx/runie/releases)
+   and drag Runie into Applications.
+2. Open Runie. If Claude Code is not installed yet, or you are not signed in, Runie walks you
+   through it right in the chat — it installs Claude Code itself and opens the sign-in page.
 
-Дальше приложение обновляется само: раз в сутки оно смотрит релизы на GitHub и ставит
-новую версию без Терминала. Каждый выпуск подписан ключом автора.
+The app is signed with a Developer ID certificate but is not notarized by Apple yet, so on the
+first launch macOS says it cannot verify the developer. Open it once through the context menu:
+**right-click Runie → Open → Open**. After that it launches normally.
 
-**Нужно:** macOS 26 или новее и подписка Claude (Pro или Max).
+From then on the app updates itself: once a day it checks the releases on GitHub and installs the
+new version without Terminal. Every release is signed with the author’s key.
 
-## Что умеет
+**Requirements:** macOS 26 or newer and a Claude subscription (Pro or Max).
 
-- **Чат у орба.** Орб живёт у края экрана, прячется в горбик и выходит, когда нужен.
-  Ответы с разметкой, прошлые разговоры, вложения, снимок области экрана.
-- **Файлы.** Поиск через Spotlight, сжатие картинок, архивы, «показать в Finder»,
-  подготовка письма или AirDrop — отправляете вы сами.
-- **Календарь и напоминания.** Встречи и дела на сегодня, создание, утренний разбор дня.
-- **Браузер.** Safari и Chrome: вкладки, текст страницы, открыть ссылку, нажать,
-  заполнить поле, выполнить свой JavaScript.
-- **Разрешения по-человечески.** Не «команда `rm`», а «Перемещение и удаление».
-  Каждую группу можно разрешить заранее или оставить с вопросом.
-- **Подсказки под полем** — ИИ придумывает их по тому, что происходит на компьютере:
-  недавние файлы, открытые программы, встречи на сегодня.
-- **Расширение на ходу.** Руни сам подключает MCP-серверы к сервисам, пишет свои
-  и сохраняет навыки. Ключи API хранятся в Связке ключей, а не в файлах.
-- **Быстрые команды.** Своя инструкция вызывается через `/команда` или просто похожей
-  просьбой.
+## What it does
 
-Всё, что Руни подключает и создаёт, живёт в его собственном плагине: Claude Code
-в терминале остаётся нетронутым.
+- **Chat at the orb.** The orb lives at the edge of the screen, hides into a bump and steps out
+  when needed. Replies with formatting, past conversations, attachments, screenshots of a region.
+- **Files.** Spotlight search, image compression, archives, “show in Finder”, preparing an email,
+  a message or an AirDrop — you send it yourself.
+- **Calendar and reminders.** Today’s meetings and to-dos, creating new ones, a morning plan.
+- **Browser.** Safari and Chrome: tabs, page text, open a link, click, fill in a field, run your
+  own JavaScript.
+- **Permissions in plain words.** Not “the `rm` command” but “Moving and deleting”. Each group can
+  be allowed in advance or left to ask.
+- **Suggestions under the input** are written by AI from what is happening on the computer: recent
+  files, running apps, today’s meetings.
+- **It extends itself.** Runie connects MCP servers to services, writes its own when there is none,
+  and saves skills. API keys live in the Keychain, never in files.
+- **Quick commands.** Your own instruction, called with `/command` or just by asking in your words.
 
-## Приватность
+Everything Runie connects and creates lives in its own plugin: Claude Code in Terminal stays
+untouched.
 
-- Никакой телеметрии, аккаунтов и серверов проекта. Данные не покидают ваш Mac,
-  кроме того, что вы сами отправляете Claude через `claude`.
-- Runie не трогает OAuth-токены Claude Code и не ходит в API напрямую.
-- Ключи подключённых сервисов лежат в Связке ключей; модель их не видит.
-- Ничего необратимого без подтверждения человека.
+<p align="center">
+  <img src="docs/screenshots/permissions-en.png" width="720" alt="Permission groups in Runie settings">
+</p>
 
-## Сборка из исходников
+## Language
+
+The interface follows your macOS language: Russian and English are built in. The language Runie
+*replies* in is a separate setting — Settings → General → Reply language.
+
+## Privacy
+
+- No telemetry, no accounts, no servers of ours. Nothing leaves your Mac except what you send to
+  Claude through `claude` yourself.
+- Runie never touches Claude Code’s OAuth tokens and never calls the API directly.
+- Keys for connected services live in the Keychain; the model never sees them.
+- Nothing irreversible happens without your confirmation.
+
+## Build from source
 
 ```bash
 xcodebuild -project Runie.xcodeproj -scheme Runie -configuration Debug build
 swift test --package-path Packages/RunieKit
 ```
 
-Выпуск (сборка, подпись, архив, appcast и релиз на GitHub):
+Release (build, sign, DMG, appcast and a GitHub release):
 
 ```bash
-scripts/release.sh 0.1.1
+scripts/release.sh 0.2.1
 ```
 
-Скрипт подписывает локальным сертификатом из `scripts/make-signing-cert.sh`.
-С Developer ID и нотаризацией:
+By default it signs with the local certificate from `scripts/make-signing-cert.sh`. With a
+Developer ID and notarization:
 
 ```bash
-RUNIE_SIGN_IDENTITY="Developer ID Application: Имя (TEAMID)" \
-RUNIE_NOTARY_PROFILE=runie scripts/release.sh 0.1.1
+RUNIE_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
+RUNIE_NOTARY_PROFILE=runie scripts/release.sh 0.2.1
 ```
 
-## Структура
+## Layout
 
 ```
-App/Runie/            приложение (SwiftUI, AppKit)
-Packages/RunieKit/    вся логика, тестируется без UI
-scripts/              подпись и выпуск
-appcast.xml           лента обновлений для Sparkle
+App/Runie/            the app (SwiftUI, AppKit)
+Packages/RunieKit/    all the logic, tested without UI
+scripts/              signing, icon, DMG, release
+appcast.xml           the update feed for Sparkle
 ```
 
-Всё, что специфично для Claude Code — имена флагов, форма JSON, продолжение сессий —
-изолировано в одном адаптере, чтобы изменения в CLI не ломали приложение целиком.
+Everything specific to Claude Code — flag names, the shape of the JSON, resuming sessions — is
+isolated in a single adapter, so a change in the CLI cannot break the whole app.
 
-## Лицензия
+## License
 
-MIT. См. [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
