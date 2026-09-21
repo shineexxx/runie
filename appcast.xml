@@ -3,13 +3,22 @@
     <channel>
         <title>Runie</title>
         <item>
+            <title>0.2.0</title>
+            <pubDate>Mon, 21 Sep 2026 23:51:39 +0300</pubDate>
+            <link>https://github.com/shineexxx/runie</link>
+            <sparkle:version>79</sparkle:version>
+            <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/shineexxx/runie/releases/download/v0.2.0/Runie-0.2.0.zip" length="5963430" type="application/octet-stream" sparkle:edSignature="h9PZmwmpRcb/1p0DfEVJGv5RRGgwNR5S/PNLEAg1eUh1hab+/UAQCqi8ueMTOjjBhsBpggW8EYv4mBHiHAB5Dg=="/>
+        </item>
+        <item>
             <title>0.1.0</title>
             <pubDate>Sun, 20 Sep 2026 21:53:09 +0300</pubDate>
             <link>https://github.com/shineexxx/runie</link>
             <sparkle:version>72</sparkle:version>
             <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/shineexxx/runie/releases/download/v0.1.0/Runie-0.1.0.zip" length="4178500" type="application/octet-stream" sparkle:edSignature="aUBHDcNeXxWIU8msZkamVvN4VCTua7KslDxF6FTbqGVDBXpjtb5DQGERb6Z4DBQS+/dxXdpRW6eyaUqHIPV4DA=="/>
+            <enclosure url="https://github.com/shineexxx/runie/releases/download/v0.2.0/Runie-0.1.0.zip" length="4178500" type="application/octet-stream" sparkle:edSignature="aUBHDcNeXxWIU8msZkamVvN4VCTua7KslDxF6FTbqGVDBXpjtb5DQGERb6Z4DBQS+/dxXdpRW6eyaUqHIPV4DA=="/>
         </item>
     </channel>
 </rss>
