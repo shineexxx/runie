@@ -29,7 +29,10 @@ ROOT="$PWD"
 DEVELOPER_ID="$(security find-identity -v -p codesigning 2>/dev/null | grep -o 'Developer ID Application: [^"]*' | head -1)"
 IDENTITY="${RUNIE_SIGN_IDENTITY:-${DEVELOPER_ID:-Runie Local Signing}}"
 DIST="$ROOT/dist"
+# Архивы для Sparkle и установщики лежат раздельно: генератор ленты обновлений
+# читает всю свою папку и путается, если найдёт две копии одной версии.
 RELEASES="$DIST/releases"
+INSTALLERS="$DIST/installers"
 APP_NAME="Runie.app"
 ZIP_NAME="Runie-$VERSION.zip"
 DMG_NAME="Runie-$VERSION.dmg"
@@ -57,7 +60,7 @@ echo "▸ Тесты RunieKit"
 
 echo "▸ Сборка Release"
 rm -rf "$DIST/build" "$DIST/$APP_NAME"
-mkdir -p "$RELEASES"
+mkdir -p "$RELEASES" "$INSTALLERS"
 xcodebuild -project Runie.xcodeproj -scheme Runie -configuration Release \
     -derivedDataPath "$DIST/build" \
     CODE_SIGN_IDENTITY="$IDENTITY" CODE_SIGN_STYLE=Manual \
@@ -107,7 +110,7 @@ rm -f "$RELEASES/appcast.xml"
     --maximum-deltas 0 \
     "$RELEASES"
 # 7. Установщик для людей: DMG с нашим оформлением.
-RUNIE_SIGN_IDENTITY="$IDENTITY" "$ROOT/scripts/make-dmg.sh" "$DIST/$APP_NAME" "$VERSION" "$RELEASES/$DMG_NAME"
+RUNIE_SIGN_IDENTITY="$IDENTITY" "$ROOT/scripts/make-dmg.sh" "$DIST/$APP_NAME" "$VERSION" "$INSTALLERS/$DMG_NAME"
 
 if [[ "$DRY_RUN" == "--dry-run" ]]; then
     # Ленту обновлений сухой прогон не трогает: в ней должно быть только то, что выложено.
@@ -140,7 +143,7 @@ xattr -dr com.apple.quarantine /Applications/Runie.app
 ```'
 fi
 
-gh release create "$TAG" "$RELEASES/$DMG_NAME" "$RELEASES/$ZIP_NAME" \
+gh release create "$TAG" "$INSTALLERS/$DMG_NAME" "$RELEASES/$ZIP_NAME" \
     --title "Runie $VERSION" \
     --notes-file <(cat <<NOTES
 Скачайте \`$DMG_NAME\`, откройте и перетащите Runie в «Программы».
