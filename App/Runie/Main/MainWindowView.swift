@@ -34,10 +34,10 @@ struct MainWindowView: View {
                 ConversationDetail(record: nil, session: session, settings: settings, onContinueAtOrb: onContinue, onDelete: {})
             } else {
                 BrandEmptyState(
-                    title: records.isEmpty ? "Разговоров пока нет" : "Выберите разговор",
+                    title: records.isEmpty ? String(localized: "Разговоров пока нет") : String(localized: "Выберите разговор"),
                     subtitle: records.isEmpty
-                        ? "Нажмите на орб или ⌘N и напишите Руни — разговор появится здесь."
-                        : "Слева — недавние разговоры."
+                        ? String(localized: "Нажмите на орб или ⌘N и напишите Руни — разговор появится здесь.")
+                        : String(localized: "Слева — недавние разговоры.")
                 )
                 .background(BrandGlowBackground())
             }

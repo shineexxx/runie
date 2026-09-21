@@ -18,7 +18,7 @@ struct SetupFeed: View {
                     }
                 }
             case .needsClaude:
-                SetupBubble(text: "Привет! Я Руни. Я работаю на Claude Code — его нужно один раз установить. Могу сделать это сам.")
+                SetupBubble(text: String(localized: "Привет! Я Руни. Я работаю на Claude Code — его нужно один раз установить. Могу сделать это сам."))
                 SetupCard {
                     if let error = setup.installError {
                         Text("Не получилось установить:")
@@ -50,13 +50,13 @@ struct SetupFeed: View {
                                 .minimumScaleFactor(0.8)
                                 .textSelection(.enabled)
                             Spacer(minLength: 0)
-                            CopyButton(text: SetupModel.installCommand, label: "Скопировать команду", size: 12)
+                            CopyButton(text: SetupModel.installCommand, label: String(localized: "Скопировать команду"), size: 12)
                         }
                         .padding(.leading, 10)
                         .padding(.vertical, 4)
                         .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
                         HStack {
-                            Waiting(text: "Жду установку…")
+                            Waiting(text: String(localized: "Жду установку…"))
                             Spacer()
                             Button("Открыть Терминал") {
                                 setup.copyInstallCommand()
@@ -68,9 +68,9 @@ struct SetupFeed: View {
                     }
                 }
             case .installing:
-                SetupBubble(text: "Устанавливаю Claude Code. Как закончу — сразу продолжим.")
+                SetupBubble(text: String(localized: "Устанавливаю Claude Code. Как закончу — сразу продолжим."))
                 SetupCard {
-                    Waiting(text: "Скачиваю и устанавливаю… обычно пара минут")
+                    Waiting(text: String(localized: "Скачиваю и устанавливаю… обычно пара минут"))
                     if let line = setup.installProgress {
                         Text(line)
                             .font(.system(size: 11, design: .monospaced))
@@ -80,7 +80,7 @@ struct SetupFeed: View {
                     }
                 }
             case .needsLogin:
-                SetupBubble(text: "Привет! Я Руни. Чтобы начать, войдите в аккаунт Claude — подойдёт подписка Pro или Max.")
+                SetupBubble(text: String(localized: "Привет! Я Руни. Чтобы начать, войдите в аккаунт Claude — подойдёт подписка Pro или Max."))
                 SetupCard {
                     HStack {
                         Spacer()
@@ -89,10 +89,10 @@ struct SetupFeed: View {
                     }
                 }
             case .loggingIn:
-                SetupBubble(text: "Открыл страницу входа в браузере. Как только войдёте, я продолжу.")
+                SetupBubble(text: String(localized: "Открыл страницу входа в браузере. Как только войдёте, я продолжу."))
                 SetupCard {
                     HStack {
-                        Waiting(text: "Жду вход…")
+                        Waiting(text: String(localized: "Жду вход…"))
                         Spacer()
                         if setup.loginURL != nil {
                             Button("Открыть страницу", action: setup.openLoginPage)
@@ -103,17 +103,17 @@ struct SetupFeed: View {
                     }
                 }
             case .chooseTrust:
-                SetupBubble(text: "Готово, я на связи! Последний вопрос: как мне действовать?")
+                SetupBubble(text: String(localized: "Готово, я на связи! Последний вопрос: как мне действовать?"))
                 SetupCard {
                     TrustOption(
-                        title: "Спрашивать только о рискованном",
-                        detail: "Смотреть файлы, календарь и вкладки буду сам. Менять, удалять и отправлять — только с вашего разрешения.",
+                        title: String(localized: "Спрашивать только о рискованном"),
+                        detail: String(localized: "Смотреть файлы, календарь и вкладки буду сам. Менять, удалять и отправлять — только с вашего разрешения."),
                         symbol: "hand.raised",
                         recommended: true
                     ) { setup.chooseTrust(cautious: true) }
                     TrustOption(
                         title: "Спрашивать обо всём",
-                        detail: "Перед каждым действием покажу, что собираюсь сделать.",
+                        detail: String(localized: "Перед каждым действием покажу, что собираюсь сделать."),
                         symbol: "checkmark.shield",
                         recommended: false
                     ) { setup.chooseTrust(cautious: false) }

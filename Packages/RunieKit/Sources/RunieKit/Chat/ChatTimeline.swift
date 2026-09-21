@@ -146,7 +146,7 @@ public struct ChatTimeline: Sendable, Equatable {
         case .turnFailed(let failure):
             items.append(.notice(NoticeItem(
                 kind: .error,
-                text: failure.message ?? "Не получилось: \(failure.reason)"
+                text: failure.message ?? t("Не получилось: \(failure.reason)")
             )))
             interruptRunningActions()
             resetStreaming()
@@ -172,12 +172,12 @@ public struct ChatTimeline: Sendable, Equatable {
     public mutating func markConnectionEnded(exitCode: Int32, stoppedByUser: Bool) {
         if stoppedByUser {
             if isBusy {
-                items.append(.notice(NoticeItem(kind: .info, text: "Остановлено")))
+                items.append(.notice(NoticeItem(kind: .info, text: t("Остановлено"))))
             }
         } else if isBusy || exitCode != 0 {
             items.append(.notice(NoticeItem(
                 kind: .error,
-                text: "Агент неожиданно завершился (код \(exitCode))"
+                text: t("Агент неожиданно завершился (код \(exitCode))")
             )))
         }
         interruptRunningActions()

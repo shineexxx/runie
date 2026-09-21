@@ -7,18 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		888014E2306149D600C2FEC0 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 888014DF306149D600C2FEC0 /* Localizable.strings */; };
+		888014E3306149D600C2FEC0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 888014DE306149D600C2FEC0 /* InfoPlist.strings */; };
 		A1000103 /* RunieKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1000401 /* RunieKit */; };
 		A1000104 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A1000403 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		888014E0306149D600C2FEC0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		888014E1306149D600C2FEC0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A1000000 /* Runie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runie.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000004 /* Runie.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runie.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A1000800 /* Runie */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Runie; sourceTree = "<group>"; };
+		A1000800 /* Runie */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Runie;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +63,8 @@
 			children = (
 				A1000800 /* Runie */,
 				A1000003 /* Info.plist */,
+				888014DE306149D600C2FEC0 /* InfoPlist.strings */,
+				888014DF306149D600C2FEC0 /* Localizable.strings */,
 				A1000004 /* Runie.entitlements */,
 			);
 			path = App;
@@ -103,10 +113,11 @@
 				};
 			};
 			buildConfigurationList = A1000600 /* Build configuration list for PBXProject "Runie" */;
-			developmentRegion = en;
+			developmentRegion = ru;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				ru,
 				Base,
 			);
 			mainGroup = A1000300;
@@ -130,6 +141,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				888014E2306149D600C2FEC0 /* Localizable.strings in Resources */,
+				888014E3306149D600C2FEC0 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,6 +157,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		888014DE306149D600C2FEC0 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				888014E0306149D600C2FEC0 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		888014DF306149D600C2FEC0 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				888014E1306149D600C2FEC0 /* en */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		A1000601 /* Debug */ = {
@@ -277,14 +309,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A1000401 /* RunieKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RunieKit;
+		};
 		A1000403 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1000402 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
-		};
-		A1000401 /* RunieKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RunieKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

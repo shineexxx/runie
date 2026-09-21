@@ -280,13 +280,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             })
         }
 
-        menu.addItem(ClosureMenuItem("Открыть Runie…", symbol: "macwindow") { [weak self] in
+        menu.addItem(ClosureMenuItem(String(localized: "Открыть Runie…"), symbol: "macwindow") { [weak self] in
             self?.mainWindow.show()
         })
-        menu.addItem(ClosureMenuItem("Разрешения…", symbol: "hand.raised") { [weak self] in
+        menu.addItem(ClosureMenuItem(String(localized: "Разрешения…"), symbol: "hand.raised") { [weak self] in
             self?.mainWindow.show(.permissions)
         })
-        menu.addItem(ClosureMenuItem("Проверить обновления…", symbol: "arrow.down.circle") {
+        menu.addItem(ClosureMenuItem(String(localized: "Проверить обновления…"), symbol: "arrow.down.circle") {
             UpdaterModel.shared.check()
         })
 
@@ -300,7 +300,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(startOver)
 
         menu.addItem(.separator())
-        menu.addItem(ClosureMenuItem("Выйти из Runie") {
+        menu.addItem(ClosureMenuItem(String(localized: "Выйти из Runie")) {
             NSApp.terminate(nil)
         })
         return menu

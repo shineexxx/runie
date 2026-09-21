@@ -115,10 +115,10 @@ public struct RuniePlugin: Sendable {
 
         public var errorDescription: String? {
             switch self {
-            case .badName(let name): "Имя «\(name)» не подходит: только латинские строчные буквы, цифры и дефис, до 40 символов."
+            case .badName(let name): t("Имя «\(name)» не подходит: только латинские строчные буквы, цифры и дефис, до 40 символов.")
             case .badServer(let reason): reason
-            case .notFound(let name): "«\(name)» не найден."
-            case .builtIn(let name): "«\(name)» — встроенный навык Руни, его нельзя заменить или удалить."
+            case .notFound(let name): t("«\(name)» не найден.")
+            case .builtIn(let name): t("«\(name)» — встроенный навык Руни, его нельзя заменить или удалить.")
             }
         }
     }
@@ -145,7 +145,7 @@ public struct RuniePlugin: Sendable {
     public func addServer(_ server: Server) throws {
         guard Self.isValidName(server.name) else { throw Failure.badName(server.name) }
         for secret in server.secrets where secret.variable.range(of: "^[A-Za-z_][A-Za-z0-9_]{0,63}$", options: .regularExpression) == nil {
-            throw Failure.badServer("Имя переменной «\(secret.variable)» не подходит: латиница, цифры и _.")
+            throw Failure.badServer(t("Имя переменной «\(secret.variable)» не подходит: латиница, цифры и _."))
         }
         let entry = try mcpEntry(for: server)
         var all = servers().filter { $0.name != server.name }
@@ -187,7 +187,7 @@ public struct RuniePlugin: Sendable {
         switch server.transport {
         case .http:
             guard let url = server.url, let parsed = URL(string: url), parsed.scheme == "https", parsed.host != nil else {
-                throw Failure.badServer("Удалённому серверу нужен адрес https://.")
+                throw Failure.badServer(t("Удалённому серверу нужен адрес https://."))
             }
             var entry: [String: JSONValue] = ["type": .string("http"), "url": .string(url)]
             if !server.headers.isEmpty {
@@ -196,7 +196,7 @@ public struct RuniePlugin: Sendable {
             return .object(entry)
         case .stdio:
             guard let command = server.command, !command.trimmingCharacters(in: .whitespaces).isEmpty else {
-                throw Failure.badServer("Локальному серверу нужна команда запуска.")
+                throw Failure.badServer(t("Локальному серверу нужна команда запуска."))
             }
             var entry: [String: JSONValue] = [
                 "command": .string(substitute(command)),
@@ -274,7 +274,7 @@ public struct RuniePlugin: Sendable {
         guard !skill.isBuiltIn else { throw Failure.builtIn(skill.name) }
         guard !skill.description.trimmingCharacters(in: .whitespaces).isEmpty,
               !skill.instructions.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw Failure.badServer("Навыку нужны описание и инструкция.")
+            throw Failure.badServer(t("Навыку нужны описание и инструкция."))
         }
         try writeSkill(skill)
     }

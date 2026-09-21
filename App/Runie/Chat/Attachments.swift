@@ -35,7 +35,7 @@ enum AttachmentStore {
         }
         guard FileManager.default.fileExists(atPath: raw.path) else { return nil }
         defer { try? FileManager.default.removeItem(at: raw) }
-        let name = "Снимок \(Date().formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(.runie)))"
+        let name = String(localized: "Снимок \(Date().formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(.runie)))")
         return importImage(raw, name: name)
     }
 
@@ -81,14 +81,14 @@ enum AttachmentStore {
         let board = NSPasteboard.general
         if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
            !urls.isEmpty {
-            return urls.count == 1 ? urls[0].lastPathComponent : "Файлов: \(urls.count)"
+            return urls.count == 1 ? urls[0].lastPathComponent : String(localized: "Файлов: \(urls.count)")
         }
-        if NSImage(pasteboard: board) != nil { return "Картинка" }
+        if NSImage(pasteboard: board) != nil { return String(localized: "Картинка") }
         if let text = board.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
             let line = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text
             return "«\(line.count > 28 ? String(line.prefix(28)) + "…" : line)»"
         }
-        return "Пусто"
+        return String(localized: "Пусто")
     }
 
     /// Содержимое буфера: файлы и картинка — вложениями, текст — в поле ввода.
@@ -103,7 +103,7 @@ enum AttachmentStore {
            let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
             let raw = FileManager.default.temporaryDirectory.appending(path: "runie-clip-\(UUID().uuidString).png")
             defer { try? FileManager.default.removeItem(at: raw) }
-            if (try? png.write(to: raw)) != nil, let attachment = importImage(raw, name: "Из буфера обмена") {
+            if (try? png.write(to: raw)) != nil, let attachment = importImage(raw, name: String(localized: "Из буфера обмена")) {
                 return ([attachment], nil)
             }
         }
@@ -115,7 +115,7 @@ enum AttachmentStore {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
-        panel.message = "Выберите файлы для Руни"
+        panel.message = String(localized: "Выберите файлы для Руни")
         panel.prompt = "Прикрепить"
         NSApp.activate()
         guard panel.runModal() == .OK else { return [] }
@@ -183,12 +183,12 @@ struct AttachmentButtons: View {
         dropdown.show(
             below: rect,
             items: [
-                DropdownItem(id: "capture", title: "Снимок области экрана",
-                             detail: "Выделите, что показать Руни", symbol: "viewfinder", action: onCapture),
-                DropdownItem(id: "clipboard", title: "Буфер обмена",
+                DropdownItem(id: "capture", title: String(localized: "Снимок области экрана"),
+                             detail: String(localized: "Выделите, что показать Руни"), symbol: "viewfinder", action: onCapture),
+                DropdownItem(id: "clipboard", title: String(localized: "Буфер обмена"),
                              detail: AttachmentStore.clipboardSummary(), symbol: "doc.on.clipboard", action: onPaste),
-                DropdownItem(id: "files", title: "Файлы…",
-                             detail: "Документы, картинки, архивы", symbol: "doc", action: onPickFiles)
+                DropdownItem(id: "files", title: String(localized: "Файлы…"),
+                             detail: String(localized: "Документы, картинки, архивы"), symbol: "doc", action: onPickFiles)
             ],
             onClose: { isOpen = false }
         )
@@ -320,8 +320,8 @@ struct MessageImageView: View {
                 NSWorkspace.shared.open(URL(fileURLWithPath: source))
             }
         }
-        .help(alt.isEmpty ? "Открыть картинку" : alt)
-        .accessibilityLabel(alt.isEmpty ? "Картинка" : alt)
+        .help(alt.isEmpty ? String(localized: "Открыть картинку") : alt)
+        .accessibilityLabel(alt.isEmpty ? String(localized: "Картинка") : alt)
     }
 
     private func styled(_ image: Image) -> some View {
@@ -334,7 +334,7 @@ struct MessageImageView: View {
     }
 
     private var missing: some View {
-        Label(alt.isEmpty ? "Картинка не найдена" : alt, systemImage: "photo.badge.exclamationmark")
+        Label(alt.isEmpty ? String(localized: "Картинка не найдена") : alt, systemImage: "photo.badge.exclamationmark")
             .font(.system(size: 12))
             .foregroundStyle(.secondary)
     }

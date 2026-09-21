@@ -1,0 +1,471 @@
+/* No comment provided by engineer. */
+"«%@» пропадёт из истории Runie." = "“%@” will be gone from Runie’s history.";
+
+/* No comment provided by engineer. */
+"«%@» пропадёт из Claude Code — и в Runie, и в терминале." = "“%@” will be gone from Claude Code — in Runie and in Terminal alike.";
+
+/* No comment provided by engineer. */
+"/%@" = "/%@";
+
+/* No comment provided by engineer. */
+"/%@ — «%@»" = "/%@ — “%@”";
+
+/* No comment provided by engineer. */
+"%@, %@" = "%@, %@";
+
+/* No comment provided by engineer. */
+"%lld%%" = "%lld%%";
+
+/* No comment provided by engineer. */
+"Адрес" = "Address";
+
+/* No comment provided by engineer. */
+"Версия" = "Version";
+
+/* No comment provided by engineer. */
+"Войти в Claude" = "Sign in to Claude";
+
+/* No comment provided by engineer. */
+"Всегда" = "Always";
+
+/* No comment provided by engineer. */
+"Вставьте сюда" = "Paste it here";
+
+/* No comment provided by engineer. */
+"вызов: /%@" = "call it with /%@";
+
+/* No comment provided by engineer. */
+"Выключен в самом Claude Code. Включается в терминале: claude, затем /mcp." = "Turned off in Claude Code itself. Turn it on in Terminal: run claude, then /mcp.";
+
+/* No comment provided by engineer. */
+"Где хранится" = "Stored in";
+
+/* No comment provided by engineer. */
+"Данные появятся после первого ответа Руни." = "Numbers appear after Runie’s first reply.";
+
+/* No comment provided by engineer. */
+"Добавить" = "Add";
+
+/* No comment provided by engineer. */
+"Добавить…" = "Add…";
+
+/* No comment provided by engineer. */
+"Другие разговоры" = "Other conversations";
+
+/* No comment provided by engineer. */
+"Если команда затрагивает несколько групп — например, находит файлы и удаляет их, — Руни выполнит её без вопроса, только если разрешены все эти группы. Команды, которые не удаётся разобрать, всегда попадают в «Прочие команды»." = "If a command touches several groups — say, it finds files and deletes them — Runie runs it without asking only when every one of those groups is allowed. Commands that cannot be parsed always fall into “Other commands”.";
+
+/* No comment provided by engineer. */
+"Закрыть чат" = "Close chat";
+
+/* No comment provided by engineer. */
+"Звать разобрать день по утрам" = "Offer to plan the day each morning";
+
+/* No comment provided by engineer. */
+"Изменить" = "Edit";
+
+/* No comment provided by engineer. */
+"Имя" = "Name";
+
+/* No comment provided by engineer. */
+"История" = "History";
+
+/* No comment provided by engineer. */
+"итоги недели\nчто я сделал за неделю" = "weekly wrap-up\nwhat I got done this week";
+
+/* No comment provided by engineer. */
+"Как в системе" = "Same as system";
+
+/* No comment provided by engineer. */
+"Как вызвать" = "How to open it";
+
+/* No comment provided by engineer. */
+"Как ещё попросить" = "Other ways to ask";
+
+/* No comment provided by engineer. */
+"Как подключить" = "How to connect";
+
+/* No comment provided by engineer. */
+"Ключ сохранится в Связке ключей этого Mac. Руни его не видит — он передаётся только самому сервису." = "The key is stored in this Mac’s Keychain. Runie never sees it — it goes only to the service itself.";
+
+/* No comment provided by engineer. */
+"Когда утром вы впервые открываете Mac, орб выходит из-за края, а в чате первой подсказкой стоит «Разобрать день»: встречи, напоминания и свободные окна. Раз в день." = "The first time you come back to your Mac in the morning, the orb steps out from the edge and the first suggestion is “Plan my day”: meetings, reminders and free slots. Once a day.";
+
+/* No comment provided by engineer. */
+"Команд пока нет." = "No commands yet.";
+
+/* No comment provided by engineer. */
+"Команда" = "Command";
+
+/* No comment provided by engineer. */
+"Команда /%@" = "Command /%@";
+
+/* No comment provided by engineer. */
+"Команда уже будет в буфере обмена" = "The command will already be on your clipboard";
+
+/* No comment provided by engineer. */
+"Лимит" = "Usage";
+
+/* No comment provided by engineer. */
+"Лимит подписки Claude" = "Claude subscription limit";
+
+/* No comment provided by engineer. */
+"Меняют файлы, систему или выходят в интернет" = "Change files, change the system or reach the internet";
+
+/* No comment provided by engineer. */
+"Модель Claude" = "Claude model";
+
+/* No comment provided by engineer. */
+"Модель: %@" = "Model: %@";
+
+/* No comment provided by engineer. */
+"Мои команды" = "My commands";
+
+/* No comment provided by engineer. */
+"На этом языке Руни отвечает, придумывает подсказки и пишет даты. Язык интерфейса берётся из настроек macOS." = "Runie replies, writes suggestions and formats dates in this language. The interface language comes from your macOS settings.";
+
+/* No comment provided by engineer. */
+"Навык — инструкция, которую Руни подгружает для особых задач. Выключенный навык недоступен только в Runie, в Claude Code он остаётся. Изменения применяются, когда Руни свободен." = "A skill is an instruction Runie loads for a particular kind of task. Turning one off affects Runie only — in Claude Code it stays. Changes apply once Runie is idle.";
+
+/* No comment provided by engineer. */
+"Навыки" = "Skills";
+
+/* No comment provided by engineer. */
+"Навыки · %lld" = "Skills · %lld";
+
+/* No comment provided by engineer. */
+"Навыки, которые Руни записал сам, когда вы просили запомнить, как что-то делать." = "Skills Runie wrote itself when you asked it to remember how something is done.";
+
+/* No comment provided by engineer. */
+"Навыков пока нет. Навыки лежат в папке ~/.claude/skills." = "No skills yet. Skills live in ~/.claude/skills.";
+
+/* No comment provided by engineer. */
+"Название" = "Title";
+
+/* No comment provided by engineer. */
+"Найден" = "Found at";
+
+/* No comment provided by engineer. */
+"Найти навык" = "Find a skill";
+
+/* No comment provided by engineer. */
+"Напишите в чате «/» и выберите команду — или просто попросите похожими словами, и Руни вызовет её сам. Команды работают только в Runie." = "Type “/” in the chat and pick a command — or just ask in your own words and Runie will run it. Commands work in Runie only.";
+
+/* No comment provided by engineer. */
+"Напишите, что брать из этого сервера, — иначе он не учитывается." = "Write what to take from this server, otherwise it is skipped.";
+
+/* No comment provided by engineer. */
+"например, notion" = "for example, notion";
+
+/* No comment provided by engineer. */
+"Например: /отчёт — «собери, что я сделал за неделю, по календарю и файлам, и оформи списком»." = "For example: /report — “gather what I did this week from my calendar and files and lay it out as a list”.";
+
+/* No comment provided by engineer. */
+"Настройки" = "Settings";
+
+/* No comment provided by engineer. */
+"Настройки Runie (⌘,)" = "Runie settings (⌘,)";
+
+/* No comment provided by engineer. */
+"не найден" = "not found";
+
+/* No comment provided by engineer. */
+"Не получилось" = "Didn’t work";
+
+/* No comment provided by engineer. */
+"Не получилось установить:" = "Couldn’t install it:";
+
+/* No comment provided by engineer. */
+"Не сейчас" = "Not now";
+
+/* No comment provided by engineer. */
+"Недавние" = "Recent";
+
+/* No comment provided by engineer. */
+"Недельный отчёт" = "Weekly report";
+
+/* No comment provided by engineer. */
+"Ничего не меняют" = "Change nothing";
+
+/* No comment provided by engineer. */
+"Ничего не нашлось" = "Nothing found";
+
+/* No comment provided by engineer. */
+"Новая команда" = "New command";
+
+/* No comment provided by engineer. */
+"Новый разговор" = "New conversation";
+
+/* No comment provided by engineer. */
+"Новый разговор (⌘N)" = "New conversation (⌘N)";
+
+/* No comment provided by engineer. */
+"Новый MCP-сервер" = "New MCP server";
+
+/* No comment provided by engineer. */
+"Нужен ключ для «%@»" = "A key is needed for “%@”";
+
+/* No comment provided by engineer. */
+"Нужно войти: откройте claude.ai → Настройки → Коннекторы." = "Sign-in needed: open claude.ai → Settings → Connectors.";
+
+/* No comment provided by engineer. */
+"Обновить" = "Refresh";
+
+/* No comment provided by engineer. */
+"Обновления" = "Updates";
+
+/* No comment provided by engineer. */
+"Общие" = "General";
+
+/* No comment provided by engineer. */
+"Опишите, как Руни должен выполнять команду: шаги, откуда брать данные, в каком виде ответить. Например: посмотри мой календарь за неделю и файлы на рабочем столе, собери список сделанного по дням, в конце — три главных итога." = "Describe how Runie should carry out the command: the steps, where to take the data from, what the answer should look like. For example: look at my calendar for the week and the files on my Desktop, list what got done day by day, and finish with the three main outcomes.";
+
+/* No comment provided by engineer. */
+"Остановить" = "Stop";
+
+/* No comment provided by engineer. */
+"Отклонить" = "Deny";
+
+/* No comment provided by engineer. */
+"Открыть разговор в окне Runie" = "Open this conversation in the Runie window";
+
+/* No comment provided by engineer. */
+"Открыть страницу" = "Open the page";
+
+/* No comment provided by engineer. */
+"Открыть Терминал" = "Open Terminal";
+
+/* No comment provided by engineer. */
+"Открыть у орба" = "Open at the orb";
+
+/* No comment provided by engineer. */
+"Открыть чат" = "Open chat";
+
+/* No comment provided by engineer. */
+"Отмена" = "Cancel";
+
+/* No comment provided by engineer. */
+"Отправить" = "Send";
+
+/* No comment provided by engineer. */
+"отчёт" = "report";
+
+/* No comment provided by engineer. */
+"Переменные" = "Variables";
+
+/* No comment provided by engineer. */
+"По одной фразе на строку. По ним Руни поймёт, что нужна эта команда, даже без «/»." = "One phrase per line. They tell Runie this command is wanted even without the “/”.";
+
+/* No comment provided by engineer. */
+"Повторить" = "Try again";
+
+/* No comment provided by engineer. */
+"Поиск по разговорам" = "Search conversations";
+
+/* No comment provided by engineer. */
+"Показать в Finder" = "Show in Finder";
+
+/* No comment provided by engineer. */
+"Поменять можно в настройках, раздел «Разрешения»." = "You can change this later in Settings → Permissions.";
+
+/* No comment provided by engineer. */
+"Понятно" = "OK";
+
+/* No comment provided by engineer. */
+"Попробовать снова" = "Try again";
+
+/* No comment provided by engineer. */
+"Прежде чем что-то сделать на Mac, Руни спрашивает разрешения. Здесь можно разрешить частые действия заранее — тогда вопроса не будет." = "Runie asks before it does anything on your Mac. Here you can allow the everyday things in advance, so it stops asking.";
+
+/* No comment provided by engineer. */
+"Прикрепить" = "Attach";
+
+/* No comment provided by engineer. */
+"Проверить сейчас" = "Check now";
+
+/* No comment provided by engineer. */
+"Проверять обновления автоматически" = "Check for updates automatically";
+
+/* No comment provided by engineer. */
+"Продолжить в Руни" = "Continue in Runie";
+
+/* No comment provided by engineer. */
+"Продолжить этот разговор в чате у орба" = "Continue this conversation in the chat at the orb";
+
+/* No comment provided by engineer. */
+"Раз в сутки Runie заглядывает на GitHub и предлагает поставить новую версию. Каждый выпуск подписан ключом автора." = "Once a day Runie checks GitHub and offers to install the new version. Every release is signed with the author’s key.";
+
+/* No comment provided by engineer. */
+"Раздел" = "Section";
+
+/* No comment provided by engineer. */
+"Разрешать" = "Allow";
+
+/* No comment provided by engineer. */
+"Разрешения" = "Permissions";
+
+/* No comment provided by engineer. */
+"Разрешить" = "Allow";
+
+/* No comment provided by engineer. */
+"Разрешить безопасное" = "Allow the safe ones";
+
+/* No comment provided by engineer. */
+"Руни" = "Runie";
+
+/* No comment provided by engineer. */
+"Руни будет делать это без вопроса" = "Runie will do this without asking";
+
+/* No comment provided by engineer. */
+"Руни занят — дождитесь ответа" = "Runie is busy — wait for the reply";
+
+/* No comment provided by engineer. */
+"Руни просит разрешения" = "Runie asks permission";
+
+/* No comment provided by engineer. */
+"Руни просит разрешения: %@" = "Runie asks permission: %@";
+
+/* No comment provided by engineer. */
+"Руни работает через вашу подписку Claude. У неё два лимита: на ближайшие 5 часов и на неделю. Когда лимит заканчивается, Руни не может отвечать до его сброса." = "Runie works through your Claude subscription. It has two limits: one for the next 5 hours and one for the week. When a limit runs out, Runie can’t reply until it resets.";
+
+/* No comment provided by engineer. */
+"Руни раз в полчаса смотрит это, только читая, — ничего не отправляет и не меняет." = "Runie looks at this every half hour, reading only — it sends nothing and changes nothing.";
+
+/* No comment provided by engineer. */
+"Руни сейчас занят другим разговором. Дождитесь ответа или остановите его." = "Runie is busy with another conversation. Wait for the reply or stop it.";
+
+/* No comment provided by engineer. */
+"Русский" = "Русский";
+
+/* No comment provided by engineer. */
+"Сейчас использовано" = "Used so far";
+
+/* No comment provided by engineer. */
+"Секунду…" = "One moment…";
+
+/* No comment provided by engineer. */
+"Сервер — это чужая программа с доступом к вашему Mac. Добавляйте только те, которым доверяете." = "A server is someone else’s program with access to your Mac. Add only the ones you trust.";
+
+/* No comment provided by engineer. */
+"Серверы" = "Servers";
+
+/* No comment provided by engineer. */
+"Серверы дают Руни новые возможности: Notion, GitHub, Slack и другие. Выключатель действует только в Runie — в Claude Code в терминале всё остаётся как есть. Изменения применяются, когда Руни свободен. Коннекторы claude.ai подключаются на claude.ai в разделе «Коннекторы»." = "Servers give Runie new abilities: Notion, GitHub, Slack and others. The switch affects Runie only — in Claude Code in Terminal everything stays as it was. Changes apply once Runie is idle. claude.ai connectors are set up on claude.ai under “Connectors”.";
+
+/* No comment provided by engineer. */
+"Скачаю официальный установщик с claude.ai. Нужен интернет и пара минут." = "I’ll download the official installer from claude.ai. Needs the internet and a couple of minutes.";
+
+/* No comment provided by engineer. */
+"Сколько уже потрачено. Когда лимит закончится, Руни не сможет отвечать до сброса." = "How much is used up. When a limit runs out, Runie can’t reply until it resets.";
+
+/* No comment provided by engineer. */
+"Скрыть команду" = "Hide the command";
+
+/* No comment provided by engineer. */
+"советую" = "recommended";
+
+/* No comment provided by engineer. */
+"Сохранил Руни" = "Saved by Runie";
+
+/* No comment provided by engineer. */
+"Сохранить" = "Save";
+
+/* No comment provided by engineer. */
+"Спрашивать" = "Ask";
+
+/* No comment provided by engineer. */
+"Спрашивать обо всём" = "Ask about everything";
+
+/* No comment provided by engineer. */
+"Спрашиваю Claude Code…" = "Asking Claude Code…";
+
+/* No comment provided by engineer. */
+"Спросить ещё раз" = "Ask again";
+
+/* No comment provided by engineer. */
+"Убрать" = "Remove";
+
+/* No comment provided by engineer. */
+"Удалить" = "Delete";
+
+/* No comment provided by engineer. */
+"Удалить команду?" = "Delete the command?";
+
+/* No comment provided by engineer. */
+"Удалить навык" = "Delete the skill";
+
+/* No comment provided by engineer. */
+"Удалить разговор" = "Delete the conversation";
+
+/* No comment provided by engineer. */
+"Удалить разговор?" = "Delete the conversation?";
+
+/* No comment provided by engineer. */
+"Удалить сервер" = "Delete the server";
+
+/* No comment provided by engineer. */
+"Удалить сервер?" = "Delete the server?";
+
+/* No comment provided by engineer. */
+"Удалить…" = "Delete…";
+
+/* No comment provided by engineer. */
+"Установить" = "Install";
+
+/* No comment provided by engineer. */
+"Утренний разбор дня" = "Morning plan";
+
+/* No comment provided by engineer. */
+"Учитывать в подсказках" = "Use in suggestions";
+
+/* No comment provided by engineer. */
+"Через Терминал" = "Use Terminal";
+
+/* No comment provided by engineer. */
+"Чтение файлов, просмотр папок и сведения о системе — это ничего не меняет" = "Reading files, browsing folders and system info — none of it changes anything";
+
+/* No comment provided by engineer. */
+"Что брать" = "What to take";
+
+/* No comment provided by engineer. */
+"Что делать" = "What to do";
+
+/* No comment provided by engineer. */
+"Что сюда входит" = "What’s in here";
+
+/* No comment provided by engineer. */
+"Этот разговор сейчас в чате у орба" = "This conversation is open in the chat at the orb";
+
+/* No comment provided by engineer. */
+"Язык" = "Language";
+
+/* No comment provided by engineer. */
+"Язык ответов" = "Reply language";
+
+/* No comment provided by engineer. */
+"API_KEY=… (через пробел)" = "API_KEY=… (space-separated)";
+
+/* No comment provided by engineer. */
+"Claude Code" = "Claude Code";
+
+/* No comment provided by engineer. */
+"Claude Code не найден. Установите его и выполните в терминале `claude login`." = "Claude Code not found. Install it and run `claude login` in Terminal.";
+
+/* No comment provided by engineer. */
+"English" = "English";
+
+/* No comment provided by engineer. */
+"https://mcp.example.com/mcp" = "https://mcp.example.com/mcp";
+
+/* No comment provided by engineer. */
+"MCP-серверы" = "MCP servers";
+
+/* No comment provided by engineer. */
+"npx -y @modelcontextprotocol/server-filesystem ~/Documents" = "npx -y @modelcontextprotocol/server-filesystem ~/Documents";
+
+/* No comment provided by engineer. */
+"Runie" = "Runie";
+
+/* No comment provided by engineer. */
+"Tab" = "Tab";
+

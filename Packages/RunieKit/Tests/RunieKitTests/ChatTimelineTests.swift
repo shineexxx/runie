@@ -29,7 +29,7 @@ struct ChatTimelineTests {
         let timeline = try replay("tool-use")
 
         let action = try #require(actions(timeline).first)
-        #expect(action.title == "Читает todo.txt")
+        #expect(action.title == t("Читает") + " todo.txt")
         #expect(action.status == .succeeded)
         #expect(action.output?.contains("молоко") == true)
 
@@ -43,7 +43,7 @@ struct ChatTimelineTests {
     func permissionDeniedStaysDenied() throws {
         let timeline = try replay("permission")
         let action = try #require(actions(timeline).first)
-        #expect(action.title == "Создаёт hello.txt")
+        #expect(action.title == t("Создаёт") + " hello.txt")
         #expect(action.status == .denied)
         #expect(action.output?.isEmpty == false)
         #expect(timeline.activity == .idle)
@@ -256,9 +256,9 @@ struct ToolDescriberTests {
 
     @Test("файловые операции называют файл, а не путь")
     func fileOperations() throws {
-        #expect(try describe("Read", #"{"file_path":"/tmp/a/todo.txt"}"#).title == "Читает todo.txt")
-        #expect(try describe("Write", #"{"file_path":"/tmp/hello.txt"}"#).title == "Создаёт hello.txt")
-        #expect(try describe("Edit", #"{"file_path":"/tmp/notes.md"}"#).title == "Правит notes.md")
+        #expect(try describe("Read", #"{"file_path":"/tmp/a/todo.txt"}"#).title == t("Читает") + " todo.txt")
+        #expect(try describe("Write", #"{"file_path":"/tmp/hello.txt"}"#).title == t("Создаёт") + " hello.txt")
+        #expect(try describe("Edit", #"{"file_path":"/tmp/notes.md"}"#).title == t("Правит") + " notes.md")
         #expect(try describe("Read", #"{"file_path":"/tmp/a/todo.txt"}"#).detail == "/tmp/a/todo.txt")
     }
 
@@ -271,7 +271,7 @@ struct ToolDescriberTests {
 
     @Test("без пути — осмысленная замена, а не пустая строка")
     func fileOperationWithoutPath() throws {
-        #expect(try describe("Read").title == "Читает файл")
+        #expect(try describe("Read").title == t("Читает файл"))
     }
 
     @Test("команда: описание от агента в заголовке, первая строка команды в подробностях")
@@ -279,7 +279,7 @@ struct ToolDescriberTests {
         let described = try describe("Bash", #"{"command":"find . -name '*.png'\necho done","description":"Ищет скриншоты"}"#)
         #expect(described.title == "Ищет скриншоты")
         #expect(described.detail == "find . -name '*.png'")
-        #expect(try describe("Bash", #"{"command":"ls"}"#).title == "Выполняет команду")
+        #expect(try describe("Bash", #"{"command":"ls"}"#).title == t("Выполняет команду"))
     }
 
     @Test("длинная подробность обрезается")
@@ -292,7 +292,7 @@ struct ToolDescriberTests {
 
     @Test("веб: хост в заголовке")
     func web() throws {
-        #expect(try describe("WebFetch", #"{"url":"https://www.dottie.ai/pricing"}"#).title == "Открывает www.dottie.ai")
+        #expect(try describe("WebFetch", #"{"url":"https://www.dottie.ai/pricing"}"#).title == t("Открывает \("www.dottie.ai")"))
         #expect(try describe("WebSearch", #"{"query":"погода"}"#).detail == "погода")
     }
 

@@ -124,9 +124,9 @@ struct RunieToolDescriptionTests {
     @Test("свои инструменты — по-русски и в своих группах разрешений")
     func describedAndClassified() {
         let paths: JSONValue = .object(["paths": .array([.string("/a/1.png"), .string("/a/2.png")]), "via": .string("mail")])
-        #expect(ToolDescriber.describe(name: "mcp__runie__compress_images", input: paths).title == "Сжимает картинки (2)")
-        #expect(ToolDescriber.describe(name: "mcp__runie__share_files", input: paths).title == "Готовит отправку через Почту")
-        #expect(ToolDescriber.describe(name: "mcp__runie__find_files", input: .object(["query": .string("отчёт")])).title == "Ищет «отчёт»")
+        #expect(ToolDescriber.describe(name: "mcp__runie__compress_images", input: paths).title == t("Сжимает картинки (\(2))"))
+        #expect(ToolDescriber.describe(name: "mcp__runie__share_files", input: paths).title == t("Готовит отправку через \(t("Почту"))"))
+        #expect(ToolDescriber.describe(name: "mcp__runie__find_files", input: .object(["query": .string("отчёт")])).title == t("Ищет «\("отчёт")»"))
         #expect(ToolDescriber.describe(name: "mcp__runie__compress_images", input: paths).detail == "1.png, 2.png")
 
         #expect(PermissionClassifier.categories(toolName: "mcp__runie__find_files", input: paths) == [.browseFolders])
@@ -139,7 +139,7 @@ struct RunieToolDescriptionTests {
         #expect(!PermissionCategory.calendarRead.isRisky)
         #expect(PermissionCategory.calendarEdit.isRisky)
         #expect(ToolDescriber.describe(name: "mcp__runie__calendar_events", input: .object(["range": .string("week")])).title
-                == "Смотрит встречи на неделю")
+                == t("Смотрит встречи \(t("на неделю"))"))
         #expect(PermissionClassifier.categories(toolName: "mcp__notion__search", input: paths) == [.services])
     }
 }

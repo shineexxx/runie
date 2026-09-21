@@ -517,7 +517,7 @@ private struct ReplyBubble: View {
         }
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 0) {
-                CopyButton(text: text, label: "Скопировать ответ", size: 12)
+                CopyButton(text: text, label: String(localized: "Скопировать ответ"), size: 12)
                 if let onRetry {
                     Button(action: onRetry) {
                         Image(systemName: "arrow.clockwise")
@@ -736,9 +736,9 @@ struct PermissionCard: View {
 
     private var alwaysHelp: String {
         switch request.toolName {
-        case "Bash": "Больше не спрашивать об этой команде до конца разговора"
-        case "WebFetch": "Больше не спрашивать об этом сайте до конца разговора"
-        default: "Больше не спрашивать о таком действии до конца разговора"
+        case "Bash": String(localized: "Больше не спрашивать об этой команде до конца разговора")
+        case "WebFetch": String(localized: "Больше не спрашивать об этом сайте до конца разговора")
+        default: String(localized: "Больше не спрашивать о таком действии до конца разговора")
         }
     }
 }
@@ -871,7 +871,7 @@ private struct InputRow: View {
     }
 
     private var placeholder: String {
-        session.isBusy ? "Работаю…" : "Спросите Руни…"
+        session.isBusy ? String(localized: "Работаю…") : String(localized: "Спросите Руни…")
     }
 
     private var expandButton: some View {
@@ -949,7 +949,7 @@ private struct ConversationsButton: View {
         dropdown.show(
             below: rect,
             items: items,
-            searchPrompt: "Найти разговор",
+            searchPrompt: String(localized: "Найти разговор"),
             onClose: {
                 isOpen = false
                 onDone()
@@ -961,8 +961,8 @@ private struct ConversationsButton: View {
     private static func when(_ date: Date) -> String {
         let calendar = Calendar.current
         let time = date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(.runie))
-        if calendar.isDateInToday(date) { return "сегодня, \(time)" }
-        if calendar.isDateInYesterday(date) { return "вчера, \(time)" }
+        if calendar.isDateInToday(date) { return String(localized: "сегодня, \(time)") }
+        if calendar.isDateInYesterday(date) { return String(localized: "вчера, \(time)") }
         return date.formatted(.dateTime.day().month(.wide).locale(.runie))
     }
 }
@@ -1088,13 +1088,13 @@ private struct UsageChip: View {
     static func tooltip(_ usage: SubscriptionUsage) -> String {
         let parts = usage.windows.map { window in
             let name = switch window.kind {
-            case "five_hour": "за 5 часов"
-            case "seven_day": "за 7 дней"
+            case "five_hour": String(localized: "за 5 часов")
+            case "seven_day": String(localized: "за 7 дней")
             default: window.kind
             }
             return "\(name): \(Int((window.utilization * 100).rounded()))%"
         }
-        return "Использовано подписки — " + parts.joined(separator: ", ")
+        return String(localized: "Использовано подписки — ") + parts.joined(separator: ", ")
     }
 }
 
@@ -1162,10 +1162,10 @@ enum ActivityLabel {
     static func text(_ activity: ChatTimeline.Activity) -> String {
         switch activity {
         case .idle: "Руни"
-        case .waiting: "Отправляю…"
-        case .thinking: "Думает…"
-        case .working(let detail): detail ?? "Работает…"
-        case .responding: "Отвечает…"
+        case .waiting: String(localized: "Отправляю…")
+        case .thinking: String(localized: "Думает…")
+        case .working(let detail): detail ?? String(localized: "Работает…")
+        case .responding: String(localized: "Отвечает…")
         }
     }
 }

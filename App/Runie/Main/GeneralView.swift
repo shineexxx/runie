@@ -9,15 +9,15 @@ struct GeneralView: View {
     @AppStorage(MorningBriefing.enabledKey) private var briefingEnabled = true
 
     private var lastCheck: String {
-        guard let date = updater.lastCheck else { return "Ещё не проверяли" }
-        return "Последняя проверка: " + date.formatted(.dateTime.day().month().hour().minute().locale(.runie))
+        guard let date = updater.lastCheck else { return String(localized: "Ещё не проверяли") }
+        return String(localized: "Последняя проверка: ") + date.formatted(.dateTime.day().month().hour().minute().locale(.runie))
     }
 
     var body: some View {
         Form {
             Section("Руни") {
                 LabeledContent("Версия", value: Runie.version)
-                LabeledContent("Как вызвать", value: "Нажмите на орб у края экрана")
+                LabeledContent("Как вызвать", value: String(localized: "Нажмите на орб у края экрана"))
             }
             Section("Язык") {
                 Picker(selection: Binding(get: { settings.answerLanguage }, set: { settings.answerLanguage = $0 })) {
@@ -38,7 +38,7 @@ struct GeneralView: View {
             Section("Обновления") {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(updater.status ?? "Runie обновляется сам")
+                        Text(updater.status ?? String(localized: "Runie обновляется сам"))
                         Text(lastCheck)
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)

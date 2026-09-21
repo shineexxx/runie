@@ -127,7 +127,7 @@ struct ExtensionsView: View {
         Task {
             let result = await ClaudeCLI.run(["mcp", "remove", "--scope", server.scope ?? "user", server.name])
             if result.status != 0 {
-                removalError = result.output.isEmpty ? "Claude Code не удалил сервер." : result.output
+                removalError = result.output.isEmpty ? String(localized: "Claude Code не удалил сервер.") : result.output
             }
             session.reloadAgent()
             session.refreshExtensions()
@@ -204,7 +204,7 @@ struct ExtensionsView: View {
                 )
             }
         } header: {
-            Text("Навыки · \(session.skillInfos.count)")
+            Text(String(localized: "Навыки · \(session.skillInfos.count)"))
         } footer: {
             Text("Навык — инструкция, которую Руни подгружает для особых задач. Выключенный навык недоступен только в Runie, в Claude Code он остаётся. Изменения применяются, когда Руни свободен.")
                 .fixedSize(horizontal: false, vertical: true)
@@ -252,7 +252,7 @@ private struct ServerRow: View {
                     if isEnabledInRunie {
                         StatusBadge(status: server.status)
                     } else {
-                        StatusBadge(status: .disabled, title: "выключен в Runie")
+                        StatusBadge(status: .disabled, title: String(localized: "выключен в Runie"))
                     }
                 }
                 Text(subtitle)
@@ -306,7 +306,7 @@ private struct ServerRow: View {
             .toggleStyle(.checkbox)
             if source.enabled {
                 let preset = MCPSourcePresets.query(forServer: server.name)
-                TextField("Что брать", text: $source.query, prompt: Text(preset ?? "Например: задачи на меня со сроком на этой неделе"), axis: .vertical)
+                TextField("Что брать", text: $source.query, prompt: Text(preset ?? String(localized: "Например: задачи на меня со сроком на этой неделе")), axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 11))
                     .lineLimit(1...3)
@@ -325,7 +325,7 @@ private struct ServerRow: View {
     }
 
     private var displayName: String {
-        if server.isRunie { return "Инструменты Runie" }
+        if server.isRunie { return String(localized: "Инструменты Runie") }
         if let name = server.runieName { return name }
         return server.name.hasPrefix("claude.ai ") ? String(server.name.dropFirst("claude.ai ".count)) : server.name
     }
@@ -342,11 +342,11 @@ private struct ServerRow: View {
 
     private var subtitle: String {
         let source = switch server.scope {
-        case "claudeai": "Коннектор claude.ai"
-        case "user": "Мой сервер"
-        case "project", "local": "Сервер проекта"
-        case "plugin": server.runieName != nil ? "Подключил Руни" : "Из плагина"
-        default: server.isRunie ? "Файлы, Календарь, отправка — встроено в Runie" : (server.scope ?? "")
+        case "claudeai": String(localized: "Коннектор claude.ai")
+        case "user": String(localized: "Мой сервер")
+        case "project", "local": String(localized: "Сервер проекта")
+        case "plugin": server.runieName != nil ? String(localized: "Подключил Руни") : String(localized: "Из плагина")
+        default: server.isRunie ? String(localized: "Файлы, Календарь, отправка — встроено в Runie") : (server.scope ?? "")
         }
         return [source, server.target].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
     }
@@ -365,12 +365,12 @@ private struct StatusBadge: View {
 
     private var defaultTitle: String {
         switch status {
-        case .connected: "подключён"
-        case .pending: "подключается"
-        case .needsAuth: "нужен вход"
-        case .failed: "ошибка"
-        case .disabled: "выключен"
-        case .unknown: "неизвестно"
+        case .connected: String(localized: "подключён")
+        case .pending: String(localized: "подключается")
+        case .needsAuth: String(localized: "нужен вход")
+        case .failed: String(localized: "ошибка")
+        case .disabled: String(localized: "выключен")
+        case .unknown: String(localized: "неизвестно")
         }
     }
 
@@ -509,7 +509,7 @@ private struct AddServerSheet: View {
                 onAdded()
                 dismiss()
             } else {
-                error = result.output.isEmpty ? "Claude Code не добавил сервер." : result.output
+                error = result.output.isEmpty ? String(localized: "Claude Code не добавил сервер.") : result.output
             }
         }
     }
@@ -520,7 +520,7 @@ private struct AddServerSheet: View {
 enum ClaudeCLI {
     /// Команда `claude …` с выводом. Для настроек: `mcp add`, `mcp remove`.
     static func run(_ arguments: [String]) async -> (status: Int32, output: String) {
-        guard let executable = try? ClaudeCodeLocator().locate() else { return (-1, "Claude Code не найден.") }
+        guard let executable = try? ClaudeCodeLocator().locate() else { return (-1, String(localized: "Claude Code не найден.")) }
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments

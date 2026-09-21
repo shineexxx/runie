@@ -192,7 +192,7 @@ final class SetupModel {
                 self.installProcess = nil
                 self.installProgress = nil
                 if status != 0 || (try? ClaudeCodeLocator().locate()) == nil {
-                    self.installError = tail.isEmpty ? "Установщик завершился с ошибкой (код \(status))." : tail
+                    self.installError = tail.isEmpty ? String(localized: "Установщик завершился с ошибкой (код \(status)).") : tail
                     self.stage = .needsClaude
                 }
                 await self.evaluate()

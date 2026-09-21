@@ -57,7 +57,7 @@ struct SidebarBrandHeader: View {
     }
 
     private var status: String {
-        session.isBusy ? ActivityLabel.text(session.timeline.activity) : "Готов помочь"
+        session.isBusy ? ActivityLabel.text(session.timeline.activity) : String(localized: "Готов помочь")
     }
 }
 

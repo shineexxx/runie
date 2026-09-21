@@ -210,7 +210,7 @@ struct ChatSessionTests {
         #expect(await eventually { !session.isBusy })
         #expect(backend.connections.first?.stopped == true)
         #expect(session.timeline.items.contains {
-            if case .notice(let notice) = $0 { notice.text == "Остановлено" } else { false }
+            if case .notice(let notice) = $0 { notice.text == t("Остановлено") } else { false }
         })
     }
 

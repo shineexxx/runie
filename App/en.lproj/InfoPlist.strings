@@ -1,0 +1,27 @@
+/* Bundle name */
+"CFBundleName" = "Runie";
+
+/* Privacy - AppleEvents Sending Usage Description */
+"NSAppleEventsUsageDescription" = "Runie controls apps on your behalf to do the things you ask for. Every irreversible action needs your confirmation.";
+
+/* Privacy - Calendars Full Access Usage Description */
+"NSCalendarsFullAccessUsageDescription" = "Runie looks at today’s events to suggest how it can help, and works with your calendar when you ask.";
+
+/* Privacy - Contacts Usage Description */
+"NSContactsUsageDescription" = "Runie looks up an email or phone number in Contacts when you ask it to send someone something.";
+
+/* Privacy - Desktop Folder Usage Description */
+"NSDesktopFolderUsageDescription" = "Runie works with files on your Desktop when you ask it to find, change or send them.";
+
+/* Privacy - Documents Folder Usage Description */
+"NSDocumentsFolderUsageDescription" = "Runie works with files in Documents when you ask it to find, change or send them.";
+
+/* Privacy - Downloads Folder Usage Description */
+"NSDownloadsFolderUsageDescription" = "Runie works with files in Downloads when you ask it to find, change or send them.";
+
+/* Copyright (human-readable) */
+"NSHumanReadableCopyright" = "MIT License. Copyright (c) 2026 Runie contributors.";
+
+/* Privacy - Reminders Full Access Usage Description */
+"NSRemindersFullAccessUsageDescription" = "Runie reads and adds reminders when you ask it to plan your day or to remember something.";
+

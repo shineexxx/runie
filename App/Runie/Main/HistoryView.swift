@@ -68,7 +68,7 @@ struct ConversationDetail: View {
         if items.isEmpty {
             BrandEmptyState(
                 title: SuggestionSet.fallbackGreeting(),
-                subtitle: "Напишите Руни внизу — ответ появится здесь."
+                subtitle: String(localized: "Напишите Руни внизу — ответ появится здесь.")
             )
         } else {
             ScrollView {
@@ -191,8 +191,8 @@ struct ConversationDetail: View {
     }
 
     private var placeholder: String {
-        if isLive, session.isBusy { return "Руни работает…" }
-        return record == nil ? "Напишите Руни…" : "Продолжить разговор…"
+        if isLive, session.isBusy { return String(localized: "Руни работает…") }
+        return record == nil ? String(localized: "Напишите Руни…") : String(localized: "Продолжить разговор…")
     }
 
     private var lastUserText: String? {

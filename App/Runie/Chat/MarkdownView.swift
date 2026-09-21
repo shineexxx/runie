@@ -65,11 +65,11 @@ private struct CodeBlockView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(language ?? "код")
+                Text(language ?? String(localized: "код"))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                 Spacer()
-                CopyButton(text: code, label: "Скопировать код")
+                CopyButton(text: code, label: String(localized: "Скопировать код"))
             }
             .padding(.leading, 10)
             .padding(.trailing, 4)
@@ -124,7 +124,7 @@ private struct TableBlockView: View {
 /// Кнопка «скопировать»: на мгновение превращается в галочку.
 struct CopyButton: View {
     let text: String
-    var label = "Скопировать"
+    var label = String(localized: "Скопировать")
     var size: CGFloat = 11
 
     @State private var copied = false
@@ -147,7 +147,7 @@ struct CopyButton: View {
                 .contentTransition(.symbolEffect(.replace))
         }
         .buttonStyle(.plain)
-        .help(copied ? "Скопировано" : label)
+        .help(copied ? String(localized: "Скопировано") : label)
         .accessibilityLabel(label)
     }
 }

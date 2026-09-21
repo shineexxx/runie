@@ -34,7 +34,7 @@ struct BrowserScriptTests {
     @Test("группы разрешений и подписи")
     func describe() {
         let input: JSONValue = .object(["browser": .string("chrome"), "text": .string("Войти")])
-        #expect(ToolDescriber.describe(name: "mcp__runie__browser_click", input: input).title == "Нажимает «Войти» в Chrome")
+        #expect(ToolDescriber.describe(name: "mcp__runie__browser_click", input: input).title == t("Нажимает «\("Войти")» в \("Chrome")"))
         #expect(PermissionClassifier.categories(toolName: "mcp__runie__browser_page_text", input: input) == [.browserRead])
         #expect(PermissionClassifier.categories(toolName: "mcp__runie__browser_fill", input: input) == [.browserControl])
         #expect(!PermissionCategory.browserRead.isRisky)
@@ -68,7 +68,7 @@ struct BrowserScriptTests {
         #expect(PermissionCategory.pageScript.isRisky)
         let code = "return document.title"
         let described = ToolDescriber.describe(name: "mcp__runie__browser_run_js", input: .object(["code": .string(code)]))
-        #expect(described.title == "Выполняет JavaScript на странице в Safari")
+        #expect(described.title == t("Выполняет JavaScript на странице в \("Safari")"))
         #expect(described.detail == code)
     }
 }

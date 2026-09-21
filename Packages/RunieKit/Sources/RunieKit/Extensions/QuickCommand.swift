@@ -107,16 +107,16 @@ extension RuniePlugin {
         var command = command
         command.command = QuickCommand.normalize(command.command)
         command.title = command.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !command.title.isEmpty else { throw Failure.badServer("Команде нужно название.") }
+        guard !command.title.isEmpty else { throw Failure.badServer(t("Команде нужно название.")) }
         guard QuickCommand.isValidCommand(command.command) else {
-            throw Failure.badServer("Команда — одно слово из букв и цифр, например «отчёт».")
+            throw Failure.badServer(t("Команда — одно слово из букв и цифр, например «отчёт»."))
         }
         guard !command.instructions.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw Failure.badServer("Напишите, что делать по этой команде.")
+            throw Failure.badServer(t("Напишите, что делать по этой команде."))
         }
         var others = commands().filter { $0.name != previous && $0.name != command.name }
         if others.contains(where: { QuickCommand.normalize($0.command) == command.command }) {
-            throw Failure.badServer("Команда /\(command.command) уже есть.")
+            throw Failure.badServer(t("Команда /\(command.command) уже есть."))
         }
 
         let desired = QuickCommand.skillName(for: command.command)

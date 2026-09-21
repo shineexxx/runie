@@ -86,10 +86,10 @@ struct EdgeButtonView: View {
 
     private var accessibilityStatus: String {
         switch RunieMood(activity: session.timeline.activity) {
-        case .idle, .carried: "свободен"
-        case .thinking: "думает"
-        case .working: "работает"
-        case .responding: "отвечает"
+        case .idle, .carried: String(localized: "свободен")
+        case .thinking: String(localized: "думает")
+        case .working: String(localized: "работает")
+        case .responding: String(localized: "отвечает")
         }
     }
 }

@@ -66,7 +66,7 @@ struct ModelMenu: View {
                     action: { select(model) }
                 )
             },
-            emptyText: "Загружаю модели…",
+            emptyText: String(localized: "Загружаю модели…"),
             onClose: { isOpen = false }
         )
     }
@@ -81,7 +81,7 @@ struct ModelMenu: View {
     private var currentTitle: String {
         let value = session.selectedModel ?? "default"
         guard let model = session.availableModels.first(where: { $0.value == value }) else {
-            return session.selectedModel ?? "Модель"
+            return session.selectedModel ?? String(localized: "Модель")
         }
         return ModelNames.short(model)
     }
@@ -451,10 +451,10 @@ struct WindowAnchorReader: NSViewRepresentable {
 enum ModelNames {
 
     private static let phrases: [String: String] = [
-        "Best for everyday, complex tasks": "для повседневных и сложных задач",
-        "Most capable for your hardest and longest-running tasks": "для самых трудных и долгих задач",
-        "Efficient for routine tasks": "экономная — для обычных задач",
-        "Fastest for quick answers": "самая быстрая — для коротких ответов",
+        "Best for everyday, complex tasks": String(localized: "для повседневных и сложных задач"),
+        "Most capable for your hardest and longest-running tasks": String(localized: "для самых трудных и долгих задач"),
+        "Efficient for routine tasks": String(localized: "экономная — для обычных задач"),
+        "Fastest for quick answers": String(localized: "самая быстрая — для коротких ответов"),
     ]
 
     /// «Opus 5 with 1M context» → «Opus 5»;
@@ -479,11 +479,11 @@ enum ModelNames {
     /// Строка меню: «По умолчанию» или «Sonnet 5». Коротко, чтобы меню было узким.
     static func title(_ model: AgentModel) -> String {
         // У «По умолчанию» в скобках — какая модель за ним сейчас стоит.
-        model.value == "default" ? "По умолчанию (\(baseName(model)))" : baseName(model)
+        model.value == "default" ? String(localized: "По умолчанию (\(baseName(model)))") : baseName(model)
     }
 
     static func detail(_ model: AgentModel) -> String {
-        if model.value == "default" { return "Как настроено в Claude Code" }
+        if model.value == "default" { return String(localized: "Как настроено в Claude Code") }
         let parts = model.description.components(separatedBy: " · ")
         guard parts.count > 1 else { return model.description }
         let tail = parts.dropFirst().joined(separator: " · ")

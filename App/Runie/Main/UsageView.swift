@@ -60,10 +60,10 @@ struct UsageWindowRow: View {
 enum UsageText {
     static func windowName(_ kind: String) -> String {
         switch kind {
-        case "five_hour": "За 5 часов"
-        case "seven_day": "За неделю"
-        case "seven_day_opus": "За неделю, Opus"
-        case "seven_day_sonnet": "За неделю, Sonnet"
+        case "five_hour": String(localized: "За 5 часов")
+        case "seven_day": String(localized: "За неделю")
+        case "seven_day_opus": String(localized: "За неделю, Opus")
+        case "seven_day_sonnet": String(localized: "За неделю, Sonnet")
         default: kind
         }
     }
@@ -72,11 +72,11 @@ enum UsageText {
         guard let date = window.resetsAt else { return nil }
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
-            return "Сброс сегодня в \(date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(.runie)))"
+            return String(localized: "Сброс сегодня в \(date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(.runie)))")
         }
         if calendar.isDateInTomorrow(date) {
-            return "Сброс завтра в \(date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(.runie)))"
+            return String(localized: "Сброс завтра в \(date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(.runie)))")
         }
-        return "Сброс \(date.formatted(.dateTime.day().month(.wide).hour().minute().locale(.runie)))"
+        return String(localized: "Сброс \(date.formatted(.dateTime.day().month(.wide).hour().minute().locale(.runie)))")
     }
 }

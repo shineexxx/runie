@@ -50,3 +50,9 @@ extension Locale {
     /// Язык, на котором Руни разговаривает: им форматируются даты в ответах инструментов.
     public static var runie: Locale { AnswerLanguage.current.locale }
 }
+
+/// Строка интерфейса из RunieKit. Переводы лежат в самом пакете: приложение
+/// показывает их как есть, а язык берётся из настроек системы.
+func t(_ key: String.LocalizationValue) -> String {
+    String(localized: key, bundle: .module)
+}

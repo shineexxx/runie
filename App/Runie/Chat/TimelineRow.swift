@@ -73,7 +73,7 @@ private struct AssistantMessage: View {
                 .background(.primary.opacity(0.07), in: MessageBubbleShape(tail: .leading))
                 .padding(.leading, MessageBubbleShape.tailReach)
             // «Скопировать» рядом с облачком, пока над ним курсор.
-            CopyButton(text: text, label: "Скопировать ответ", size: 12)
+            CopyButton(text: text, label: String(localized: "Скопировать ответ"), size: 12)
                 .opacity(hovering ? 1 : 0)
                 .animation(.easeOut(duration: 0.15), value: hovering)
             Spacer(minLength: 48)
@@ -149,12 +149,12 @@ private struct ActionRow: View {
 
     private var statusLabel: String {
         switch action.status {
-        case .running: "выполняется"
-        case .awaitingApproval: "ждёт разрешения"
-        case .succeeded: "готово"
-        case .failed: "ошибка"
-        case .denied: "отказано в разрешении"
-        case .interrupted: "прервано"
+        case .running: String(localized: "выполняется")
+        case .awaitingApproval: String(localized: "ждёт разрешения")
+        case .succeeded: String(localized: "готово")
+        case .failed: String(localized: "ошибка")
+        case .denied: String(localized: "отказано в разрешении")
+        case .interrupted: String(localized: "прервано")
         }
     }
 }
