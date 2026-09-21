@@ -24,7 +24,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         session = ChatSession(backend: backend)
         // Встроенные инструменты для файлов: поиск, Finder, сжатие, архив, отправка.
         session.hostTools = RunieTools.server
-        let store = ChatHistoryStore.standard()
+        var store = ChatHistoryStore.standard()
+        #if DEBUG
+        // Для снимков экрана: своя папка разговоров и своя тема оформления.
+        if let folder = UserDefaults.standard.string(forKey: "RunieHistoryDir") {
+            store = ChatHistoryStore(directory: URL(fileURLWithPath: folder))
+        }
+        switch UserDefaults.standard.string(forKey: "RunieAppearance") {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
+        #endif
         session.store = store
         settings = AppSettings()
         session.policy = settings.policy
@@ -211,6 +222,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // `-RunieOpenWindow permissions` открывает окно Runie на нужном разделе.
         if let section = UserDefaults.standard.string(forKey: "RunieOpenWindow") {
             mainWindow.show(MainWindowController.Section(rawValue: section))
+            // Для снимков: сразу открыть первый сохранённый разговор.
+            if UserDefaults.standard.bool(forKey: "RunieSelectFirst"), let first = store.list().first {
+                mainWindow.showConversation(first.id)
+            }
         }
         // `-RunieAutoSend "текст"` вместе с `-RunieAutoOpen` отправляет сообщение после
         // открытия — чтобы проверять живые ходы агента без мыши.

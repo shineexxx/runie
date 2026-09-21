@@ -10,7 +10,15 @@ of its own, no cloud of its own, no account of its own.
 [Русская версия](README.ru.md)
 
 <p align="center">
-  <img src="docs/screenshots/chat-en.png" width="540" alt="Runie chat at the orb">
+  <img src="docs/screenshots/chat-en.png" width="520" alt="Runie chat at the orb">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/orb.png" width="520" alt="The orb on its own and tucked into the edge of the screen">
+</p>
+
+<p align="center">
+  <em>The orb lives at the edge of the screen. Leave it alone and it hides into a bump, still glowing.</em>
 </p>
 
 ## Install
@@ -50,7 +58,19 @@ Everything Runie connects and creates lives in its own plugin: Claude Code in Te
 untouched.
 
 <p align="center">
-  <img src="docs/screenshots/permissions-en.png" width="720" alt="Permission groups in Runie settings">
+  <img src="docs/screenshots/window-en.png" width="820" alt="The Runie window: conversations on the left, the transcript on the right">
+</p>
+
+<p align="center">
+  <em>The window holds every conversation, and any of them can be carried on right there.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/settings-en.png" width="820" alt="Permission groups in Runie settings">
+</p>
+
+<p align="center">
+  <em>Permissions in plain words: allow a group in advance and Runie stops asking about it.</em>
 </p>
 
 ## Language

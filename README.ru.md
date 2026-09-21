@@ -10,7 +10,15 @@ Runie — нативное macOS-приложение: орб у края экр
 [English version](README.md)
 
 <p align="center">
-  <img src="docs/screenshots/chat-ru.png" width="540" alt="Чат Руни у орба">
+  <img src="docs/screenshots/chat-ru.png" width="520" alt="Чат Руни у орба">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/orb.png" width="520" alt="Орб сам по себе и спрятанный в край экрана">
+</p>
+
+<p align="center">
+  <em>Орб живёт у края экрана. Если его не трогать, он прячется в горбик и продолжает светиться.</em>
 </p>
 
 ## Установка
@@ -51,7 +59,19 @@ Runie — нативное macOS-приложение: орб у края экр
 остаётся нетронутым.
 
 <p align="center">
-  <img src="docs/screenshots/permissions-ru.png" width="720" alt="Группы разрешений в настройках Runie">
+  <img src="docs/screenshots/window-ru.png" width="820" alt="Окно Runie: разговоры слева, переписка справа">
+</p>
+
+<p align="center">
+  <em>В окне лежат все разговоры, и любой можно продолжить прямо там.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/settings-ru.png" width="820" alt="Группы разрешений в настройках Runie">
+</p>
+
+<p align="center">
+  <em>Разрешения человеческими словами: разрешите группу заранее — и Руни перестанет про неё спрашивать.</em>
 </p>
 
 ## Язык

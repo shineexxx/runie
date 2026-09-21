@@ -64,8 +64,16 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     private func makeWindow() -> NSWindow {
+        // `-RunieWindowSize 1440x900` — размер окна для снимков экрана.
+        var size = NSSize(width: 980, height: 660)
+        #if DEBUG
+        if let forced = UserDefaults.standard.string(forKey: "RunieWindowSize") {
+            let parts = forced.split(separator: "x").compactMap { Double($0) }
+            if parts.count == 2 { size = NSSize(width: parts[0], height: parts[1]) }
+        }
+        #endif
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 980, height: 660),
+            contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -74,8 +82,18 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 760, height: 480)
-        window.setFrameAutosaveName("RunieMainWindow")
-        if !window.setFrameUsingName("RunieMainWindow") { window.center() }
+        var forcedSize = false
+        #if DEBUG
+        forcedSize = UserDefaults.standard.string(forKey: "RunieWindowSize") != nil
+        #endif
+        if forcedSize {
+            // Заданный размер важнее запомненного: снимки должны быть одинаковыми.
+            window.setContentSize(size)
+            window.center()
+        } else {
+            window.setFrameAutosaveName("RunieMainWindow")
+            if !window.setFrameUsingName("RunieMainWindow") { window.center() }
+        }
         window.delegate = self
         // ⌘V с картинкой — во вложения разговора в окне.
         pasteMonitor = AttachmentStore.installPasteHandler(for: { [weak self] in self?.window }) { files in
