@@ -101,9 +101,10 @@ ditto -c -k --sequesterRsrc --keepParent "$DIST/$APP_NAME" "$RELEASES/$ZIP_NAME"
 echo "▸ appcast"
 SPARKLE_BIN="$DIST/build/SourcePackages/artifacts/sparkle/Sparkle/bin"
 [[ -x "$SPARKLE_BIN/generate_appcast" ]] || SPARKLE_BIN="$ROOT/build/SourcePackages/artifacts/sparkle/Sparkle/bin"
-# Прошлый appcast — чтобы записи о старых версиях остались.
+# В ленте — только текущий выпуск: ссылки в ней ведут в релиз этой версии,
+# и записи о прошлых версиях указывали бы не туда.
 rm -f "$RELEASES/appcast.xml"
-[[ -s "$ROOT/appcast.xml" ]] && cp -f "$ROOT/appcast.xml" "$RELEASES/appcast.xml"
+find "$RELEASES" -name "Runie-*.zip" ! -name "$ZIP_NAME" -delete
 "$SPARKLE_BIN/generate_appcast" \
     --download-url-prefix "$REPO_URL/releases/download/$TAG/" \
     --link "$REPO_URL" \
