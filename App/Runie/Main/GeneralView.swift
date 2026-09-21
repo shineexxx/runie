@@ -2,6 +2,8 @@ import RunieKit
 import SwiftUI
 
 struct GeneralView: View {
+    let settings: AppSettings
+
     private let claudePath = try? ClaudeCodeLocator().locate().path
     private let updater = UpdaterModel.shared
     @AppStorage(MorningBriefing.enabledKey) private var briefingEnabled = true
@@ -16,6 +18,22 @@ struct GeneralView: View {
             Section("Руни") {
                 LabeledContent("Версия", value: Runie.version)
                 LabeledContent("Как вызвать", value: "Нажмите на орб у края экрана")
+            }
+            Section("Язык") {
+                Picker(selection: Binding(get: { settings.answerLanguage }, set: { settings.answerLanguage = $0 })) {
+                    Text("Как в системе").tag(AnswerLanguage.system)
+                    Text("Русский").tag(AnswerLanguage.russian)
+                    Text("English").tag(AnswerLanguage.english)
+                } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Язык ответов")
+                        Text("На этом языке Руни отвечает, придумывает подсказки и пишет даты. Язык интерфейса берётся из настроек macOS.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .pickerStyle(.menu)
             }
             Section("Обновления") {
                 HStack {

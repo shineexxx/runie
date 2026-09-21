@@ -74,6 +74,16 @@ final class SuggestionsModel {
         SuggestionContext.partOfDay(at: generated.date) == SuggestionContext.partOfDay(at: now)
     }
 
+    /// Язык ответов сменился — придуманное на прежнем языке больше не годится.
+    func resetCache() {
+        cache.removeAll()
+        noteCache.removeAll()
+        last = nil
+        UserDefaults.standard.removeObject(forKey: Self.lastKey)
+        current = Suggestion.fixed(ContextSuggestions.fallback)
+        greeting = SuggestionSet.fallbackGreeting()
+    }
+
     /// Вызывается при открытии чата.
     func refresh(for app: AppContext?) {
         let key = app?.bundleIdentifier ?? "none"

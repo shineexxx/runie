@@ -2,12 +2,6 @@ import Foundation
 import Observation
 import RunieKit
 
-extension Locale {
-    /// Runie говорит по-русски, даже если система на другом языке: даты и числа
-    /// в окне не должны переходить на английский посреди русского текста.
-    static let runie = Locale(identifier: "ru_RU")
-}
-
 /// Настройки, которые человек меняет в окне Runie.
 @MainActor
 @Observable
@@ -52,6 +46,16 @@ final class AppSettings {
     @ObservationIgnored var onDisabledSkillsChange: ((Set<String>) -> Void)?
 
     /// Выбранная модель. `nil` — как в Claude Code.
+    /// На каком языке Руни отвечает. Хранится в RunieKit: им пользуются и инструменты.
+    var answerLanguage: AnswerLanguage = AnswerLanguage.current {
+        didSet {
+            guard answerLanguage != oldValue else { return }
+            AnswerLanguage.current = answerLanguage
+            onAnswerLanguageChange?(answerLanguage)
+        }
+    }
+    var onAnswerLanguageChange: ((AnswerLanguage) -> Void)?
+
     var selectedModel: String? {
         didSet { UserDefaults.standard.set(selectedModel, forKey: Key.model) }
     }

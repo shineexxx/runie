@@ -45,6 +45,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         session.onModelsUpdate = { [weak self] models in
             self?.settings.cachedModels = models
         }
+        settings.onAnswerLanguageChange = { [weak self] _ in
+            guard let self else { return }
+            // Язык живёт в системном промпте агента — нужен новый процесс.
+            session.replaceBackend(Self.makeBackend())
+            suggestions.resetCache()
+        }
         settings.onPolicyChange = { [weak self] policy in
             self?.session.policy = policy
         }
@@ -305,7 +311,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let executable = try ClaudeCodeLocator().locate()
             // Агент работает от домашней папки: пользователь просит про свои файлы,
             // а не про какой-то проект.
-            var arguments = ClaudeCodeArguments(appendSystemPrompt: runiePrompt)
+            var arguments = ClaudeCodeArguments(appendSystemPrompt: runiePrompt + "\n" + AnswerLanguage.current.promptLine)
             arguments.hostToolServers = [RunieTools.server.name]
             // Серверы и навыки, которые Руни подключил сам, — только для Runie.
             let plugin = RunieExtensions.plugin

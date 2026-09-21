@@ -17,18 +17,23 @@ public struct MCPDigest: Sendable {
     }
 
     /// Аргументы для такой сессии поверх обычных.
-    public static func arguments(model: String = "haiku") -> [String] {
+    public static func arguments(model: String = "haiku", language: AnswerLanguage = .current) -> [String] {
         // Не `--tools ""`: он выключает и инструменты MCP. Встроенные запрещаем списком.
         [
             "--model", model,
             "--disallowedTools", builtInTools.joined(separator: ","),
             "--no-session-persistence",
             "--disable-slash-commands",
-            "--system-prompt", """
+            "--system-prompt", language.isRussian ? """
             Ты собираешь краткую сводку для ИИ-помощника на Mac. Используй только инструменты, \
             которые читают данные. Ничего не отправляй и не меняй. Ответь по-русски списком \
             до 5 коротких пунктов, только суть: кто, что, название. Если ничего подходящего нет — ответь ровно одним словом «нет», \
             не объясняя, что и где проверял.
+            """ : """
+            You are collecting a short digest for an AI assistant on a Mac. Use only tools that \
+            read data. Send nothing, change nothing. Reply in English as a list of up to 5 short \
+            bullets, the essentials only: who, what, title. If there is nothing relevant, reply \
+            with the single word "no", without explaining what you checked.
             """
         ]
     }
@@ -116,12 +121,12 @@ public struct MCPDigest: Sendable {
     static func meaningful(_ result: String?) -> String? {
         guard let summary = result?.trimmingCharacters(in: .whitespacesAndNewlines), !summary.isEmpty else { return nil }
         let bare = summary.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "*_.!: ").union(.whitespacesAndNewlines))
-        guard bare != "нет" else { return nil }
+        guard bare != "нет", bare != "no", bare != "nothing" else { return nil }
         let hasItems = summary.split(separator: "\n").contains {
             let line = $0.trimmingCharacters(in: .whitespaces)
             return line.hasPrefix("- ") || line.hasPrefix("• ") || line.hasPrefix("* ") || line.first?.isNumber == true
         }
-        if !hasItems, bare.hasPrefix("нет ") || bare.hasPrefix("ничего") { return nil }
+        if !hasItems, ["нет ", "ничего", "no ", "nothing", "there are no", "there is no"].contains(where: bare.hasPrefix) { return nil }
         return summary
     }
 }

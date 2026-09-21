@@ -30,12 +30,25 @@ public struct SuggestionSet: Codable, Sendable, Equatable {
     }
 
     /// Приветствие без ИИ — по времени суток.
-    public static func fallbackGreeting(at date: Date = Date(), calendar: Calendar = .current) -> String {
-        switch SuggestionContext.partOfDay(at: date, calendar: calendar) {
-        case .morning: "Доброе утро! Чем помочь?"
-        case .day: "Добрый день! Чем помочь?"
-        case .evening: "Добрый вечер! Чем помочь?"
-        case .night: "Не спится? Чем помочь?"
+    public static func fallbackGreeting(
+        at date: Date = Date(),
+        calendar: Calendar = .current,
+        language: AnswerLanguage = .current
+    ) -> String {
+        let part = SuggestionContext.partOfDay(at: date, calendar: calendar)
+        if language.isRussian {
+            return switch part {
+            case .morning: "Доброе утро! Чем помочь?"
+            case .day: "Добрый день! Чем помочь?"
+            case .evening: "Добрый вечер! Чем помочь?"
+            case .night: "Не спится? Чем помочь?"
+            }
+        }
+        return switch part {
+        case .morning: "Good morning! How can I help?"
+        case .day: "Hi! How can I help?"
+        case .evening: "Good evening! How can I help?"
+        case .night: "Still up? How can I help?"
         }
     }
 }
@@ -141,7 +154,7 @@ public struct SuggestionContext: Sendable, Equatable {
     /// Максимум символов в приветствии: оно помещается в одно облачко.
     public static let greetingLimit = 40
 
-    public func prompt(calendar: Calendar = .current) -> String {
+    public func prompt(calendar: Calendar = .current, language: AnswerLanguage = .current) -> String {
         var lines: [String] = []
         let hour = calendar.component(.hour, from: date)
         let partOfDay = Self.partOfDay(at: date, calendar: calendar).russian
@@ -181,6 +194,7 @@ public struct SuggestionContext: Sendable, Equatable {
             lines.append("Не повторяй эти подсказки: " + previousSuggestions.map { "«\($0)»" }.joined(separator: ", ") + ".")
         }
 
+        guard language.isRussian else { return englishPrompt(facts: lines.joined(separator: "\n")) }
         return """
         Руни — ИИ-помощник на Mac. Он умеет работать с файлами и папками, запускать команды, \
         искать в интернете, управлять приложениями через AppleScript, читать календарь и напоминания.
@@ -200,6 +214,30 @@ public struct SuggestionContext: Sendable, Equatable {
         Ответь только JSON, без пояснений:
         {"greeting": "приветствие", "suggestions": [{"label": "надпись на кнопке, до \(Self.labelLimit) символов", \
         "prompt": "полная просьба к Руни от первого лица человека"}]}
+        """
+    }
+
+    /// Тот же запрос по-английски: перевод сломал бы примеры тона.
+    private func englishPrompt(facts: String) -> String {
+        """
+        Runie is an AI assistant on a Mac. It works with files and folders, runs commands, \
+        searches the web, controls apps through AppleScript, reads the calendar and reminders.
+
+        \(facts)
+
+        Write, in English:
+        1. A greeting from Runie for an empty chat. Short, 2–6 words, the way a pleasant \
+        assistant would say it: you may nod to the time of day or the app in front, and end \
+        with a simple question. Never: give advice, hint at chores, mention files, folders or \
+        mess, judge the person or their habits, joke at their expense, ask rhetorical questions. \
+        Tone examples: "Good evening! What are we up to?", "Hi! How can I help?", \
+        "Good morning! Where do we start?", "Late one. How can I help?".
+        2. Two suggestions: what would be genuinely useful to ask Runie right now, given the \
+        facts above. Concrete and different, no filler. The label is a neutral action \
+        ("Summarize the PDF"), with no judgement or moralising.
+        Reply with JSON only, no explanations:
+        {"greeting": "greeting", "suggestions": [{"label": "button label, up to \(Self.labelLimit) characters", \
+        "prompt": "the full request to Runie, in the person's own voice"}]}
         """
     }
 

@@ -213,7 +213,7 @@ private struct SettingsView: View {
             case .usage: UsageView(usage: session.timeline.usage)
             case .servers: ExtensionsView(session: session, settings: settings, part: .servers)
             case .skills: ExtensionsView(session: session, settings: settings, part: .skills)
-            case .general: GeneralView()
+            case .general: GeneralView(settings: settings)
             default: PermissionsSettingsView(settings: settings)
             }
         }
