@@ -9,7 +9,8 @@
 #                           Для публичной раздачи: "Developer ID Application: Имя (TEAMID)".
 #   RUNIE_NOTARY_PROFILE  — профиль notarytool. Если задан, сборка уходит на нотаризацию
 #                           Apple и получает staple: тогда приложение открывается
-#                           двойным щелчком без предупреждений.
+#                           двойным щелчком без предупреждений. По умолчанию берётся
+#                           профиль «runie»; если его нет, выпуск идёт без нотаризации.
 set -euo pipefail
 
 VERSION="${1:-}"
@@ -28,6 +29,14 @@ ROOT="$PWD"
 # Подпись: если в Связке ключей есть Developer ID — берём его, иначе локальный сертификат.
 DEVELOPER_ID="$(security find-identity -v -p codesigning 2>/dev/null | grep -o 'Developer ID Application: [^"]*' | head -1)"
 IDENTITY="${RUNIE_SIGN_IDENTITY:-${DEVELOPER_ID:-Runie Local Signing}}"
+# Нотаризация: профиль из переменной, иначе — сохранённый профиль «runie».
+# Своё хранилище notarytool не видно через `security`, поэтому профиль проверяется
+# им самим: если его нет, выпуск идёт дальше без нотаризации, а не падает.
+NOTARY_PROFILE="${RUNIE_NOTARY_PROFILE:-runie}"
+if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" --output-format json >/dev/null 2>&1; then
+    echo "  профиль notarytool «$NOTARY_PROFILE» недоступен — выпуск без нотаризации"
+    NOTARY_PROFILE=""
+fi
 DIST="$ROOT/dist"
 # Архивы для Sparkle и установщики лежат раздельно: генератор ленты обновлений
 # читает всю свою папку и путается, если найдёт две копии одной версии.
@@ -78,16 +87,26 @@ fi
 # Обратный порядок путей ставит вложенное (XPC, Updater.app) раньше родителей.
 while IFS= read -r item; do
     codesign --force --options runtime "${TIMESTAMP[@]}" --sign "$IDENTITY" "$item" >/dev/null
-done < <(find "$DIST/$APP_NAME/Contents" \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" \) | sort -r)
+# Autoupdate — отдельный исполняемый файл внутри Sparkle: он не .app и не .xpc,
+# и без своей подписи с Developer ID нотаризация отклоняет всю сборку.
+done < <(find "$DIST/$APP_NAME/Contents" \
+    \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" -o -name "Autoupdate" \) | sort -r)
 codesign --force --options runtime "${TIMESTAMP[@]}" \
     --entitlements App/Runie.entitlements --sign "$IDENTITY" "$DIST/$APP_NAME"
 codesign --verify --deep --strict "$DIST/$APP_NAME" && echo "  подпись в порядке"
 
 # 4. Нотаризация — только с Developer ID и профилем notarytool.
-if [[ -n "${RUNIE_NOTARY_PROFILE:-}" ]]; then
+if [[ -n "$NOTARY_PROFILE" ]]; then
     echo "▸ Нотаризация у Apple"
     ditto -c -k --keepParent "$DIST/$APP_NAME" "$DIST/notarize.zip"
-    xcrun notarytool submit "$DIST/notarize.zip" --keychain-profile "$RUNIE_NOTARY_PROFILE" --wait
+    xcrun notarytool submit "$DIST/notarize.zip" --keychain-profile "$NOTARY_PROFILE" --wait | tee "$DIST/notary.log"
+    # `submit` не падает на отказе: без этой проверки провал заметил бы только stapler.
+    if ! grep -q "status: Accepted" "$DIST/notary.log"; then
+        echo "Apple не приняла сборку. Полный разбор:" >&2
+        SUBMISSION="$(grep -m1 "  id: " "$DIST/notary.log" | awk '{print $2}')"
+        xcrun notarytool log "$SUBMISSION" --keychain-profile "$NOTARY_PROFILE" >&2
+        exit 1
+    fi
     xcrun stapler staple "$DIST/$APP_NAME"
     rm -f "$DIST/notarize.zip"
 fi
@@ -113,6 +132,14 @@ find "$RELEASES" -name "Runie-*.zip" ! -name "$ZIP_NAME" -delete
 # 7. Установщик для людей: DMG с нашим оформлением.
 RUNIE_SIGN_IDENTITY="$IDENTITY" "$ROOT/scripts/make-dmg.sh" "$DIST/$APP_NAME" "$VERSION" "$INSTALLERS/$DMG_NAME"
 
+# Образ тоже идёт на нотаризацию: Gatekeeper проверяет сам скачанный DMG,
+# и без staple он встретит человека предупреждением ещё до установки.
+if [[ -n "$NOTARY_PROFILE" ]]; then
+    echo "▸ Нотаризация установщика"
+    xcrun notarytool submit "$INSTALLERS/$DMG_NAME" --keychain-profile "$NOTARY_PROFILE" --wait
+    xcrun stapler staple "$INSTALLERS/$DMG_NAME"
+fi
+
 if [[ "$DRY_RUN" == "--dry-run" ]]; then
     # Ленту обновлений сухой прогон не трогает: в ней должно быть только то, что выложено.
     echo "▸ Сухой прогон: готово. $RELEASES/$DMG_NAME и $RELEASES/$ZIP_NAME"
@@ -129,7 +156,7 @@ git push origin HEAD
 git push -f origin "$TAG"
 # Первый запуск зависит от того, чем подписано: у Developer ID без нотаризации
 # macOS просит открыть через меню, у локального сертификата — снять карантин.
-if [[ "$IDENTITY" == Developer\ ID* && -z "${RUNIE_NOTARY_PROFILE:-}" ]]; then
+if [[ "$IDENTITY" == Developer\ ID* && -z "$NOTARY_PROFILE" ]]; then
     FIRST_RUN='**Первый запуск.** Приложение подписано сертификатом Developer ID, но ещё не прошло нотаризацию Apple,
 поэтому macOS в первый раз скажет, что не может проверить разработчика. Откройте его через контекстное меню:
 правый клик по Runie → «Открыть» → «Открыть». Дальше оно запускается обычным двойным щелчком.'
