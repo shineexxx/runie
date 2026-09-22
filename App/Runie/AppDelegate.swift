@@ -48,6 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.onDisabledMCPServersChange = { [weak self] servers in
             guard let self else { return }
             session.disabledMCPServers = servers
+            // У Телеграма есть фоновая служба: выключатель должен останавливать
+            // сбор переписки, а не только прятать инструменты. Запуск launchctl
+            // занимает секунду — не держим на нём интерфейс.
+            let telegramOn = !servers.contains(where: TelegramExtension.matches)
+            Task.detached { TelegramExtension.setEnabled(telegramOn) }
             session.reloadAgent()
         }
         settings.onDisabledSkillsChange = { [weak self] skills in

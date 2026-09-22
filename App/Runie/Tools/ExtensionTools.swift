@@ -104,6 +104,12 @@ struct RemoveServiceTool: HostTool {
     func call(_ arguments: JSONValue) async -> HostToolResult {
         let name = arguments["name"]?.stringValue ?? ""
         let secrets = RunieExtensions.plugin.servers().first { $0.name == name }?.secrets ?? []
+        // У Телеграма, кроме записи о сервере, есть фоновая служба и накопленная
+        // переписка: отключаем — значит убираем и их.
+        var extra = ""
+        if TelegramExtension.matches(name) {
+            extra = " " + (TelegramExtension.remove(plugin: RunieExtensions.plugin) ?? "")
+        }
         do {
             try RunieExtensions.plugin.removeServer(named: name)
         } catch {
@@ -113,7 +119,7 @@ struct RemoveServiceTool: HostTool {
             SecretStore.delete(RuniePlugin.environmentVariable(server: name, variable: secret.variable))
         }
         RunieExtensions.onChange?()
-        return HostToolResult("Сервер «\(name)» отключён, ключи удалены.")
+        return HostToolResult("Сервер «\(name)» отключён, ключи удалены." + extra)
     }
 }
 
