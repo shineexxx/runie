@@ -53,6 +53,9 @@ new version without Terminal. Every release is signed with the author’s key.
 - **It extends itself.** Runie connects MCP servers to services, writes its own when there is none,
   and saves skills. API keys live in the Keychain, never in files.
 - **Quick commands.** Your own instruction, called with `/command` or just by asking in your words.
+- **Long-term memory.** Runie remembers facts about you, your corrections and agreements, keeps a daily
+  journal and relies on it in later conversations. It all lives as plain Markdown files in
+  Documents → Runie → Memory: open, edit, delete. Passwords and keys never land there.
 
 Everything Runie connects and creates lives in its own plugin: Claude Code in Terminal stays
 untouched.

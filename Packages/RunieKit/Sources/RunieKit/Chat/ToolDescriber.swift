@@ -144,6 +144,16 @@ public enum ToolDescriber {
             return Description(title: t("Удаляет навык «\(input["name"]?.stringValue ?? "")»"), detail: nil)
         case "list_extensions":
             return Description(title: t("Смотрит подключённые сервисы и навыки"), detail: nil)
+        case "memory_save":
+            return Description(title: t("Запоминает: «\(input["description"]?.stringValue ?? "")»"), detail: input["body"]?.stringValue.map(clip))
+        case "memory_forget":
+            return Description(title: t("Забывает «\(input["name"]?.stringValue ?? "")»"), detail: nil)
+        case "memory_recall":
+            return Description(title: t("Вспоминает про «\(input["query"]?.stringValue ?? "")»"), detail: nil)
+        case "memory_journal":
+            return Description(title: t("Записывает в дневник"), detail: input["note"]?.stringValue.map(clip))
+        case "memory_profile":
+            return Description(title: t("Обновляет профиль в памяти"), detail: input["text"]?.stringValue.map(clip))
         case "calendar_events":
             let range = switch input["range"]?.stringValue {
             case "tomorrow": t("на завтра")

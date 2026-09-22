@@ -19,6 +19,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case browserControl
     case pageScript
     case extendRunie
+    case memory
     case contacts
     case services
     case otherCommands
@@ -43,6 +44,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .browserControl: t("Управление браузером")
         case .pageScript: t("JavaScript на странице")
         case .extendRunie: t("Новые возможности Руни")
+        case .memory: t("Память Руни")
         case .contacts: t("Контакты")
         case .services: t("Подключённые сервисы")
         case .otherCommands: t("Прочие команды")
@@ -63,6 +65,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .browserRead: t("Посмотреть открытые вкладки Safari и Chrome и прочитать текст страницы.")
         case .browserControl: t("Открыть ссылку, перейти на вкладку, нажать кнопку или заполнить поле на странице.")
         case .extendRunie: t("Подключить сервис или сохранить навык. Работает только в Runie — Claude Code в терминале не меняется.")
+        case .memory: t("Запомнить факт о вас, дописать дневник дня или вспомнить сохранённое. Всё лежит обычными текстовыми файлами в папке Документы → Runie → Memory.")
         case .pageScript: t("Выполнить свой код на открытой странице: разобрать её устройство, достать данные, нажать то, что не нажимается по надписи. Код видно в запросе.")
         case .calendarRead: t("Посмотреть встречи и напоминания — например, чтобы разобрать день.")
         case .calendarEdit: t("Добавить встречу или напоминание, отметить напоминание выполненным.")
@@ -73,10 +76,16 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         }
     }
 
+    /// Что делать, пока человек ничего не выбрал. Память разрешена сразу: она пишет
+    /// только в свою папку, а вопрос на каждое «запомни» быстро надоедает.
+    public var defaultRule: PermissionPolicy.Rule {
+        self == .memory ? .allow : .ask
+    }
+
     /// Можно ли испортить что-то необратимо. Такие группы в настройках помечаются.
     public var isRisky: Bool {
         switch self {
-        case .readFiles, .browseFolders, .systemInfo, .calendarRead, .browserRead: false
+        case .readFiles, .browseFolders, .systemInfo, .calendarRead, .browserRead, .memory: false
         default: true
         }
     }
@@ -114,6 +123,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
             [(t("открыть ссылку"), "Safari, Chrome"), (t("нажать кнопку"), "Safari, Chrome"), (t("заполнить поле"), "Safari, Chrome")]
         case .extendRunie:
             [(t("подключить сервис"), t("MCP-сервер")), (t("запомнить, как делать задачу"), t("навык"))]
+        case .memory:
+            [(t("запомнить факт или поправку"), t("память")), (t("записать, что сделали за день"), t("дневник")), (t("вспомнить сохранённое"), t("память"))]
         case .pageScript:
             [(t("найти элементы и ссылки"), "Safari, Chrome"), (t("достать таблицу с данными"), "Safari, Chrome"), (t("прокрутить, выбрать в списке"), "Safari, Chrome")]
         case .calendarRead:
@@ -164,6 +175,9 @@ public enum PermissionClassifier {
         case "mcp__runie__add_service", "mcp__runie__remove_service", "mcp__runie__save_skill", "mcp__runie__remove_skill":
             return [.extendRunie]
         case "mcp__runie__list_extensions": return [.systemInfo]
+        case "mcp__runie__memory_save", "mcp__runie__memory_forget", "mcp__runie__memory_recall",
+             "mcp__runie__memory_journal", "mcp__runie__memory_profile":
+            return [.memory]
         case "mcp__runie__create_event", "mcp__runie__create_reminder", "mcp__runie__complete_reminder":
             return [.calendarEdit]
         default:
@@ -376,7 +390,7 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
     }
 
     public func rule(for category: PermissionCategory) -> Rule {
-        rules[category] ?? .ask
+        rules[category] ?? category.defaultRule
     }
 
     /// Разрешать без вопроса, только если разрешены все группы, которые затрагивает

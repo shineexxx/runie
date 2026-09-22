@@ -30,12 +30,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let folder = UserDefaults.standard.string(forKey: "RunieHistoryDir") {
             store = ChatHistoryStore(directory: URL(fileURLWithPath: folder))
         }
+        if let folder = UserDefaults.standard.string(forKey: "RunieMemoryDir") {
+            RunieMemory.store = MemoryStore(root: URL(fileURLWithPath: folder))
+        }
         switch UserDefaults.standard.string(forKey: "RunieAppearance") {
         case "light": NSApp.appearance = NSAppearance(named: .aqua)
         case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
         default: break
         }
         #endif
+        try? RunieMemory.store.prepare()
         session.store = store
         settings = AppSettings()
         session.policy = settings.policy
@@ -337,6 +341,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 arguments: arguments
             )
             backend.extraEnvironment = { SecretStore.environment(for: plugin) }
+            // Память читается при каждом подключении: новый разговор видит то, что
+            // запомнили в прошлом.
+            backend.promptSupplement = { RunieMemory.store.promptSection() }
             return backend
         } catch {
             return UnavailableBackend()
@@ -373,7 +380,17 @@ AppleScript через оболочку. Если готовых действи�
 Не трогай cookie, хранилища, поля паролей и не отправляй данные страницы в сеть. \
 Если человек просит то, чего ты не умеешь (сервис или программа без инструментов), не отказывай сразу: \
 предложи подключить и действуй по навыку runie:connect-service. Когда человек просит запомнить, как \
-делать задачу, — навык runie:create-skill. Всё это работает только в Runie. Ничего не покупай, не оплачивай, не отправляй и не вводи пароли без явной просьбы.
+делать задачу, — навык runie:create-skill. Всё это работает только в Runie. \
+У тебя есть долгая память — раздел «Память» ниже: профиль человека, индекс фактов и дневник последних дней. \
+Опирайся на неё, не переспрашивай то, что там есть. Запоминай через memory_save то, что пригодится в других \
+разговорах: факты о человеке (kind=user), его поправки к твоей работе (kind=feedback: «не спрашивай дважды», \
+«пиши короче»), договорённости и сроки по делам (kind=project, относительные даты переводи в абсолютные), \
+полезные ссылки (kind=reference). Не запоминай то, что уже есть в памяти или видно в файлах, и никогда — пароли \
+и ключи. Если человек просит запомнить, забыть или спрашивает «что ты обо мне помнишь» — это memory_save, \
+memory_forget и индекс. Подробности факта из индекса — memory_recall. Когда закончил дело, которое что-то \
+изменило (файлы, письмо, встреча, решение), одной строкой запиши его в дневник memory_journal. \
+Профиль (memory_profile) правь, когда узнал что-то важное о самом человеке. \
+Ничего не покупай, не оплачивай, не отправляй и не вводи пароли без явной просьбы.
 """
 
 /// Бэкенд на случай, когда Claude Code не установлен. Приложение при этом

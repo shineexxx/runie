@@ -55,6 +55,9 @@ public struct ClaudeCodeBackend: AgentBackend {
     /// ключи серверов из Связки ключей, более полный PATH. Считаются заново — ключ,
     /// введённый минуту назад, уже на месте.
     public var extraEnvironment: (@Sendable () -> [String: String])?
+    /// Хвост системного промпта, который считается заново при каждом подключении:
+    /// память Руни меняется между разговорами, а аргументы — нет.
+    public var promptSupplement: (@Sendable () -> String)?
 
     public init(
         executable: URL,
@@ -70,6 +73,9 @@ public struct ClaudeCodeBackend: AgentBackend {
         var arguments = self.arguments
         arguments.session = sessionID.map { .resume(id: $0) } ?? .new(id: UUID())
         arguments.disallowedTools += disallowedTools
+        if let supplement = promptSupplement?().trimmingCharacters(in: .whitespacesAndNewlines), !supplement.isEmpty {
+            arguments.appendSystemPrompt = [arguments.appendSystemPrompt, supplement].compactMap { $0 }.joined(separator: "\n\n")
+        }
 
         let runtime = AgentRuntime(configuration: .init(
             executable: executable,

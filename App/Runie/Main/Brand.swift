@@ -107,6 +107,7 @@ extension PermissionCategory {
         case .browserControl: "cursorarrow.click"
         case .pageScript: "curlybraces"
         case .extendRunie: "wand.and.sparkles"
+        case .memory: "brain"
         case .services: "puzzlepiece.extension"
         case .otherCommands: "terminal"
         }

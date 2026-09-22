@@ -81,6 +81,15 @@ public enum SkillCatalog {
         return fields
     }
 
+    /// Текст после шапки `---`; без шапки — весь файл.
+    static func body(_ text: String) -> String {
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        guard lines.first?.trimmingCharacters(in: .whitespaces) == "---",
+              let end = lines.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" })
+        else { return text.trimmingCharacters(in: .whitespacesAndNewlines) }
+        return lines[(end + 1)...].joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private static func unquote(_ value: String) -> String {
         guard value.count >= 2, let first = value.first, let last = value.last,
               (first == "\"" && last == "\"") || (first == "'" && last == "'") else { return value }

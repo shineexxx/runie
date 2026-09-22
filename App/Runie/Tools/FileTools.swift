@@ -34,7 +34,12 @@ enum RunieTools {
         RemoveServiceTool(),
         SaveSkillTool(),
         RemoveSkillTool(),
-        ListExtensionsTool()
+        ListExtensionsTool(),
+        MemorySaveTool(),
+        MemoryForgetTool(),
+        MemoryRecallTool(),
+        MemoryJournalTool(),
+        MemoryProfileTool()
     ])
 }
 
