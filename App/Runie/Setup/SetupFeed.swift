@@ -1,7 +1,13 @@
+import RunieKit
 import SwiftUI
 
 /// Знакомство в чате: Руни пишет облачками, а шаги — карточки с кнопками под ними.
 struct SetupFeed: View {
+
+    /// Сколько весит модель смыслового поиска — человек видит это до загрузки.
+    static let modelSize = Measurement(value: Double(MemoryModelInstaller.downloadSize), unit: UnitInformationStorage.bytes)
+        .formatted(.byteCount(style: .file).locale(.runie))
+
     let setup: SetupModel
 
     @State private var showsManual = false
@@ -118,6 +124,22 @@ struct SetupFeed: View {
                         recommended: false
                     ) { setup.chooseTrust(cautious: false) }
                     Text("Поменять можно в настройках, раздел «Разрешения».")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            case .offerMemory:
+                SetupBubble(text: String(localized: "И ещё: я запоминаю, что вы рассказываете, — привычки, договорённости, правила работы. Записи лежат в «Документах» обычными файлами."))
+                SetupCard {
+                    Text("Чтобы находить их по смыслу, а не только по совпадению слов, нужна небольшая модель. Она работает на вашем Mac и ничего никуда не отправляет.")
+                        .font(.system(size: 12))
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 8) {
+                        Button("Скачать \(SetupFeed.modelSize)") { setup.offerMemory(download: true) }
+                            .buttonStyle(SetupButtonStyle(primary: true))
+                        Button("Потом") { setup.offerMemory(download: false) }
+                            .buttonStyle(SetupButtonStyle(primary: false))
+                    }
+                    Text("Передумаете — настройки, раздел «Общие».")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }

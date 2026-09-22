@@ -55,7 +55,9 @@ new version without Terminal. Every release is signed with the author’s key.
 - **Quick commands.** Your own instruction, called with `/command` or just by asking in your words.
 - **Long-term memory.** Runie remembers facts about you, your corrections and agreements, keeps a daily
   journal and relies on it in later conversations. It all lives as plain Markdown files in
-  Documents → Runie → Memory: open, edit, delete. Passwords and keys never land there.
+  Documents → Runie → Memory: open, edit, delete. Passwords and keys never land there. A 55 MB model
+  can be downloaded on request, and then memory is searched by meaning: “the rule about pictures”
+  finds the note about screenshots. The model runs entirely on your Mac.
 
 Everything Runie connects and creates lives in its own plugin: Claude Code in Terminal stays
 untouched.
@@ -125,3 +127,7 @@ isolated in a single adapter, so a change in the CLI cannot break the whole app.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+The memory search model is [sentence-transformers/static-similarity-mrl-multilingual-v1](https://huggingface.co/sentence-transformers/static-similarity-mrl-multilingual-v1),
+licensed Apache 2.0. Runie ships it truncated to 256 dimensions and fp16; `scripts/make-embedding-model.py`
+prepares the files.

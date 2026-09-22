@@ -90,7 +90,10 @@ struct MemoryRecallTool: HostTool {
             return HostToolResult(facts.map { "- \($0.name): \($0.description)" }.joined(separator: "\n"))
         }
         let name = query.replacingOccurrences(of: "facts/", with: "").replacingOccurrences(of: ".md", with: "")
-        let found = store.fact(named: name).map { [$0] } ?? MemorySearch.search(query, in: facts).map(\.fact)
+        // Со скачанной моделью поиск понимает и другие слова: «правило про картинки»
+        // находит запись про скриншоты.
+        let model = await MainActor.run { MemoryModelInstaller.shared.model }
+        let found = store.fact(named: name).map { [$0] } ?? MemorySearch.search(query, in: facts, model: model).map(\.fact)
         guard !found.isEmpty else { return HostToolResult("По запросу «\(query)» в памяти ничего нет.") }
         let text = found.map { fact in
             "## \(fact.description)\n(facts/\(fact.fileName), \(fact.kind.rawValue), обновлено \(MemoryStore.dayName(fact.updated)))\n\(fact.body)"

@@ -16,6 +16,8 @@ final class SetupModel {
         case needsLogin
         case loggingIn
         case chooseTrust
+        /// Предложение скачать модель смыслового поиска по памяти.
+        case offerMemory
         case ready
     }
 
@@ -65,6 +67,7 @@ final class SetupModel {
             case "needsLogin": .needsLogin
             case "loggingIn": .loggingIn
             case "chooseTrust": .chooseTrust
+            case "offerMemory": .offerMemory
             default: .checking
             }
         }
@@ -293,6 +296,17 @@ final class SetupModel {
         }
         settings.policy = policy
         UserDefaults.standard.set(true, forKey: Self.trustKey)
+        // Про память спрашиваем один раз и только если модели ещё нет.
+        let asked = UserDefaults.standard.bool(forKey: Self.memoryKey)
+        stage = asked || MemoryModel.isInstalled() ? .ready : .offerMemory
+    }
+
+    private static let memoryKey = "setup.memoryAsked"
+
+    /// Ответ на предложение скачать модель. Загрузка идёт фоном — знакомство её не ждёт.
+    func offerMemory(download: Bool) {
+        UserDefaults.standard.set(true, forKey: Self.memoryKey)
+        if download { MemoryModelInstaller.shared.install() }
         stage = .ready
     }
 }

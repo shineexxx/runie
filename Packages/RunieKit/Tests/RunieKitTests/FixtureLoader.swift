@@ -7,6 +7,16 @@ enum FixtureLoader {
 
     static let names = ["tool-use", "permission", "resume-missing", "bash-readonly", "thinking", "partial", "permission-request"]
 
+    /// Произвольный файл из папки Fixtures.
+    static func data(named name: String) throws -> Data {
+        let parts = name.split(separator: ".")
+        let url = try #require(
+            Bundle.module.url(forResource: String(parts[0]), withExtension: String(parts[1]), subdirectory: "Fixtures"),
+            "нет фикстуры \(name)"
+        )
+        return try Data(contentsOf: url)
+    }
+
     static func rawEvents(_ name: String) throws -> [RawAgentEvent] {
         let url = try #require(
             Bundle.module.url(forResource: name, withExtension: "jsonl", subdirectory: "Fixtures"),

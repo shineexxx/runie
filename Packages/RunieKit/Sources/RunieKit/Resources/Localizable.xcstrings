@@ -442,6 +442,17 @@
         }
       }
     },
+    "Модель смыслового поиска не скачана.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The semantic search model has not been downloaded."
+          }
+        }
+      }
+    },
     "Навыку нужны описание и инструкция.": {
       "extractionState": "manual",
       "localizations": {
@@ -504,6 +515,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Didn’t work: %@"
+          }
+        }
+      }
+    },
+    "Не удалось скачать %@: ответ %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not download %@: response %lld"
           }
         }
       }
@@ -1189,6 +1211,17 @@
         }
       }
     },
+    "Файл модели испорчен: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model file is damaged: %@"
+          }
+        }
+      }
+    },
     "Читает": {
       "extractionState": "manual",
       "localizations": {
@@ -1240,6 +1273,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This looks like %@ — Runie doesn’t remember such things."
+          }
+        }
+      }
+    },
+    "в словаре %lld строк вместо %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the vocabulary has %lld lines instead of %lld"
           }
         }
       }
@@ -1493,6 +1537,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "find elements and links"
+          }
+        }
+      }
+    },
+    "не сходятся размеры": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sizes don’t add up"
+          }
+        }
+      }
+    },
+    "не та шапка": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "wrong header"
           }
         }
       }

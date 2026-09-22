@@ -784,3 +784,23 @@
 /* No comment provided by engineer. */
 "Tab" = "Tab";
 
+
+"Память" = "Memory";
+
+"Искать по смыслу, а не только по словам" = "Search by meaning, not just by words";
+
+"Руни запоминает факты о вас в папке «Документы → Runie → Memory». Со скачанной моделью он найдёт нужное, даже если вы спросите другими словами: «правило про картинки» приведёт к записи про скриншоты. Модель работает на вашем Mac, ничего никуда не отправляет." = "Runie remembers facts about you in Documents → Runie → Memory. With the model downloaded it finds the right one even when you ask in other words: “the rule about pictures” leads to the note about screenshots. The model runs on your Mac and sends nothing anywhere.";
+
+"Скачать %@" = "Download %@";
+
+"Отменить" = "Cancel";
+
+"Модель на месте — поиск по памяти понимает смысл." = "The model is in place — memory search understands meaning.";
+
+"И ещё: я запоминаю, что вы рассказываете, — привычки, договорённости, правила работы. Записи лежат в «Документах» обычными файлами." = "One more thing: I remember what you tell me — habits, agreements, how you like to work. The notes live in Documents as plain files.";
+
+"Чтобы находить их по смыслу, а не только по совпадению слов, нужна небольшая модель. Она работает на вашем Mac и ничего никуда не отправляет." = "To find them by meaning rather than by matching words, a small model is needed. It runs on your Mac and sends nothing anywhere.";
+
+"Потом" = "Later";
+
+"Передумаете — настройки, раздел «Общие»." = "Changed your mind? Settings, the General section.";
