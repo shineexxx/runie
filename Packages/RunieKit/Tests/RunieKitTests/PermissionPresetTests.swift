@@ -53,10 +53,18 @@ struct PermissionPresetTests {
         #expect(policy.rule(for: .install) == .ask)
     }
 
-    @Test("не разрешаются заранее ровно две группы")
+    @Test("заранее не разрешается только необратимое и вход под учётной записью")
     func alwaysAsks() {
         let asking = PermissionCategory.allCases.filter(\.alwaysAsks)
-        #expect(Set(asking) == [.moveDelete, .install])
+        #expect(Set(asking) == [.moveDelete, .install, .signInAsYou])
+        // Куки дают сайту думать, что за экраном сам человек, — это всегда с его ведома.
+        #expect(!PermissionPolicy.permissive.allows(
+            request("mcp__runie__web_open", .object(["url": .string("https://dnevnik.ru"), "sign_in": .bool(true)]))
+        ))
+        // А просто сходить на сайт своим браузером в этом режиме можно.
+        #expect(PermissionPolicy.permissive.allows(
+            request("mcp__runie__web_open", .object(["url": .string("https://dnevnik.ru")]))
+        ))
         // Команда из двух групп: удаление тянет за собой вопрос целиком.
         #expect(!PermissionPolicy.permissive.allows(shell("find . -name '*.tmp' -delete")))
     }

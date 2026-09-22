@@ -112,6 +112,17 @@
         }
       }
     },
+    "В Связке ключей нет ключа, которым %@ шифрует свои куки.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Keychain has no key that %@ uses to encrypt its cookies."
+          }
+        }
+      }
+    },
     "В памяти нет «%@».": {
       "extractionState": "manual",
       "localizations": {
@@ -119,6 +130,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "There is no “%@” in memory."
+          }
+        }
+      }
+    },
+    "Взять куки сайта из вашего Safari или Chrome, чтобы зайти туда под вашей учётной записью. Только для того сайта, о котором речь.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a site’s cookies from your Safari or Chrome to sign in there as you. Only for the site in question."
           }
         }
       }
@@ -141,6 +163,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recalls “%@”"
+          }
+        }
+      }
+    },
+    "Вход под вашей учётной записью": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing in as you"
           }
         }
       }
@@ -607,6 +640,17 @@
         }
       }
     },
+    "Не удалось разобрать %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not make sense of %@."
+          }
+        }
+      }
+    },
     "Не удалось скачать %@: ответ %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -614,6 +658,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Could not download %@: response %lld"
+          }
+        }
+      }
+    },
+    "Нет доступа к %@. Дайте Руни полный доступ к диску в настройках macOS.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to %@. Give Runie Full Disk Access in macOS settings."
           }
         }
       }
@@ -1134,6 +1189,17 @@
         }
       }
     },
+    "Свой браузер без окна": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A browser of its own, with no window"
+          }
+        }
+      }
+    },
     "Сжимает картинки (%lld)": {
       "extractionState": "manual",
       "localizations": {
@@ -1284,6 +1350,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Links and sources"
+          }
+        }
+      }
+    },
+    "Сходить на сайт в своём браузере, которого не видно: прочитать страницу, нажать, заполнить поле. Ваши вкладки и работа не трогаются.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visit a site in a browser you never see: read the page, click, fill in a field. Your tabs and your work are left alone."
           }
         }
       }
@@ -1486,6 +1563,17 @@
         }
       }
     },
+    "базу кук Chrome": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chrome’s cookie database"
+          }
+        }
+      }
+    },
     "в словаре %lld строк вместо %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -1504,6 +1592,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS version"
+          }
+        }
+      }
+    },
+    "взять куки сайта": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "take a site’s cookies"
           }
         }
       }
@@ -1647,6 +1746,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "battery level"
+          }
+        }
+      }
+    },
+    "кукам Chrome": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chrome’s cookies"
+          }
+        }
+      }
+    },
+    "кукам Safari": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safari’s cookies"
           }
         }
       }
@@ -1992,6 +2113,17 @@
         }
       }
     },
+    "прочитать и нажать": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "read and click"
+          }
+        }
+      }
+    },
     "прочитать файл": {
       "extractionState": "manual",
       "localizations": {
@@ -2036,6 +2168,17 @@
         }
       }
     },
+    "свой браузер": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "its own browser"
+          }
+        }
+      }
+    },
     "сервис": {
       "extractionState": "manual",
       "localizations": {
@@ -2065,6 +2208,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "copy"
+          }
+        }
+      }
+    },
+    "снимок страницы": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a snapshot of the page"
           }
         }
       }
@@ -2175,6 +2329,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "zip or unzip an archive"
+          }
+        }
+      }
+    },
+    "файл кук Safari": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safari’s cookie file"
           }
         }
       }

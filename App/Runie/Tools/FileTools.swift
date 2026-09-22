@@ -60,7 +60,15 @@ enum RunieTools {
         MemoryJournalTool(),
         MemoryProfileTool(),
         AskUserTool(),
-        SearchMyStuffTool()
+        SearchMyStuffTool(),
+        WebOpenTool(),
+        WebReadTool(),
+        WebElementsTool(),
+        WebClickTool(),
+        WebFillTool(),
+        WebRunJavaScriptTool(),
+        WebSnapshotTool(),
+        WebForgetTool()
     ]
 }
 

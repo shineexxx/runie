@@ -106,6 +106,8 @@ extension PermissionCategory {
         case .browserRead: "safari"
         case .browserControl: "cursorarrow.click"
         case .pageScript: "curlybraces"
+        case .quietBrowser: "macwindow.on.rectangle"
+        case .signInAsYou: "person.badge.key"
         case .extendRunie: "wand.and.sparkles"
         case .memory: "brain"
         case .personalIndex: "magnifyingglass.circle"

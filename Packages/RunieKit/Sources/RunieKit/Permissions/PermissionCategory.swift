@@ -18,6 +18,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case calendarEdit
     case browserControl
     case pageScript
+    case quietBrowser
+    case signInAsYou
     case extendRunie
     case memory
     case personalIndex
@@ -44,6 +46,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .calendarEdit: t("Изменение календаря и напоминаний")
         case .browserControl: t("Управление браузером")
         case .pageScript: t("JavaScript на странице")
+        case .quietBrowser: t("Свой браузер без окна")
+        case .signInAsYou: t("Вход под вашей учётной записью")
         case .extendRunie: t("Новые возможности Руни")
         case .memory: t("Память Руни")
         case .personalIndex: t("Поиск по вашим данным")
@@ -68,6 +72,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .browserControl: t("Открыть ссылку, перейти на вкладку, нажать кнопку или заполнить поле на странице.")
         case .extendRunie: t("Подключить сервис или сохранить навык. Работает только в Runie — Claude Code в терминале не меняется.")
         case .personalIndex: t("Искать по указателю, который Руни собрал из ваших файлов, писем и заметок. Что в него попадает, вы выбираете сами в настройках; пока источник не включён, искать нечего.")
+        case .quietBrowser: t("Сходить на сайт в своём браузере, которого не видно: прочитать страницу, нажать, заполнить поле. Ваши вкладки и работа не трогаются.")
+        case .signInAsYou: t("Взять куки сайта из вашего Safari или Chrome, чтобы зайти туда под вашей учётной записью. Только для того сайта, о котором речь.")
         case .memory: t("Запомнить факт о вас, дописать дневник дня или вспомнить сохранённое. Всё лежит обычными текстовыми файлами в папке Документы → Runie → Memory.")
         case .pageScript: t("Выполнить свой код на открытой странице: разобрать её устройство, достать данные, нажать то, что не нажимается по надписи. Код видно в запросе.")
         case .calendarRead: t("Посмотреть встречи и напоминания — например, чтобы разобрать день.")
@@ -93,7 +99,9 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     /// и после того, как про неё забыли. Здесь вопрос — последняя преграда, и
     /// он стоит секунды внимания.
     public var alwaysAsks: Bool {
-        self == .moveDelete || self == .install
+        // Вход под учётной записью человека — всегда с его ведома: куки дают
+        // сайту думать, что за экраном он сам.
+        self == .moveDelete || self == .install || self == .signInAsYou
     }
 
     /// Можно ли испортить что-то необратимо. Такие группы в настройках помечаются.
@@ -141,6 +149,11 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
             [(t("найти свой файл или письмо"), t("указатель")), (t("вспомнить, где это лежало"), t("указатель"))]
         case .memory:
             [(t("запомнить факт или поправку"), t("память")), (t("записать, что сделали за день"), t("дневник")), (t("вспомнить сохранённое"), t("память"))]
+        case .quietBrowser:
+            [(t("открыть страницу"), t("свой браузер")), (t("прочитать и нажать"), t("свой браузер")),
+             (t("снимок страницы"), t("свой браузер"))]
+        case .signInAsYou:
+            [(t("взять куки сайта"), "Safari, Chrome")]
         case .pageScript:
             [(t("найти элементы и ссылки"), "Safari, Chrome"), (t("достать таблицу с данными"), "Safari, Chrome"), (t("прокрутить, выбрать в списке"), "Safari, Chrome")]
         case .calendarRead:
@@ -188,6 +201,13 @@ public enum PermissionClassifier {
         case "mcp__runie__browser_open", "mcp__runie__browser_switch_tab", "mcp__runie__browser_click", "mcp__runie__browser_fill":
             return [.browserControl]
         case "mcp__runie__browser_run_js": return [.pageScript]
+        case "mcp__runie__web_open":
+            // Вход под учётной записью — отдельный вопрос поверх обычного захода.
+            return input["sign_in"]?.boolValue == true ? [.quietBrowser, .signInAsYou] : [.quietBrowser]
+        case "mcp__runie__web_read", "mcp__runie__web_elements", "mcp__runie__web_snapshot",
+             "mcp__runie__web_click", "mcp__runie__web_fill", "mcp__runie__web_forget":
+            return [.quietBrowser]
+        case "mcp__runie__web_run_js": return [.quietBrowser, .pageScript]
         case "mcp__runie__add_service", "mcp__runie__remove_service", "mcp__runie__save_skill", "mcp__runie__remove_skill":
             return [.extendRunie]
         case "mcp__runie__list_extensions": return [.systemInfo]
