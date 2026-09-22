@@ -239,6 +239,9 @@ private struct SettingsView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
+            // Фон обязателен: у настроек он прозрачный, и прокручиваемый текст
+            // иначе просвечивает прямо сквозь вкладки.
+            .background(.bar)
         }
     }
 }
