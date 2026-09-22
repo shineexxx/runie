@@ -175,6 +175,9 @@ public enum PermissionClassifier {
         case "mcp__runie__add_service", "mcp__runie__remove_service", "mcp__runie__save_skill", "mcp__runie__remove_skill":
             return [.extendRunie]
         case "mcp__runie__list_extensions": return [.systemInfo]
+        // Вопрос человеку и так требует его ответа: спрашивать разрешение,
+        // чтобы спросить, — бессмысленно. Пустой список значит «можно всегда».
+        case "mcp__runie__ask_user", "AskUserQuestion": return []
         case "mcp__runie__memory_save", "mcp__runie__memory_forget", "mcp__runie__memory_recall",
              "mcp__runie__memory_journal", "mcp__runie__memory_profile":
             return [.memory]

@@ -199,13 +199,15 @@ private struct CommandEditor: View {
 
 /// Список команд над полем ввода, пока набирается «/…». Щелчок или Tab подставляет.
 struct CommandSuggestions: View {
-    let matches: [QuickCommand]
-    let onPick: (QuickCommand) -> Void
+    let matches: [SlashSuggestion]
+    let onPick: (SlashSuggestion) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(matches.prefix(5)) { command in
-                CommandSuggestionRow(command: command, isFirst: command.id == matches.first?.id) { onPick(command) }
+            ForEach(matches.prefix(6)) { suggestion in
+                CommandSuggestionRow(suggestion: suggestion, isFirst: suggestion.id == matches.first?.id) {
+                    onPick(suggestion)
+                }
             }
         }
         .padding(5)
@@ -215,7 +217,7 @@ struct CommandSuggestions: View {
 }
 
 private struct CommandSuggestionRow: View {
-    let command: QuickCommand
+    let suggestion: SlashSuggestion
     let isFirst: Bool
     let action: () -> Void
 
@@ -224,10 +226,11 @@ private struct CommandSuggestionRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Text("/\(command.command)")
+                Text("/\(suggestion.slug)")
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(OrbPalette.teal)
-                Text(command.title)
+                    // Навыки — приглушённее: свои команды человек завёл сам.
+                    .foregroundStyle(suggestion.kind == .command ? OrbPalette.teal : Color.secondary)
+                Text(suggestion.title)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

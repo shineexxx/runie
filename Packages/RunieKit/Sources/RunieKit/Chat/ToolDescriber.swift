@@ -142,6 +142,8 @@ public enum ToolDescriber {
             return Description(title: t("Сохраняет навык «\(input["name"]?.stringValue ?? "")»"), detail: input["description"]?.stringValue.map(clip))
         case "remove_skill":
             return Description(title: t("Удаляет навык «\(input["name"]?.stringValue ?? "")»"), detail: nil)
+        case "ask_user":
+            return Description(title: t("Спрашивает вас"), detail: input["question"]?.stringValue)
         case "list_extensions":
             return Description(title: t("Смотрит подключённые сервисы и навыки"), detail: nil)
         case "memory_save":

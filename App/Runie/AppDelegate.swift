@@ -127,8 +127,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.button.reattach()
         }
         // `/команда` из настроек превращается в просьбу выполнить её навык.
-        session.expandMessage = { text in
-            QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)
+        session.expandMessage = { [weak self] text in
+            SlashSuggestion.expand(
+                text,
+                commands: QuickCommandsModel.shared.commands,
+                skills: self?.session.skillInfos ?? []
+            )
         }
         // Руни подключил сервис или сохранил навык — подхватить, как только освободится.
         RunieExtensions.onChange = { [weak self] in
@@ -136,6 +140,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.session.reloadWhenIdle()
                 self?.session.refreshExtensions()
             }
+        }
+        // Руни о чём-то спрашивает — вопрос должен быть на виду.
+        QuestionBroker.shared.onRequest = { [weak self] in
+            guard let self, !chat.isVisible, !mainWindow.isShowingCurrentConversation else { return }
+            openChat()
         }
         // Сервису нужен ключ — карточка ввода должна быть на виду.
         SecretBroker.shared.onRequest = { [weak self] in
@@ -395,6 +404,9 @@ AppleScript через оболочку. Если готовых действи�
 memory_forget и индекс. Подробности факта из индекса — memory_recall. Когда закончил дело, которое что-то \
 изменило (файлы, письмо, встреча, решение), одной строкой запиши его в дневник memory_journal. \
 Профиль (memory_profile) правь, когда узнал что-то важное о самом человеке. \
+Если для продолжения нужно решение человека — развилка, выбор между подходами, уточнение расплывчатой \
+просьбы, — спроси через ask_user: он ответит кнопкой прямо в чате. Не спрашивай о том, что можно \
+посмотреть самому или решить разумным умолчанием. \
 Ничего не покупай, не оплачивай, не отправляй и не вводи пароли без явной просьбы.
 """
 

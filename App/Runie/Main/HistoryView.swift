@@ -114,9 +114,11 @@ struct ConversationDetail: View {
                     .id(request.requestID)
             }
 
-            let commandMatches = QuickCommand.matching(draft, in: QuickCommandsModel.shared.commands)
+            let commandMatches = SlashSuggestion.matching(
+                draft, commands: QuickCommandsModel.shared.commands, skills: session.skillInfos
+            )
             if !commandMatches.isEmpty {
-                CommandSuggestions(matches: commandMatches) { draft = "/\($0.command) " }
+                CommandSuggestions(matches: commandMatches) { draft = $0.draft }
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 

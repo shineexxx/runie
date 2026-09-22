@@ -39,7 +39,8 @@ enum RunieTools {
         MemoryForgetTool(),
         MemoryRecallTool(),
         MemoryJournalTool(),
-        MemoryProfileTool()
+        MemoryProfileTool(),
+        AskUserTool()
     ])
 }
 
