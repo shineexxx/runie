@@ -71,3 +71,40 @@ final class ClosureMenuItem: NSMenuItem {
         handler()
     }
 }
+
+extension NSWindow {
+    /// Показывает окно поверх чужих приложений.
+    ///
+    /// Runie живёт без иконки в Dock, а его окна открываются из панели, которая
+    /// нарочно не активирует приложение. Без прямой просьбы система оставляет
+    /// окно позади того, где человек работал, и он его просто не находит.
+    func showInFront() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        makeKeyAndOrderFront(nil)
+        orderFrontRegardless()
+        // Политика Dock меняется не мгновенно: пока она доедет, система успевает
+        // оставить окно позади. Повторяем на следующем обороте цикла — иначе
+        // человек нажимает ⌘, и не находит настроек.
+        DispatchQueue.main.async { [weak self] in
+            NSApp.activate(ignoringOtherApps: true)
+            self?.makeKeyAndOrderFront(nil)
+            self?.orderFrontRegardless()
+        }
+    }
+}
+
+extension NSApplication {
+    /// Убирает Runie из Dock, когда обычных окон больше не осталось.
+    ///
+    /// Переключать политику на `.accessory` сразу при закрытии окна нельзя: она
+    /// прячет все обычные окна приложения разом. Закрыв одно окно, человек
+    /// терял и остальные — например, главное окно вместе с рассказом об указателе.
+    func hideFromDockIfNoOrdinaryWindowsLeft(besides closing: NSWindow?) {
+        let stillOpen = windows.contains { window in
+            window !== closing && window.isVisible && !(window is NSPanel)
+        }
+        guard !stillOpen else { return }
+        setActivationPolicy(.accessory)
+    }
+}

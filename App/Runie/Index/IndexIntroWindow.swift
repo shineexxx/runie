@@ -82,9 +82,7 @@ final class IndexIntroWindowController: NSObject, NSWindowDelegate {
     func show() {
         let window = self.window ?? makeWindow()
         self.window = window
-        NSApp.setActivationPolicy(.regular)
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        window.showInFront()
     }
 
     private func makeWindow() -> NSWindow {
@@ -110,6 +108,6 @@ final class IndexIntroWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         window = nil
-        NSApp.setActivationPolicy(.accessory)
+        NSApp.hideFromDockIfNoOrdinaryWindowsLeft(besides: notification.object as? NSWindow)
     }
 }
