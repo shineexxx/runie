@@ -109,10 +109,10 @@ struct ChatView: View {
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
 
-                    // Набирается «/…» — свои команды и навыки прямо над полем.
-                    let commandMatches = slashMatches
+                    // Набирается «/…» — свои команды прямо над полем.
+                    let commandMatches = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands)
                     if !commandMatches.isEmpty {
-                        CommandSuggestions(matches: commandMatches) { layout.draft = $0.draft }
+                        CommandSuggestions(matches: commandMatches) { layout.draft = "/\($0.command) " }
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
 
@@ -135,7 +135,6 @@ struct ChatView: View {
                         onPaste: onPaste,
                         layout: layout,
                         onSubmitDraft: submitDraft,
-                        onTab: { slashMatches.first?.draft },
                         onStop: { session.stop() },
                         onOpenWindow: onOpenWindow,
                         onRefocus: onRefocus
@@ -254,20 +253,11 @@ struct ChatView: View {
         }
     }
 
-    /// Что предложить под набранное «/…»: сначала свои команды, потом навыки.
-    private var slashMatches: [SlashSuggestion] {
-        SlashSuggestion.matching(
-            layout.draft,
-            commands: QuickCommandsModel.shared.commands,
-            skills: session.skillInfos,
-            disabledSkills: settings.disabledSkills
-        )
-    }
-
     private func submitDraft() {
         // Return на недописанной «/отч» подставляет команду, а не отправляет обрывок.
-        if let first = slashMatches.first, QuickCommand.normalize(layout.draft) != first.slug.lowercased() {
-            layout.draft = first.draft
+        let matches = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands)
+        if let first = matches.first, QuickCommand.normalize(layout.draft) != QuickCommand.normalize(first.command) {
+            layout.draft = "/\(first.command) "
             return
         }
         guard layout.hasDraft, !session.isBusy, setup.isReady else { return }
@@ -798,8 +788,6 @@ private struct InputRow: View {
     let onPaste: () -> Void
     @Bindable var layout: ChatLayout
     let onSubmitDraft: () -> Void
-    /// Tab на «/…»: что подставить в поле, или `nil`, если подставлять нечего.
-    let onTab: () -> String?
     let onStop: () -> Void
     let onOpenWindow: () -> Void
     let onRefocus: () -> Void
@@ -844,10 +832,11 @@ private struct InputRow: View {
                 .lineLimit(1...3)
                 .focused($isFocused)
                 .onSubmit(onSubmitDraft)
-                // Tab на «/…» подставляет первую подходящую команду или навык.
+                // Tab на «/…» подставляет первую подходящую команду.
                 .onKeyPress(.tab) {
-                    guard let first = onTab() else { return .ignored }
-                    layout.draft = first
+                    guard let first = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands).first
+                    else { return .ignored }
+                    layout.draft = "/\(first.command) "
                     return .handled
                 }
                 // ↑ в пустом поле — последнее сообщение, чтобы поправить и отправить заново.

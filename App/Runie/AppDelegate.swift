@@ -127,12 +127,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.button.reattach()
         }
         // `/команда` из настроек превращается в просьбу выполнить её навык.
-        session.expandMessage = { [weak self] text in
-            SlashSuggestion.expand(
-                text,
-                commands: QuickCommandsModel.shared.commands,
-                skills: self?.session.skillInfos ?? []
-            )
+        session.expandMessage = { text in
+            QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)
         }
         // Руни подключил сервис или сохранил навык — подхватить, как только освободится.
         RunieExtensions.onChange = { [weak self] in
