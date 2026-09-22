@@ -82,6 +82,12 @@ struct ChatView: View {
                     }
                         .modifier(EmergeFromLight(progress: emergence, window: 0.34...0.82, anchor: orbCornerAnchor))
 
+                    // Один раз предлагаем скачать модель смыслового поиска по памяти.
+                    if setup.offersMemory {
+                        MemoryOfferCard(setup: setup)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
+                    }
+
                     // Сервису нужен ключ — защищённое поле прямо над полем ввода.
                     if let secret = SecretBroker.shared.pending {
                         SecretCard(request: secret, broker: SecretBroker.shared)

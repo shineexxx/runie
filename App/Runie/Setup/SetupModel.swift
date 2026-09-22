@@ -29,7 +29,11 @@ final class SetupModel {
     /// Чем закончилась неудачная установка.
     private(set) var installError: String?
 
-    var isReady: Bool { stage == .ready }
+    /// Чат работает. Предложение скачать модель памяти — не препятствие:
+    /// оно стоит карточкой над полем ввода, писать можно и не отвечая на него.
+    var isReady: Bool { stage == .ready || stage == .offerMemory }
+
+    var offersMemory: Bool { stage == .offerMemory }
 
     /// Claude Code нашёлся после запуска приложения — пора подменить заглушку.
     @ObservationIgnored var onClaudeFound: ((URL) -> Void)?
@@ -55,7 +59,7 @@ final class SetupModel {
         }
         // Всё было в порядке в прошлый раз — чат открывается сразу, проверка идёт в фоне.
         if UserDefaults.standard.bool(forKey: Self.trustKey), (try? ClaudeCodeLocator().locate()) != nil {
-            stage = .ready
+            stage = Self.settled
         }
         #if DEBUG
         // `-RunieSetupStage needsLogin` — показать шаг знакомства, ничего не проверяя.
@@ -111,15 +115,23 @@ final class SetupModel {
             transition(to: .chooseTrust)
         } else {
             finishLogin()
-            transition(to: .ready)
+            transition(to: Self.settled)
         }
+    }
+
+    /// Куда попадает знакомство, когда всё настроено: обычно сразу в чат, но один
+    /// раз по дороге спрашиваем про память. Про неё спрашивают и тех, кто настроил
+    /// Руни раньше, чем она появилась.
+    private static var settled: Stage {
+        UserDefaults.standard.bool(forKey: memoryKey) || MemoryModel.isInstalled() ? .ready : .offerMemory
     }
 
     private func transition(to next: Stage) {
         stage = next
         if !didFinishFirstCheck {
             didFinishFirstCheck = true
-            if next != .ready { onNeedsAttention?() }
+            // Ради предложения скачать модель орб человека не дёргает.
+            if next != .ready, next != .offerMemory { onNeedsAttention?() }
         }
         // Пока ждём установку или вход, проверяем сами — человеку ничего нажимать не нужно.
         let waiting = [.needsClaude, .needsLogin, .loggingIn].contains(next)
@@ -296,9 +308,7 @@ final class SetupModel {
         }
         settings.policy = policy
         UserDefaults.standard.set(true, forKey: Self.trustKey)
-        // Про память спрашиваем один раз и только если модели ещё нет.
-        let asked = UserDefaults.standard.bool(forKey: Self.memoryKey)
-        stage = asked || MemoryModel.isInstalled() ? .ready : .offerMemory
+        stage = Self.settled
     }
 
     private static let memoryKey = "setup.memoryAsked"

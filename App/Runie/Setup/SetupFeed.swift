@@ -3,11 +3,6 @@ import SwiftUI
 
 /// Знакомство в чате: Руни пишет облачками, а шаги — карточки с кнопками под ними.
 struct SetupFeed: View {
-
-    /// Сколько весит модель смыслового поиска — человек видит это до загрузки.
-    static let modelSize = Measurement(value: Double(MemoryModelInstaller.downloadSize), unit: UnitInformationStorage.bytes)
-        .formatted(.byteCount(style: .file).locale(.runie))
-
     let setup: SetupModel
 
     @State private var showsManual = false
@@ -16,7 +11,7 @@ struct SetupFeed: View {
         VStack(alignment: .leading, spacing: 10) {
             Spacer(minLength: 0)
             switch setup.stage {
-            case .checking, .ready:
+            case .checking, .ready, .offerMemory:
                 SetupBubble {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
@@ -124,22 +119,6 @@ struct SetupFeed: View {
                         recommended: false
                     ) { setup.chooseTrust(cautious: false) }
                     Text("Поменять можно в настройках, раздел «Разрешения».")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
-            case .offerMemory:
-                SetupBubble(text: String(localized: "И ещё: я запоминаю, что вы рассказываете, — привычки, договорённости, правила работы. Записи лежат в «Документах» обычными файлами."))
-                SetupCard {
-                    Text("Чтобы находить их по смыслу, а не только по совпадению слов, нужна небольшая модель. Она работает на вашем Mac и ничего никуда не отправляет.")
-                        .font(.system(size: 12))
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 8) {
-                        Button("Скачать \(SetupFeed.modelSize)") { setup.offerMemory(download: true) }
-                            .buttonStyle(SetupButtonStyle(primary: true))
-                        Button("Потом") { setup.offerMemory(download: false) }
-                            .buttonStyle(SetupButtonStyle(primary: false))
-                    }
-                    Text("Передумаете — настройки, раздел «Общие».")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
@@ -260,5 +239,31 @@ private struct SetupButtonStyle: ButtonStyle {
             )
             .opacity(configuration.isPressed ? 0.75 : 1)
             .contentShape(Capsule())
+    }
+}
+
+/// Предложение скачать модель смыслового поиска по памяти. Стоит над полем ввода,
+/// как вопрос о разрешении: писать Руни можно и не отвечая на него.
+struct MemoryOfferCard: View {
+    let setup: SetupModel
+
+    private static let size = Measurement(value: Double(MemoryModelInstaller.downloadSize), unit: UnitInformationStorage.bytes)
+        .formatted(.byteCount(style: .file).locale(.runie))
+
+    var body: some View {
+        SetupCard {
+            Text("Я запоминаю, что вы рассказываете, — привычки, договорённости, правила работы. Чтобы находить записи по смыслу, а не только по совпадению слов, нужна небольшая модель. Она работает на вашем Mac и ничего никуда не отправляет.")
+                .font(.system(size: 12))
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                Button("Скачать \(Self.size)") { setup.offerMemory(download: true) }
+                    .buttonStyle(SetupButtonStyle(primary: true))
+                Button("Потом") { setup.offerMemory(download: false) }
+                    .buttonStyle(SetupButtonStyle(primary: false))
+            }
+            Text("Передумаете — настройки, раздел «Общие».")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
     }
 }
