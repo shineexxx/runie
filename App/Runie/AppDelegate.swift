@@ -235,6 +235,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? response.jsonString().write(toFile: output, atomically: true, encoding: .utf8)
             }
         }
+        // `-RunieIndexNow YES` — включить указатель по файлам и сразу обойти их.
+        if UserDefaults.standard.bool(forKey: "RunieIndexNow") {
+            IndexModel.shared.setEnabled(.files, true)
+        }
         // `-RunieOpenWindow permissions` открывает окно Runie на нужном разделе.
         if let section = UserDefaults.standard.string(forKey: "RunieOpenWindow") {
             mainWindow.show(MainWindowController.Section(rawValue: section))

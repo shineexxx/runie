@@ -74,7 +74,14 @@ final class IndexModel {
             do {
                 switch source {
                 case .files:
-                    let collector = FileCollector()
+                    var options = FileCollector.Options()
+                    #if DEBUG
+                    // `-RunieIndexRoot /путь` — обходить только эту папку, для проверок.
+                    if let root = UserDefaults.standard.string(forKey: "RunieIndexRoot") {
+                        options.roots = [URL(fileURLWithPath: root)]
+                    }
+                    #endif
+                    let collector = FileCollector(options: options)
                     try await collector.scan(into: store, model: model, since: full ? .distantPast : nil) { done in
                         Task { @MainActor in
                             let index = IndexModel.shared

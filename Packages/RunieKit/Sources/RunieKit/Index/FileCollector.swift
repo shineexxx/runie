@@ -194,12 +194,14 @@ public struct FileCollector: Sendable {
     /// идёт в фоне, и ждать очереди главного потока незачем.
     static func spotlightPaths(in root: URL, changedSince since: Date?, limit: Int) -> [URL] {
         guard limit > 0 else { return [] }
-        var predicate = "kMDItemFSName == '*'"
-        if let since {
-            // Время Spotlight считает от 2001 года, как и сам macOS.
-            let seconds = since.timeIntervalSinceReferenceDate
-            predicate = "kMDItemContentModificationDate > \(seconds)"
-        }
+        // Spotlight понимает только сравнения; «взять всё» — это «изменено после
+        // начала времён». Дату он ждёт в своём виде `$time.iso(...)`.
+        let moment = ISO8601DateFormatter.string(
+            from: since ?? Date(timeIntervalSince1970: 0),
+            timeZone: TimeZone(identifier: "UTC")!,
+            formatOptions: [.withInternetDateTime]
+        )
+        let predicate = "kMDItemContentModificationDate > $time.iso(\(moment))"
         guard let query = MDQueryCreate(kCFAllocatorDefault, predicate as CFString, nil, nil) else { return [] }
         MDQuerySetSearchScope(query, [root.path] as CFArray, 0)
         guard MDQueryExecute(query, CFOptionFlags(kMDQuerySynchronous.rawValue)) else { return [] }

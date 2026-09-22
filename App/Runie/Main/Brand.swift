@@ -108,6 +108,7 @@ extension PermissionCategory {
         case .pageScript: "curlybraces"
         case .extendRunie: "wand.and.sparkles"
         case .memory: "brain"
+        case .personalIndex: "magnifyingglass.circle"
         case .services: "puzzlepiece.extension"
         case .otherCommands: "terminal"
         }

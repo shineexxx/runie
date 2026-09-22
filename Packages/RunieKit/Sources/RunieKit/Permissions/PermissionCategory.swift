@@ -20,6 +20,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     case pageScript
     case extendRunie
     case memory
+    case personalIndex
     case contacts
     case services
     case otherCommands
@@ -45,6 +46,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .pageScript: t("JavaScript на странице")
         case .extendRunie: t("Новые возможности Руни")
         case .memory: t("Память Руни")
+        case .personalIndex: t("Поиск по вашим данным")
         case .contacts: t("Контакты")
         case .services: t("Подключённые сервисы")
         case .otherCommands: t("Прочие команды")
@@ -65,6 +67,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         case .browserRead: t("Посмотреть открытые вкладки Safari и Chrome и прочитать текст страницы.")
         case .browserControl: t("Открыть ссылку, перейти на вкладку, нажать кнопку или заполнить поле на странице.")
         case .extendRunie: t("Подключить сервис или сохранить навык. Работает только в Runie — Claude Code в терминале не меняется.")
+        case .personalIndex: t("Искать по указателю, который Руни собрал из ваших файлов, писем и заметок. Что в него попадает, вы выбираете сами в настройках; пока источник не включён, искать нечего.")
         case .memory: t("Запомнить факт о вас, дописать дневник дня или вспомнить сохранённое. Всё лежит обычными текстовыми файлами в папке Документы → Runie → Memory.")
         case .pageScript: t("Выполнить свой код на открытой странице: разобрать её устройство, достать данные, нажать то, что не нажимается по надписи. Код видно в запросе.")
         case .calendarRead: t("Посмотреть встречи и напоминания — например, чтобы разобрать день.")
@@ -79,13 +82,15 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
     /// Что делать, пока человек ничего не выбрал. Память разрешена сразу: она пишет
     /// только в свою папку, а вопрос на каждое «запомни» быстро надоедает.
     public var defaultRule: PermissionPolicy.Rule {
-        self == .memory ? .allow : .ask
+        // Память и указатель человек включает сам, в настройках: это и есть
+        // согласие, спрашивать ещё раз при каждом поиске незачем.
+        self == .memory || self == .personalIndex ? .allow : .ask
     }
 
     /// Можно ли испортить что-то необратимо. Такие группы в настройках помечаются.
     public var isRisky: Bool {
         switch self {
-        case .readFiles, .browseFolders, .systemInfo, .calendarRead, .browserRead, .memory: false
+        case .readFiles, .browseFolders, .systemInfo, .calendarRead, .browserRead, .memory, .personalIndex: false
         default: true
         }
     }
@@ -123,6 +128,8 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
             [(t("открыть ссылку"), "Safari, Chrome"), (t("нажать кнопку"), "Safari, Chrome"), (t("заполнить поле"), "Safari, Chrome")]
         case .extendRunie:
             [(t("подключить сервис"), t("MCP-сервер")), (t("запомнить, как делать задачу"), t("навык"))]
+        case .personalIndex:
+            [(t("найти свой файл или письмо"), t("указатель")), (t("вспомнить, где это лежало"), t("указатель"))]
         case .memory:
             [(t("запомнить факт или поправку"), t("память")), (t("записать, что сделали за день"), t("дневник")), (t("вспомнить сохранённое"), t("память"))]
         case .pageScript:
@@ -178,6 +185,7 @@ public enum PermissionClassifier {
         // Вопрос человеку и так требует его ответа: спрашивать разрешение,
         // чтобы спросить, — бессмысленно. Пустой список значит «можно всегда».
         case "mcp__runie__ask_user", "AskUserQuestion": return []
+        case "mcp__runie__search_my_stuff": return [.personalIndex]
         case "mcp__runie__memory_save", "mcp__runie__memory_forget", "mcp__runie__memory_recall",
              "mcp__runie__memory_journal", "mcp__runie__memory_profile":
             return [.memory]

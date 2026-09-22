@@ -200,6 +200,17 @@
         }
       }
     },
+    "Заметки": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        }
+      }
+    },
     "Записывает в дневник": {
       "extractionState": "manual",
       "localizations": {
@@ -310,6 +321,17 @@
         }
       }
     },
+    "Искать по указателю, который Руни собрал из ваших файлов, писем и заметок. Что в него попадает, вы выбираете сами в настройках; пока источник не включён, искать нечего.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the index Runie built from your files, mail and notes. You choose what goes into it in settings; until a source is on, there is nothing to search."
+          }
+        }
+      }
+    },
     "Ищет «%@»": {
       "extractionState": "manual",
       "localizations": {
@@ -339,6 +361,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Looks up the contact “%@”"
+          }
+        }
+      }
+    },
+    "Ищет у вас: «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searches your things: “%@”"
           }
         }
       }
@@ -515,6 +548,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Didn’t work: %@"
+          }
+        }
+      }
+    },
+    "Не удалось открыть указатель: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not open the index: %@"
           }
         }
       }
@@ -727,6 +771,17 @@
         }
       }
     },
+    "Ошибка в указателе: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Index error: %@"
+          }
+        }
+      }
+    },
     "Память Руни": {
       "extractionState": "manual",
       "localizations": {
@@ -811,6 +866,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connected services"
+          }
+        }
+      }
+    },
+    "Поиск по вашим данным": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search your own things"
           }
         }
       }
@@ -1222,6 +1288,28 @@
         }
       }
     },
+    "Файлы": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files"
+          }
+        }
+      }
+    },
+    "Фото": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos"
+          }
+        }
+      }
+    },
     "Читает": {
       "extractionState": "manual",
       "localizations": {
@@ -1306,6 +1394,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "recall what is saved"
+          }
+        }
+      }
+    },
+    "вспомнить, где это лежало": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "recall where it was"
           }
         }
       }
@@ -1504,6 +1603,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "find an email or phone number"
+          }
+        }
+      }
+    },
+    "найти свой файл или письмо": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "find your file or email"
           }
         }
       }
@@ -1922,6 +2032,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "delete"
+          }
+        }
+      }
+    },
+    "указатель": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "index"
           }
         }
       }

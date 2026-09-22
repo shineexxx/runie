@@ -146,6 +146,8 @@ public enum ToolDescriber {
             return Description(title: t("Спрашивает вас"), detail: input["question"]?.stringValue)
         case "list_extensions":
             return Description(title: t("Смотрит подключённые сервисы и навыки"), detail: nil)
+        case "search_my_stuff":
+            return Description(title: t("Ищет у вас: «\(input["query"]?.stringValue ?? "")»"), detail: nil)
         case "memory_save":
             return Description(title: t("Запоминает: «\(input["description"]?.stringValue ?? "")»"), detail: input["body"]?.stringValue.map(clip))
         case "memory_forget":
