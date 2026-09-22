@@ -837,6 +837,17 @@
         }
       }
     },
+    "Переписка с %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat with %@"
+          }
+        }
+      }
+    },
     "Переходит на вкладку в %@": {
       "extractionState": "manual",
       "localizations": {
@@ -1211,6 +1222,17 @@
         }
       }
     },
+    "Сообщения — нужен полный доступ к диску": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages — full disk access is needed"
+          }
+        }
+      }
+    },
     "Сохраняет навык «%@»": {
       "extractionState": "manual",
       "localizations": {
@@ -1394,6 +1416,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This looks like %@ — Runie doesn’t remember such things."
+          }
+        }
+      }
+    },
+    "Я": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Me"
           }
         }
       }

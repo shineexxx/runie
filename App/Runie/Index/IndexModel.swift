@@ -23,7 +23,7 @@ final class IndexModel {
     private static let key = "index.sources"
 
     /// Источники, которые Руни уже умеет собирать.
-    static let available: [IndexStore.Source] = [.files, .mail, .notes]
+    static let available: [IndexStore.Source] = [.files, .mail, .notes, .messages]
 
     /// Человек уже решал, что индексировать. Пока не решал — включаем всё сами,
     /// когда доступ к диску выдан: он для того и выдавался.
@@ -159,6 +159,14 @@ final class IndexModel {
                     }
                 case .mail:
                     try await MailCollector().scan(into: store, model: model, since: full ? .distantPast : nil) { done in
+                        Task { @MainActor in
+                            let index = IndexModel.shared
+                            guard index.scanning?.source == source else { return }
+                            index.scanning = (source, done)
+                        }
+                    }
+                case .messages:
+                    try await MessagesCollector().scan(into: store, model: model, since: full ? .distantPast : nil) { done in
                         Task { @MainActor in
                             let index = IndexModel.shared
                             guard index.scanning?.source == source else { return }

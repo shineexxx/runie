@@ -184,7 +184,7 @@ private struct IndexRows: View {
 
     /// Источники, для которых сборщик уже написан.
     private func isAvailable(_ source: IndexStore.Source) -> Bool {
-        source == .files || source == .notes || source == .mail
+        IndexModel.available.contains(source)
     }
 
     private func status(for source: IndexStore.Source) -> String {
@@ -197,6 +197,9 @@ private struct IndexRows: View {
             return switch source {
             case .files: String(localized: "Документы, заметки и тексты из ваших папок")
             case .notes: String(localized: "Ваши заметки; Руни читает их, когда Заметки открыты")
+            case .messages: MessagesCollector().canRead
+                ? String(localized: "Переписка из Сообщений, разговорами по дням")
+                : String(localized: "Нужен доступ к диску")
             case .mail: MailCollector().canReadFiles
                 ? String(localized: "Все письма из Почты")
                 : String(localized: "Без доступа к диску — только последние письма, и когда Почта открыта")
