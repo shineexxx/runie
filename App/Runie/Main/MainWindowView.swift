@@ -98,7 +98,8 @@ struct MainWindowView: View {
                 ContentUnavailableView.search(text: query)
             }
         }
-        // Настройки закреплены внизу и не уезжают вместе со списком.
+        // Настройки закреплены внизу и не уезжают вместе со списком. Полосе нужна
+        // своя подложка: без неё разговоры проезжают прямо сквозь надпись.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
                 Divider()
@@ -109,6 +110,7 @@ struct MainWindowView: View {
                 }
                 .padding(10)
             }
+            .background(.bar)
         }
     }
 
