@@ -10,7 +10,26 @@ import UniformTypeIdentifiers
 // нажимает «Отправить».
 
 enum RunieTools {
-    static let server = HostToolServer(name: "runie", tools: [
+
+    static let name = "runie"
+
+    /// Инструменты Телеграма появляются, только когда человек его подключил:
+    /// до этого у агента есть лишь `telegram_connect`.
+    @MainActor
+    static var server: HostToolServer {
+        var tools = base
+        tools.append(TelegramConnectTool())
+        if TelegramService.shared.isEnabled {
+            tools += [
+                TelegramStatusTool(), TelegramInboxTool(), TelegramThreadTool(),
+                TelegramSearchTool(), TelegramReplyTool(), TelegramMarkAnsweredTool(),
+                TelegramDisconnectTool()
+            ]
+        }
+        return HostToolServer(name: name, tools: tools)
+    }
+
+    private static let base: [any HostTool] = [
         FindFilesTool(),
         RevealInFinderTool(),
         OpenFilesTool(),
@@ -40,8 +59,9 @@ enum RunieTools {
         MemoryRecallTool(),
         MemoryJournalTool(),
         MemoryProfileTool(),
-        AskUserTool()
-    ])
+        AskUserTool(),
+        SearchMyStuffTool()
+    ]
 }
 
 // MARK: - Общее

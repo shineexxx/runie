@@ -52,24 +52,6 @@ public struct RuniePlugin: Sendable {
         for skill in BundledSkills.all {
             try writeSkill(skill)
         }
-        try writeBundledServers()
-    }
-
-    /// Серверы, которые Руни носит с собой: их код лежит в ресурсах RunieKit и
-    /// обновляется вместе с приложением. Подключает их человек — сами по себе
-    /// они не работают, пока сервер не заведён через `addServer`.
-    static let bundledServers = ["telegram"]
-
-    private func writeBundledServers() throws {
-        for name in Self.bundledServers {
-            guard let source = Bundle.module.url(forResource: name, withExtension: "py") else { continue }
-            let destination = serversURL.appendingPathComponent("\(name).py")
-            let body = try Data(contentsOf: source)
-            // Перезаписываем, только если код поменялся: файл может быть запущен.
-            if (try? Data(contentsOf: destination)) != body {
-                try body.write(to: destination, options: .atomic)
-            }
-        }
     }
 
     // MARK: Серверы

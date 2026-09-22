@@ -214,7 +214,7 @@ struct ExtensionsView: View {
 
 private extension MCPServerInfo {
     /// Встроенный сервер Runie — тот, что живёт в самом приложении.
-    var isRunie: Bool { transport == "sdk" || name == RunieTools.server.name }
+    var isRunie: Bool { transport == "sdk" || name == RunieTools.name }
 
     /// Свои серверы можно удалить; коннекторы claude.ai и серверы чужих плагинов — нет.
     var isRemovable: Bool {

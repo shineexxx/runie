@@ -48,11 +48,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.onDisabledMCPServersChange = { [weak self] servers in
             guard let self else { return }
             session.disabledMCPServers = servers
-            // У Телеграма есть фоновая служба: выключатель должен останавливать
-            // сбор переписки, а не только прятать инструменты. Запуск launchctl
-            // занимает секунду — не держим на нём интерфейс.
-            let telegramOn = !servers.contains(where: TelegramExtension.matches)
-            Task.detached { TelegramExtension.setEnabled(telegramOn) }
             session.reloadAgent()
         }
         settings.onDisabledSkillsChange = { [weak self] skills in
@@ -130,6 +125,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         session.expandMessage = { text in
             QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)
         }
+        // Телеграм включили или выключили — у агента меняется набор инструментов.
+        TelegramService.shared.onChange = { [weak self] in
+            guard let self else { return }
+            session.hostTools = RunieTools.server
+            session.reloadWhenIdle()
+        }
+        TelegramService.shared.startIfEnabled()
         // Руни подключил сервис или сохранил навык — подхватить, как только освободится.
         RunieExtensions.onChange = { [weak self] in
             Task { @MainActor in
@@ -341,7 +343,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Агент работает от домашней папки: пользователь просит про свои файлы,
             // а не про какой-то проект.
             var arguments = ClaudeCodeArguments(appendSystemPrompt: runiePrompt + "\n" + AnswerLanguage.current.promptLine)
-            arguments.hostToolServers = [RunieTools.server.name]
+            arguments.hostToolServers = [RunieTools.name]
             // Серверы и навыки, которые Руни подключил сам, — только для Runie.
             let plugin = RunieExtensions.plugin
             arguments.pluginDirectories = [plugin.root.path]
