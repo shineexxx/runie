@@ -77,17 +77,7 @@ struct GeneralView: View {
                 }
             }
             Section("Индекс") {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Знать ваши файлы, почту и заметки")
-                        Text("Руни составит свой указатель и будет искать по нему — по смыслу, а не по имени файла. Указатель лежит на вашем Mac; каждый источник включается отдельно.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer()
-                    Button("Подробнее…") { IndexIntroWindowController.shared.show() }
-                }
+                IndexRows()
             }
             Section("Память") {
                 MemoryModelRow()
@@ -145,5 +135,67 @@ private struct MemoryModelRow: View {
                 EmptyView()
             }
         }
+    }
+}
+
+/// Указатель: что включено, сколько собрано и можно ли всё стереть.
+private struct IndexRows: View {
+    private let index = IndexModel.shared
+
+    var body: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Знать ваши файлы, почту и заметки")
+                Text("Руни составит свой указатель и будет искать по нему — по смыслу, а не по имени файла. Указатель лежит на вашем Mac; каждый источник включается отдельно.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Button("Подробнее…") { IndexIntroWindowController.shared.show() }
+        }
+
+        ForEach(IndexStore.Source.allCases, id: \.self) { source in
+            Toggle(isOn: Binding(
+                get: { index.enabled.contains(source) },
+                set: { index.setEnabled(source, $0) }
+            )) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(source.title)
+                    Text(status(for: source))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .disabled(!isAvailable(source))
+        }
+
+        if let failure = index.failure {
+            Text(failure).font(.system(size: 11)).foregroundStyle(.orange)
+        }
+        if index.hasAnything {
+            HStack {
+                Text("Удалить указатель целиком")
+                Spacer()
+                Button("Удалить", role: .destructive) { index.removeEverything() }
+            }
+        }
+    }
+
+    /// Пока сборщик написан только для файлов, остальное показываем выключенным.
+    private func isAvailable(_ source: IndexStore.Source) -> Bool { source == .files }
+
+    private func status(for source: IndexStore.Source) -> String {
+        if let scanning = index.scanning, scanning.source == source {
+            return String(localized: "Собираю… \(scanning.done)")
+        }
+        guard isAvailable(source) else { return String(localized: "Пока не собирается") }
+        let count = index.counts[source] ?? 0
+        guard count > 0 else {
+            return source == .files
+                ? String(localized: "Документы, заметки и тексты из ваших папок")
+                : String(localized: "Ничего не собрано")
+        }
+        return String(localized: "В указателе: \(count)")
     }
 }
