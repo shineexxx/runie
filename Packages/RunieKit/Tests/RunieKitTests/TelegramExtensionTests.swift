@@ -7,6 +7,23 @@ import Testing
 @Suite("Навык Телеграма")
 struct TelegramSkillTests {
 
+    @Test("старая запись сервера от питоновской версии убирается сама")
+    func staleServerRemoved() throws {
+        let plugin = RuniePlugin(root: FileManager.default.temporaryDirectory
+            .appendingPathComponent("runie-telegram-stale-\(UUID().uuidString)"))
+        try plugin.prepare()
+        try plugin.addServer(.init(
+            name: "telegram", description: "старое", transport: .stdio,
+            command: "/usr/bin/python3", args: ["{root}/servers/telegram.py", "mcp"],
+            secrets: [.init(variable: "BOT_TOKEN", label: "Ключ")]
+        ))
+        #expect(plugin.servers().count == 1)
+        // Следующий запуск приложения подчищает её: Телеграм теперь встроен, а
+        // ключ из старой записи Руни спрашивал у Связки ключей при подключении.
+        try plugin.prepare()
+        #expect(plugin.servers().isEmpty)
+    }
+
     @Test("навык на месте и объясняет требования")
     func skill() throws {
         let plugin = RuniePlugin(root: FileManager.default.temporaryDirectory
