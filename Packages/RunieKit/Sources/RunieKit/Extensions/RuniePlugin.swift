@@ -52,6 +52,21 @@ public struct RuniePlugin: Sendable {
         for skill in BundledSkills.all {
             try writeSkill(skill)
         }
+        removeReplacedServers()
+    }
+
+    /// Серверы, которые когда-то подключались плагином, а теперь встроены в Руни.
+    ///
+    /// Старая запись не просто лишняя: её команда ведёт на удалённый скрипт, а
+    /// ключ из неё Руни спрашивает у Связки ключей при каждом подключении — и
+    /// запуск мог встать на этом вопросе.
+    static let replacedServers = ["telegram"]
+
+    private func removeReplacedServers() {
+        let stale = servers().filter { Self.replacedServers.contains($0.name) }
+        for server in stale {
+            try? removeServer(named: server.name)
+        }
     }
 
     // MARK: Серверы

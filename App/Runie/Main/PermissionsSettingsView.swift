@@ -5,8 +5,6 @@ import SwiftUI
 struct PermissionsSettingsView: View {
     let settings: AppSettings
 
-    private static let safe: [PermissionCategory] = [.readFiles, .browseFolders, .systemInfo]
-
     var body: some View {
         Form {
             Section {
@@ -15,12 +13,25 @@ struct PermissionsSettingsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {
                         Button("Разрешить безопасное") {
-                            for category in Self.safe { settings.setRule(.allow, for: category) }
+                            settings.policy = .safe
                         }
-                        .help("Чтение файлов, просмотр папок и сведения о системе — это ничего не меняет")
+                        .help("Чтение файлов, просмотр папок, календарь и вкладки — это ничего не меняет")
+                        Button("Разрешить почти всё") {
+                            settings.policy = .permissive
+                        }
+                        .help("Вопросов почти не будет: Руни спросит только про удаление и установку программ")
                         Button("Спрашивать обо всём") {
-                            for category in PermissionCategory.allCases { settings.setRule(.ask, for: category) }
+                            settings.policy = .strict
                         }
+                    }
+                    // Самый доверчивый режим стоит объяснить словами, а не оставлять
+                    // человека гадать, что именно он только что разрешил.
+                    if settings.policy == .permissive {
+                        Label("Разрешено всё, кроме перемещения с удалением и установки программ — "
+                              + "о них Руни спросит.", systemImage: "bolt.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .padding(.vertical, 4)

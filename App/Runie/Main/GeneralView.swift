@@ -197,13 +197,13 @@ private struct IndexRows: View {
             return switch source {
             case .files: String(localized: "Документы, заметки и тексты из ваших папок")
             case .notes: String(localized: "Ваши заметки; Руни читает их, когда Заметки открыты")
+            case .photos: String(localized: "Когда что снято и что написано на снимках экрана")
             case .messages: MessagesCollector().canRead
                 ? String(localized: "Переписка из Сообщений, разговорами по дням")
                 : String(localized: "Нужен доступ к диску")
             case .mail: MailCollector().canReadFiles
                 ? String(localized: "Все письма из Почты")
                 : String(localized: "Без доступа к диску — только последние письма, и когда Почта открыта")
-            default: String(localized: "Ничего не собрано")
             }
         }
         return String(localized: "В указателе: \(count)")

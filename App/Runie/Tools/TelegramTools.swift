@@ -44,20 +44,26 @@ final class TelegramService {
         return opened
     }
 
-    var api: TelegramAPI {
+    /// Связка ключей — дело не главного потока: если macOS решит спросить доступ,
+    /// главный поток встанет вместе с диалогом и окно Руни не откроется.
+    nonisolated var api: TelegramAPI {
         TelegramAPI(token: { SecretStore.value(for: TelegramService.tokenVariable) })
     }
 
-    var hasToken: Bool { SecretStore.value(for: Self.tokenVariable) != nil }
+    nonisolated var hasToken: Bool { SecretStore.value(for: Self.tokenVariable) != nil }
 
-    /// Поднимает опрос, если Телеграм включён. Зовётся при запуске приложения.
+    /// Поднимает опрос, если Телеграм включён. Зовётся при запуске приложения:
+    /// ключ спрашиваем в стороне, чтобы запуск не ждал Связку ключей.
     func startIfEnabled() {
-        guard isEnabled, hasToken else { return }
-        start()
+        guard isEnabled else { return }
+        Task.detached { [weak self] in
+            guard let self, hasToken else { return }
+            await MainActor.run { self.start() }
+        }
     }
 
     func start() {
-        guard polling == nil, let store, hasToken else { return }
+        guard polling == nil, let store else { return }
         let api = api
         polling = Task { [weak self] in
             var failures = 0

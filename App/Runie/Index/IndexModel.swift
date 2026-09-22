@@ -23,7 +23,7 @@ final class IndexModel {
     private static let key = "index.sources"
 
     /// Источники, которые Руни уже умеет собирать.
-    static let available: [IndexStore.Source] = [.files, .mail, .notes, .messages]
+    static let available: [IndexStore.Source] = [.files, .mail, .notes, .messages, .photos]
 
     /// Человек уже решал, что индексировать. Пока не решал — включаем всё сами,
     /// когда доступ к диску выдан: он для того и выдавался.
@@ -173,9 +173,14 @@ final class IndexModel {
                             index.scanning = (source, done)
                         }
                     }
-                default:
-                    // Остальные источники ещё не собираются.
-                    break
+                case .photos:
+                    try await PhotosCollector().scan(into: store, model: model, since: full ? .distantPast : nil) { done in
+                        Task { @MainActor in
+                            let index = IndexModel.shared
+                            guard index.scanning?.source == source else { return }
+                            index.scanning = (source, done)
+                        }
+                    }
                 }
             } catch is CancellationError {
                 // Человек выключил источник или закрыл настройки — это не ошибка.

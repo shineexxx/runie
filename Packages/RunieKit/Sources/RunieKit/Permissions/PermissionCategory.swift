@@ -87,6 +87,15 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Identif
         self == .memory || self == .personalIndex ? .allow : .ask
     }
 
+    /// Группы, которые не разрешает заранее даже самый доверчивый режим.
+    ///
+    /// Удалённый файл не вернуть, а установленная программа остаётся в системе
+    /// и после того, как про неё забыли. Здесь вопрос — последняя преграда, и
+    /// он стоит секунды внимания.
+    public var alwaysAsks: Bool {
+        self == .moveDelete || self == .install
+    }
+
     /// Можно ли испортить что-то необратимо. Такие группы в настройках помечаются.
     public var isRisky: Bool {
         switch self {
@@ -408,5 +417,31 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
     /// запрос. Запрос без групп — одни нейтральные команды — тоже разрешается.
     public func allows(_ request: PermissionRequest) -> Bool {
         PermissionClassifier.categories(for: request).allSatisfy { rule(for: $0) == .allow }
+    }
+
+    // MARK: Готовые наборы
+
+    /// Спрашивать обо всём: ни одна группа не разрешена заранее.
+    public static var strict: PermissionPolicy {
+        PermissionPolicy(rules: Dictionary(uniqueKeysWithValues: PermissionCategory.allCases.map { ($0, .ask) }))
+    }
+
+    /// Разрешено то, что ничего не меняет: чтение, просмотр, сведения о системе.
+    public static var safe: PermissionPolicy {
+        var policy = PermissionPolicy()
+        for category in PermissionCategory.allCases where !category.isRisky {
+            policy.rules[category] = .allow
+        }
+        return policy
+    }
+
+    /// Разрешено всё, кроме необратимого: перемещения с удалением и установки
+    /// программ. Для тех, кому вопрос на каждое действие мешает работать.
+    public static var permissive: PermissionPolicy {
+        var policy = PermissionPolicy()
+        for category in PermissionCategory.allCases {
+            policy.rules[category] = category.alwaysAsks ? .ask : .allow
+        }
+        return policy
     }
 }

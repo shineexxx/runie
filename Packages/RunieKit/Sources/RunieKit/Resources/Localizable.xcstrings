@@ -101,6 +101,17 @@
         }
       }
     },
+    "Альбомы: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Albums: %@"
+          }
+        }
+      }
+    },
     "В памяти нет «%@».": {
       "extractionState": "manual",
       "localizations": {
@@ -108,6 +119,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "There is no “%@” in memory."
+          }
+        }
+      }
+    },
+    "Видео": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
           }
         }
       }
@@ -1167,6 +1189,17 @@
         }
       }
     },
+    "Снимок экрана": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot"
+          }
+        }
+      }
+    },
     "Создание и правка файлов": {
       "extractionState": "manual",
       "localizations": {
@@ -1361,6 +1394,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Photos"
+          }
+        }
+      }
+    },
+    "Фото — не выдан доступ к медиатеке": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos — access to the library wasn’t granted"
+          }
+        }
+      }
+    },
+    "Фотография": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
           }
         }
       }

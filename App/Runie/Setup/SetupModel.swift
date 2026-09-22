@@ -300,13 +300,7 @@ final class SetupModel {
 
     /// `cautious` — спрашивать только о рискованном: читать и смотреть можно без вопроса.
     func chooseTrust(cautious: Bool) {
-        var policy = PermissionPolicy()
-        if cautious {
-            for category in PermissionCategory.allCases where !category.isRisky {
-                policy.rules[category] = .allow
-            }
-        }
-        settings.policy = policy
+        settings.policy = cautious ? .safe : PermissionPolicy()
         UserDefaults.standard.set(true, forKey: Self.trustKey)
         stage = Self.settled
     }
