@@ -14,18 +14,27 @@ struct IndexIntroView: View {
     var body: some View {
         ZStack {
             BrandGlowBackground()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    header
-                    benefits
-                    honesty
-                    grant
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        header
+                        benefits
+                        honesty
+                        grant
+                    }
+                    .padding(.horizontal, 38)
+                    .padding(.top, 28)
+                    .padding(.bottom, 20)
                 }
-                .padding(.horizontal, 38)
-                .padding(.top, 28)
-                .padding(.bottom, 30)
+                .scrollBounceBehavior(.basedOnSize)
+                // Кнопки не уезжают вместе с текстом: на невысоком экране
+                // человек иначе просто не увидит, что нажимать.
+                actions
+                    .padding(.horizontal, 38)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.bar)
             }
-            .scrollBounceBehavior(.basedOnSize)
         }
         .frame(minWidth: 620, minHeight: 460)
         .background(.background)
@@ -96,20 +105,6 @@ struct IndexIntroView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 SettingsIllustration()
-                HStack(spacing: 10) {
-                    Button("Открыть настройки") { model.openSettings() }
-                        .buttonStyle(IndexButtonStyle(primary: true))
-                    Button("Не сейчас") { model.dismiss() }
-                        .buttonStyle(IndexButtonStyle(primary: false))
-                    if model.isWatching {
-                        HStack(spacing: 6) {
-                            ProgressView().controlSize(.small)
-                            Text("Жду разрешения…")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
             }
         case .needsRestart:
             VStack(alignment: .leading, spacing: 12) {
@@ -122,12 +117,6 @@ struct IndexIntroView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 10) {
-                    Button("Перезапустить Руни") { model.restart() }
-                        .buttonStyle(IndexButtonStyle(primary: true))
-                    Button("Позже") { model.dismiss() }
-                        .buttonStyle(IndexButtonStyle(primary: false))
-                }
             }
         case .ready:
             VStack(alignment: .leading, spacing: 12) {
@@ -140,6 +129,32 @@ struct IndexIntroView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// Панель внизу окна: то, что человек должен нажать.
+    @ViewBuilder
+    private var actions: some View {
+        HStack(spacing: 10) {
+            switch model.state {
+            case .needsAccess:
+                Button("Открыть настройки") { model.openSettings() }
+                    .buttonStyle(IndexButtonStyle(primary: true))
+                Button("Не сейчас") { model.dismiss() }
+                    .buttonStyle(IndexButtonStyle(primary: false))
+                if model.isWatching {
+                    ProgressView().controlSize(.small)
+                    Text("Жду разрешения…")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            case .needsRestart:
+                Button("Перезапустить Руни") { model.restart() }
+                    .buttonStyle(IndexButtonStyle(primary: true))
+                Button("Позже") { model.dismiss() }
+                    .buttonStyle(IndexButtonStyle(primary: false))
+            case .ready:
                 Button("Понятно") { model.dismiss() }
                     .buttonStyle(IndexButtonStyle(primary: true))
             }

@@ -419,7 +419,8 @@ public final class IndexStore: @unchecked Sendable {
 
     private static let cyrillic = CharacterSet(charactersIn: "абвгдежзийклмнопрстуфхцчшщъыьэюяё")
 
-    /// Вектор в fp16: 256 чисел занимают 512 байт вместо двух килобайт.
+    /// Вектор половинной точностью: 256 чисел занимают 512 байт вместо двух
+    /// килобайт. Точности для близости хватает с запасом.
     static func pack(_ vector: [Float]) -> Data {
         var data = Data(capacity: vector.count * 2)
         for value in vector {
@@ -431,8 +432,7 @@ public final class IndexStore: @unchecked Sendable {
 
     static func unpack(_ data: Data) -> [Float] {
         data.withUnsafeBytes { raw in
-            let buffer = raw.bindMemory(to: Float16.self)
-            return buffer.map { Float($0) }
+            raw.bindMemory(to: Float16.self).map(Float.init)
         }
     }
 

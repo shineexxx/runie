@@ -235,7 +235,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? response.jsonString().write(toFile: output, atomically: true, encoding: .utf8)
             }
         }
-        // `-RunieIndexNow YES` — включить указатель по файлам и сразу обойти их.
+        // `-RunieOpenIndexIntro YES` — окно про указатель, для снимков.
+        if UserDefaults.standard.bool(forKey: "RunieOpenIndexIntro") {
+            IndexIntroWindowController.shared.show()
+        }
+        // `-RunieIndexNow files` — включить источник и сразу обойти его.
         if let source = UserDefaults.standard.string(forKey: "RunieIndexNow"),
            let source = IndexStore.Source(rawValue: source) {
             IndexModel.shared.setEnabled(source, true)

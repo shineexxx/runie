@@ -70,8 +70,11 @@ echo "▸ Тесты RunieKit"
 echo "▸ Сборка Release"
 rm -rf "$DIST/build" "$DIST/$APP_NAME"
 mkdir -p "$RELEASES" "$INSTALLERS"
+# Только Apple Silicon: на Intel нет половинной точности, которой считаются
+# векторы поиска, да и собирать вдвое дольше ради машин, которых у нас нет.
 xcodebuild -project Runie.xcodeproj -scheme Runie -configuration Release \
     -derivedDataPath "$DIST/build" \
+    ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
     CODE_SIGN_IDENTITY="$IDENTITY" CODE_SIGN_STYLE=Manual \
     build > "$DIST/build.log" 2>&1 || { tail -30 "$DIST/build.log"; exit 1; }
 cp -R "$DIST/build/Build/Products/Release/$APP_NAME" "$DIST/$APP_NAME"
