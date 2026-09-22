@@ -90,9 +90,12 @@ final class IndexIntroWindowController: NSObject, NSWindowDelegate {
     private func makeWindow() -> NSWindow {
         let model = IndexIntroModel()
         model.onClose = { [weak self] in self?.window?.performClose(nil) }
+        // Высота — по экрану: на ноутбуке окно в 900 точек просто не помещается,
+        // а содержимое всё равно прокручивается.
+        let available = NSScreen.main?.visibleFrame.height ?? 900
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 640, height: 900),
-            styleMask: [.titled, .closable, .fullSizeContentView],
+            contentRect: NSRect(x: 0, y: 0, width: 640, height: min(900, available - 60)),
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )

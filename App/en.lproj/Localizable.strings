@@ -830,3 +830,15 @@
 "Пусть Руни знает ваш Mac" = "Let Runie know your Mac";
 
 "Индекс Руни" = "Runie’s index";
+
+"Ваши заметки; Руни читает их, когда Заметки открыты" = "Your notes; Runie reads them while Notes is open";
+
+"Все письма из Почты" = "Every message from Mail";
+
+"Без доступа к диску — только последние письма, и когда Почта открыта" = "Without disk access — only recent messages, and while Mail is open";
+
+"Нужен доступ к диску" = "Disk access is needed";
+
+"Почта, Сообщения и заметки лежат в защищённых папках — без разрешения их не прочитать никому, включая Руни. Найдите Runie в списке и включите переключатель." = "Mail, Messages and notes live in protected folders — without permission nobody can read them, Runie included. Find Runie in the list and switch it on.";
+
+"Доступ к диску" = "Full Disk Access";

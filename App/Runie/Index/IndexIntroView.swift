@@ -27,7 +27,7 @@ struct IndexIntroView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(minWidth: 620, minHeight: 640)
+        .frame(minWidth: 620, minHeight: 460)
         .background(.background)
         .onAppear { model.refresh() }
     }
@@ -89,9 +89,9 @@ struct IndexIntroView: View {
         switch model.state {
         case .needsAccess:
             VStack(alignment: .leading, spacing: 14) {
-                Text("Нужен полный доступ к диску")
+                Text("Нужен доступ к диску")
                     .font(.system(size: 15, weight: .semibold))
-                Text("Почта, Сообщения и заметки лежат в защищённых папках — без этого разрешения их не прочитать никому, включая Руни. Найдите Runie в списке и включите переключатель.")
+                Text("Почта, Сообщения и заметки лежат в защищённых папках — без разрешения их не прочитать никому, включая Руни. Найдите Runie в списке и включите переключатель.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -211,7 +211,7 @@ private struct SettingsIllustration: View {
                     Image(systemName: "folder")
                         .font(.system(size: 11))
                         .foregroundStyle(OrbPalette.azure)
-                    Text("Полный доступ к диску")
+                    Text("Доступ к диску")
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .padding(.horizontal, 13)
@@ -254,7 +254,7 @@ private struct SettingsIllustration: View {
                 enabled = true
             }
         }
-        .accessibilityLabel(Text("Настройки macOS: «Полный доступ к диску», переключатель напротив Runie"))
+        .accessibilityLabel(Text("Настройки macOS: «Доступ к диску», переключатель напротив Runie"))
     }
 
     /// Нарисованный переключатель: настоящий Toggle здесь нажимался бы.

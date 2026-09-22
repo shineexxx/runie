@@ -89,6 +89,22 @@ final class IndexModel {
                             index.scanning = (source, done)
                         }
                     }
+                case .notes:
+                    try await NotesCollector().scan(into: store, model: model, since: full ? .distantPast : nil) { done in
+                        Task { @MainActor in
+                            let index = IndexModel.shared
+                            guard index.scanning?.source == source else { return }
+                            index.scanning = (source, done)
+                        }
+                    }
+                case .mail:
+                    try await MailCollector().scan(into: store, model: model, since: full ? .distantPast : nil) { done in
+                        Task { @MainActor in
+                            let index = IndexModel.shared
+                            guard index.scanning?.source == source else { return }
+                            index.scanning = (source, done)
+                        }
+                    }
                 default:
                     // Остальные источники ещё не собираются.
                     break

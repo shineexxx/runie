@@ -182,8 +182,10 @@ private struct IndexRows: View {
         }
     }
 
-    /// Пока сборщик написан только для файлов, остальное показываем выключенным.
-    private func isAvailable(_ source: IndexStore.Source) -> Bool { source == .files }
+    /// Источники, для которых сборщик уже написан.
+    private func isAvailable(_ source: IndexStore.Source) -> Bool {
+        source == .files || source == .notes || source == .mail
+    }
 
     private func status(for source: IndexStore.Source) -> String {
         if let scanning = index.scanning, scanning.source == source {
@@ -192,9 +194,14 @@ private struct IndexRows: View {
         guard isAvailable(source) else { return String(localized: "Пока не собирается") }
         let count = index.counts[source] ?? 0
         guard count > 0 else {
-            return source == .files
-                ? String(localized: "Документы, заметки и тексты из ваших папок")
-                : String(localized: "Ничего не собрано")
+            return switch source {
+            case .files: String(localized: "Документы, заметки и тексты из ваших папок")
+            case .notes: String(localized: "Ваши заметки; Руни читает их, когда Заметки открыты")
+            case .mail: MailCollector().canReadFiles
+                ? String(localized: "Все письма из Почты")
+                : String(localized: "Без доступа к диску — только последние письма, и когда Почта открыта")
+            default: String(localized: "Ничего не собрано")
+            }
         }
         return String(localized: "В указателе: \(count)")
     }

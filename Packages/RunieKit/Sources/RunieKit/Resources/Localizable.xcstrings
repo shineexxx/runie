@@ -23,6 +23,17 @@
         }
       }
     },
+    "%@ не запущен — Руни его не открывает сам.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ isn’t running — Runie doesn’t open it on its own."
+          }
+        }
+      }
+    },
     "JavaScript на странице": {
       "extractionState": "manual",
       "localizations": {
@@ -41,6 +52,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "MCP server"
+          }
+        }
+      }
+    },
+    "macOS не разрешила Runie управлять приложением «%@». Разрешите: Системные настройки → Конфиденциальность и безопасность → Автоматизация → Runie.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS hasn’t allowed Runie to control “%@”. Allow it in System Settings → Privacy & Security → Automation → Runie."
           }
         }
       }
@@ -822,6 +844,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Switches tabs in %@"
+          }
+        }
+      }
+    },
+    "Письмо без темы": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message with no subject"
           }
         }
       }
