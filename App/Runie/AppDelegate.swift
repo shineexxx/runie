@@ -87,6 +87,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return (name, query)
             }
         }
+        // Указатель обновляется сам: при запуске и дальше раз в час.
+        IndexModel.shared.start()
         briefing = MorningBriefing()
         setup = SetupModel(settings: settings)
         var needsBackend = backend is UnavailableBackend

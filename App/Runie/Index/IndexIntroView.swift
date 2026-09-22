@@ -125,7 +125,7 @@ struct IndexIntroView: View {
                 } icon: {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(OrbPalette.teal)
                 }
-                Text("Доступ есть. Выберите в настройках, что именно индексировать, — по умолчанию Руни не трогает ничего.")
+                Text("Доступ есть, и Руни уже собирает указатель: файлы, почту и заметки. Что именно собирать, можно поменять в настройках, а весь указатель — удалить одной кнопкой.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

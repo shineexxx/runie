@@ -35,8 +35,12 @@ public struct MailCollector: Sendable {
 
     // MARK: Файлы писем
 
-    /// Файлы писем, изменённые после `since`, новые первыми.
-    func files(changedSince since: Date?, limit: Int) -> [(url: URL, date: Date)] {
+    /// Отметка: самое старое письмо, до которого дошли. Почты бывают десятки
+    /// тысяч писем, и за один проход их не взять — историю добираем порциями.
+    static let depthMark = "mail.oldest"
+
+    /// Файлы писем: свежее `newerThan` или старее `olderThan`, новые первыми.
+    func files(newerThan: Date?, olderThan: Date? = nil, limit: Int) -> [(url: URL, date: Date)] {
         let keys: [URLResourceKey] = [.contentModificationDateKey, .isRegularFileKey]
         guard let walker = FileManager.default.enumerator(
             at: mailDirectory, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles]
@@ -48,7 +52,9 @@ public struct MailCollector: Sendable {
             let values = try? url.resourceValues(forKeys: Set(keys))
             guard values?.isRegularFile == true else { continue }
             let date = values?.contentModificationDate ?? Date()
-            if let since, date <= since { continue }
+            let isFresh = newerThan.map { date > $0 } ?? (olderThan == nil)
+            let isHistory = olderThan.map { date < $0 } ?? false
+            guard isFresh || isHistory else { continue }
             found.append((url, date))
         }
         // Новые письма важнее: если упрёмся в предел, пусть это будут свежие.
@@ -81,7 +87,14 @@ public struct MailCollector: Sendable {
         var indexed = 0
 
         if canReadFiles {
-            for (url, date) in files(changedSince: since, limit: limit) {
+            // Сначала новое, потом — ещё кусок истории, пока она не кончится.
+            var picked = files(newerThan: since, limit: limit)
+            let depth = store.mark(Self.depthMark)
+            if picked.count < limit, let depth {
+                picked += files(newerThan: nil, olderThan: depth, limit: limit - picked.count)
+            }
+            var oldest = depth
+            for (url, date) in picked {
                 try Task.checkCancellation()
                 guard let data = try? Data(contentsOf: url, options: .mappedIfSafe),
                       let message = MailMessage.parse(emlx: data, maxBodyLength: maxTextLength)
@@ -90,11 +103,13 @@ public struct MailCollector: Sendable {
                 let vector = model?.embed(item.title + " " + String(item.body.prefix(1_000)))
                 try store.put(item, vector: vector)
                 indexed += 1
+                if oldest == nil || date < oldest! { oldest = date }
                 if indexed % 50 == 0 {
                     progress?(indexed)
                     await Task.yield()
                 }
             }
+            if let oldest { try store.setMark(Self.depthMark, to: oldest) }
         } else {
             indexed = try await scanWithAppleEvents(into: store, model: model, since: since, progress: progress)
         }

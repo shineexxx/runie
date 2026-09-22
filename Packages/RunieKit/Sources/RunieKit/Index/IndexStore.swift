@@ -168,6 +168,13 @@ public final class IndexStore: @unchecked Sendable {
                 vector BLOB NOT NULL
             )
             """)
+        // Заметки сборщиков: докуда дошли вглубь истории и прочее в том же духе.
+        try execute("""
+            CREATE TABLE IF NOT EXISTS marks (
+                key TEXT PRIMARY KEY,
+                value REAL NOT NULL
+            )
+            """)
         // Когда каждый источник обходили в последний раз.
         try execute("""
             CREATE TABLE IF NOT EXISTS sources (
@@ -257,6 +264,26 @@ public final class IndexStore: @unchecked Sendable {
         bind(statement, 1, source.rawValue)
         guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
         return Date(timeIntervalSince1970: sqlite3_column_double(statement, 0))
+    }
+
+    /// Отметка сборщика — например, самое старое разобранное письмо.
+    public func mark(_ key: String) -> Date? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let statement = try? prepare("SELECT value FROM marks WHERE key = ?") else { return nil }
+        defer { sqlite3_finalize(statement) }
+        bind(statement, 1, key)
+        guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
+        return Date(timeIntervalSince1970: sqlite3_column_double(statement, 0))
+    }
+
+    public func setMark(_ key: String, to date: Date) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        try run("INSERT OR REPLACE INTO marks (key, value) VALUES (?, ?)") { statement in
+            self.bind(statement, 1, key)
+            sqlite3_bind_double(statement, 2, date.timeIntervalSince1970)
+        }
     }
 
     public func markScanned(_ source: Source, at date: Date = Date()) throws {

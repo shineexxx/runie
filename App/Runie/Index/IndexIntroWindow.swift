@@ -27,6 +27,12 @@ final class IndexIntroModel {
 
     func refresh() {
         state = grantedAtLaunch ? .ready : (FullDiskAccess.isGranted ? .needsRestart : .needsAccess)
+        // Доступ выдан, а человек ещё ничего не выбирал — включаем всё сразу:
+        // он дал доступ именно для этого, а пустые переключатели выглядели бы
+        // так, будто ничего не произошло.
+        if state == .ready, !IndexModel.shared.didChoose {
+            IndexModel.shared.enableEverything()
+        }
     }
 
     func openSettings() {

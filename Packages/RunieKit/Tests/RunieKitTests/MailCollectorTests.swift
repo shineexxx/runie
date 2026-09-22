@@ -45,16 +45,16 @@ struct MailCollectorTests {
 
         let collector = MailCollector(mailDirectory: root)
         #expect(collector.canReadFiles)
-        let all = collector.files(changedSince: nil, limit: 10)
+        let all = collector.files(newerThan: nil, limit: 10)
         #expect(all.count == 2)
         #expect(all.first?.date == new)
 
         // Только то, что появилось после прошлого обхода.
-        let fresh = collector.files(changedSince: Date(timeIntervalSince1970: 1_750_000_000), limit: 10)
+        let fresh = collector.files(newerThan: Date(timeIntervalSince1970: 1_750_000_000), limit: 10)
         #expect(fresh.count == 1)
 
         // Предел соблюдается и оставляет самое свежее.
-        #expect(collector.files(changedSince: nil, limit: 1).first?.date == new)
+        #expect(collector.files(newerThan: nil, limit: 1).first?.date == new)
     }
 
     @Test("обход кладёт письма в указатель с темой, отправителем и текстом")
@@ -83,11 +83,38 @@ struct MailCollectorTests {
         #expect(again >= 0)
     }
 
+    @Test("история добирается порциями, пока письма не кончатся")
+    func history() async throws {
+        let root = try makeMailFolder()
+        for index in 1...5 {
+            try writeMessage(letter(subject: "Письмо \(index)", from: "a@b.c", body: "текст"),
+                             named: "\(index)", in: root,
+                             date: Date(timeIntervalSince1970: 1_700_000_000 + Double(index) * 86_400))
+        }
+        let store = try IndexStore(url: root.appending(path: "index.sqlite"))
+        var collector = MailCollector(mailDirectory: root)
+        collector.recentLimit = 2
+
+        // Первый проход берёт два самых новых и запоминает, докуда дошёл.
+        #expect(try await collector.scan(into: store, limit: 2) == 2)
+        let depth = try #require(store.mark(MailCollector.depthMark))
+
+        // Следующий — ещё два, уже старее отметки.
+        #expect(try await collector.scan(into: store, limit: 2) == 2)
+        #expect(try store.count(source: .mail) == 4)
+        #expect(try #require(store.mark(MailCollector.depthMark)) < depth)
+
+        // И так до конца: пятое письмо, дальше добирать нечего.
+        #expect(try await collector.scan(into: store, limit: 2) == 1)
+        #expect(try store.count(source: .mail) == 5)
+        #expect(try await collector.scan(into: store, limit: 2) == 0)
+    }
+
     @Test("без доступа к папке идём запасным путём")
     func noAccess() {
         let collector = MailCollector(mailDirectory: URL(fileURLWithPath: "/такой/папки/нет"))
         #expect(!collector.canReadFiles)
-        #expect(collector.files(changedSince: nil, limit: 10).isEmpty)
+        #expect(collector.files(newerThan: nil, limit: 10).isEmpty)
     }
 
     @Test("ответ скрипта разбирается в письма")

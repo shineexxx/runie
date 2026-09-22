@@ -22,6 +22,13 @@ final class IndexModel {
 
     private static let key = "index.sources"
 
+    /// Источники, которые Руни уже умеет собирать.
+    static let available: [IndexStore.Source] = [.files, .mail, .notes]
+
+    /// Человек уже решал, что индексировать. Пока не решал — включаем всё сами,
+    /// когда доступ к диску выдан: он для того и выдавался.
+    var didChoose: Bool { UserDefaults.standard.object(forKey: Self.key) != nil }
+
     private var store: IndexStore?
     @ObservationIgnored private var task: Task<Void, Never>?
 
@@ -50,22 +57,75 @@ final class IndexModel {
     /// Указатель собран хоть по чему-то.
     var hasAnything: Bool { counts.values.contains { $0 > 0 } }
 
+    /// Обновляет указатель по включённым источникам: при запуске и потом раз в час.
+    ///
+    /// Без этого указатель застывал бы на том, что было в день включения: обход
+    /// запускался только нажатием переключателя.
+    func start() {
+        guard !enabled.isEmpty else { return }
+        Task { @MainActor in
+            // Даём приложению подняться: человек открыл Mac, ему не до обхода.
+            try? await Task.sleep(for: .seconds(8))
+            refreshAll()
+        }
+        timer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { _ in
+            MainActor.assumeIsolated { IndexModel.shared.refreshAll() }
+        }
+    }
+
+    @ObservationIgnored private var timer: Timer?
+
+    /// Ставит в очередь все включённые источники. Уже идущий обход не трогает.
+    func refreshAll() {
+        for source in Self.available where enabled.contains(source) && !queue.contains(source) {
+            queue.append(source)
+        }
+        startNext()
+    }
+
+    /// Включает всё, что Руни умеет, и обходит по очереди.
+    func enableEverything() {
+        guard !isScanning else { return }
+        enabled = Set(Self.available)
+        UserDefaults.standard.set(enabled.map(\.rawValue), forKey: Self.key)
+        queue = Self.available
+        startNext()
+    }
+
     func setEnabled(_ source: IndexStore.Source, _ isOn: Bool) {
         if isOn { enabled.insert(source) } else { enabled.remove(source) }
         UserDefaults.standard.set(enabled.map(\.rawValue), forKey: Self.key)
         if isOn {
-            rescan(source)
+            queue.append(source)
+            if !isScanning { startNext() }
         } else {
+            queue.removeAll { $0 == source }
             // Выключили — стираем собранное: человек отказался, значит отказался.
-            task?.cancel()
+            // Чужой обход при этом не трогаем: он про другой источник.
+            if scanning?.source == source {
+                task?.cancel()
+                scanning = nil
+            }
             try? openStore()?.removeAll(source: source)
             refreshCounts()
+            startNext()
         }
+    }
+
+    /// Очередь источников на обход: три сразу отменяли бы друг друга.
+    @ObservationIgnored private var queue: [IndexStore.Source] = []
+
+    private func startNext() {
+        guard !isScanning, !queue.isEmpty else { return }
+        rescan(queue.removeFirst())
     }
 
     /// Обходит источник заново. Уже идущий обход отменяется.
     func rescan(_ source: IndexStore.Source, full: Bool = false) {
-        guard enabled.contains(source), let store = openStore() else { return }
+        guard enabled.contains(source), let store = openStore() else {
+            startNext()
+            return
+        }
         task?.cancel()
         failure = nil
         scanning = (source, 0)
@@ -117,12 +177,14 @@ final class IndexModel {
             guard let self else { return }
             scanning = nil
             refreshCounts()
+            startNext()
         }
     }
 
     /// Стирает указатель целиком.
     func removeEverything() {
         task?.cancel()
+        queue.removeAll()
         scanning = nil
         guard let store = openStore() else { return }
         for source in IndexStore.Source.allCases {
