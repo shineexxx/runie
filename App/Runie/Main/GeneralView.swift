@@ -76,6 +76,19 @@ struct GeneralView: View {
                     }
                 }
             }
+            Section("Индекс") {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Знать ваши файлы, почту и заметки")
+                        Text("Руни составит свой указатель и будет искать по нему — по смыслу, а не по имени файла. Указатель лежит на вашем Mac; каждый источник включается отдельно.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    Button("Подробнее…") { IndexIntroWindowController.shared.show() }
+                }
+            }
             Section("Память") {
                 MemoryModelRow()
             }
