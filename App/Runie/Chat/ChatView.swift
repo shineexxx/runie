@@ -166,6 +166,9 @@ struct ChatView: View {
                 .padding(.horizontal, ChatPanelController.shadowMargin)
                 .padding(.bottom, ChatPanelController.bottomInset)
                 .frame(width: ChatPanelController.size.width)
+                // Под блоками — подложка, которая забирает прокрутку и клики себе.
+                // Без неё колесо мыши над ответом Руни крутило окно позади.
+                .background(ChatEventCatcher())
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
@@ -1144,6 +1147,32 @@ extension View {
         let glass = Glass.regular.tint(SurfaceTint.color)
         return glassEffect(interactive ? glass.interactive() : glass, in: shape)
             .shadow(color: .black.opacity(0.14), radius: 16, y: 6)
+    }
+}
+
+/// Прозрачная подложка чата, которая забирает себе прокрутку и нажатия.
+///
+/// Панель чата безрамочная, прозрачная и не активирует приложение. Там, где
+/// SwiftUI не подставил под курсор ничего интерактивного — в промежутке между
+/// облачками или над коротким ответом, который нечего прокручивать, — AppKit не
+/// находил окна и отдавал событие следующему. Человек вёл мышь по ответу Руни,
+/// а прокручивалось окно позади.
+///
+/// Настоящий NSView решает это раз и навсегда: событие в пределах чата
+/// заканчивается здесь. Кнопки, поле ввода и сама лента лежат выше и получают
+/// своё первыми — подложке достаётся только то, что иначе утекло бы наружу.
+private struct ChatEventCatcher: NSViewRepresentable {
+
+    func makeNSView(context: Context) -> NSView { CatcherView() }
+
+    func updateNSView(_ view: NSView, context: Context) {}
+
+    private final class CatcherView: NSView {
+        override func scrollWheel(with event: NSEvent) {}
+        override func mouseDown(with event: NSEvent) {}
+        override func rightMouseDown(with event: NSEvent) {}
+        override func otherMouseDown(with event: NSEvent) {}
+        override func magnify(with event: NSEvent) {}
     }
 }
 
