@@ -70,11 +70,9 @@ struct ChatView: View {
                     Group {
                         if let announcement = layout.announcement {
                             // Приветствие или прощание — одна реплика без ленты.
-                            Bubble(tail: .leading) {
-                                Text(announcement).fixedSize(horizontal: false, vertical: true)
-                            }
-                            .holdsPointer()
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            AnnouncementBubble(text: announcement)
+                                .id(announcement)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         } else if setup.isReady {
                             CompactFeed(
                                 session: session,
@@ -530,6 +528,66 @@ private struct CurrentTurnView: View {
     /// «Руки» видны, пока агент работает, или если последнее действие не удалось.
     private func showsAction(_ action: ActionItem) -> Bool {
         session.isBusy || action.status == .denied || action.status == .failed
+    }
+}
+
+/// Реплика, которую Руни «отправляет» сам: чат открывается пустым, Руни пару
+/// мгновений печатает — и только потом приходит сообщение. Так приветствие
+/// выглядит как сообщение, а не как надпись, которая уже была в окне.
+private struct AnnouncementBubble: View {
+    let text: String
+
+    private enum Phase { case waiting, typing, sent }
+    @State private var phase = Phase.waiting
+
+    /// Пока чат выходит из орба, облачку показываться рано.
+    static let emergeDelay: TimeInterval = 0.4
+    static let typingTime: TimeInterval = 0.7
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            switch phase {
+            case .waiting:
+                Color.clear.frame(height: 1)
+            case .typing:
+                // Облачко по размеру содержимого: реплика короткая, а растянутое
+                // на всю ширину облачко с тремя точками выглядит пустым.
+                Bubble(tail: .leading) { TypingDots() }
+                    .fixedSize()
+                    .transition(.scale(scale: 0.6, anchor: .bottomLeading).combined(with: .opacity))
+            case .sent:
+                Bubble(tail: .leading) { Text(text) }
+                    .fixedSize()
+                    .holdsPointer()
+                .transition(.scale(scale: 0.85, anchor: .bottomLeading).combined(with: .opacity))
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(Self.emergeDelay))
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.75)) { phase = .typing }
+            try? await Task.sleep(for: .seconds(Self.typingTime))
+            withAnimation(.spring(response: 0.36, dampingFraction: 0.8)) { phase = .sent }
+        }
+    }
+}
+
+/// Три точки «Руни печатает».
+private struct TypingDots: View {
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 30)) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+            HStack(spacing: 5) {
+                ForEach(0..<3, id: \.self) { index in
+                    let wave = (sin(time * 7 - Double(index) * 0.9) + 1) / 2
+                    Circle()
+                        .frame(width: 7, height: 7)
+                        .opacity(0.3 + 0.7 * wave)
+                        .offset(y: -2.5 * wave)
+                }
+            }
+            .foregroundStyle(.secondary)
+            .frame(height: 18)
+        }
     }
 }
 

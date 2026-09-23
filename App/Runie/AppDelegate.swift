@@ -442,10 +442,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Привет и пока
 
-    /// Сколько висит приветствие, прежде чем Руни уходит обратно в орб.
-    private static let greetingDuration: TimeInterval = 2.8
-    /// Сколько висит прощание перед выходом: успеть прочесть, но не держать.
-    private static let farewellDuration: TimeInterval = 1.4
+    /// Сколько чат открыт с приветствием: выход из орба, «печатает…» (около
+    /// секунды) и время прочесть — потом Руни уходит обратно в орб.
+    private static let greetingDuration: TimeInterval = 3.6
+    /// То же для прощания перед выходом: успеть прочесть, но не держать.
+    private static let farewellDuration: TimeInterval = 2.2
 
     /// При запуске Руни выходит из орба, здоровается и прячется обратно.
     ///
