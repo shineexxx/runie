@@ -272,7 +272,7 @@ struct RichMessageText: View {
     var imageWidth: CGFloat = 300
 
     var body: some View {
-        let segments = MessageSegment.parse(text)
+        let segments = MarkdownCache.segments(of: text)
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 switch segment {
@@ -307,7 +307,7 @@ struct MessageImageView: View {
                         ProgressView().controlSize(.small).frame(width: 120, height: 80)
                     }
                 }
-            } else if let image = NSImage(contentsOfFile: source) {
+            } else if let image = MarkdownCache.image(atPath: source) {
                 styled(Image(nsImage: image))
             } else {
                 missing

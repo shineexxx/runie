@@ -9,7 +9,7 @@ struct MarkdownView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(Array(MarkdownBlock.parse(text).enumerated()), id: \.offset) { _, block in
+            ForEach(Array(MarkdownCache.blocks(of: text).enumerated()), id: \.offset) { _, block in
                 view(for: block)
             }
         }
@@ -52,7 +52,7 @@ struct MarkdownView: View {
     }
 
     private func inline(_ value: String) -> some View {
-        Text(MarkdownText.inline(value))
+        Text(MarkdownCache.inline(value))
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -101,14 +101,14 @@ private struct TableBlockView: View {
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 5) {
                 GridRow {
                     ForEach(Array(header.enumerated()), id: \.offset) { _, cell in
-                        Text(MarkdownText.inline(cell)).fontWeight(.semibold)
+                        Text(MarkdownCache.inline(cell)).fontWeight(.semibold)
                     }
                 }
                 Divider().gridCellUnsizedAxes(.horizontal)
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                     GridRow {
                         ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
-                            Text(MarkdownText.inline(cell))
+                            Text(MarkdownCache.inline(cell))
                         }
                     }
                 }

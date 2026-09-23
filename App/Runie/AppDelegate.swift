@@ -309,6 +309,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        // `-RunieSecretProbe YES -RunieTrace путь` — отдаёт ли Связка ключи
+        // подключённых сервисов. Печатается только длина и код отказа: сами
+        // ключи никуда не выводятся.
+        if UserDefaults.standard.bool(forKey: "RunieSecretProbe") {
+            Task.detached {
+                let path = UserDefaults.standard.string(forKey: "RunieTrace")
+                let token = SecretStore.value(for: TelegramService.tokenVariable)
+                var report = ["Телеграм: ключ \(token == nil ? "не прочитан" : "прочитан, длина \(token!.count)")"]
+                report.append("Причина: \(SecretStore.lastFailure ?? "нет")")
+                report.append("Сбор включён: \(await TelegramService.shared.isEnabled)")
+                if let path {
+                    try? report.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
+                }
+            }
+        }
+        // `-RunieHitTest YES -RunieTrace путь` — кто откликается на точки внутри
+        // панели чата. Так видно, доходит ли до Руни прокрутка и нажатия: если
+        // вид не нашёлся, событие уходит окну позади.
+        if UserDefaults.standard.bool(forKey: "RunieHitTest") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+                guard let self else { return }
+                let panel = chat.panel
+                guard let content = panel.contentView else { return }
+                var report = ["панель: \(panel.frame), видима: \(panel.isVisible)"]
+                let size = content.bounds.size
+                for (name, point) in [
+                    ("середина", NSPoint(x: size.width / 2, y: size.height / 2)),
+                    ("верх", NSPoint(x: size.width / 2, y: size.height * 0.85)),
+                    ("облачко ответа", NSPoint(x: size.width / 2, y: size.height * 0.6)),
+                    ("над полем ввода", NSPoint(x: size.width / 2, y: size.height * 0.2)),
+                    ("поле ввода", NSPoint(x: size.width / 2, y: 40)),
+                    ("угол", NSPoint(x: 4, y: size.height - 4))
+                ] {
+                    let hit = content.hitTest(content.convert(point, to: nil))
+                    report.append("\(name) \(Int(point.x)),\(Int(point.y)): \(hit.map { String(describing: type(of: $0)) } ?? "никто")")
+                }
+                if let path = UserDefaults.standard.string(forKey: "RunieTrace") {
+                    try? report.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
+                }
+            }
+        }
         // `-RunieOpenIndexIntro YES` — окно про указатель, для снимков.
         if UserDefaults.standard.bool(forKey: "RunieOpenIndexIntro") {
             IndexIntroWindowController.shared.show()

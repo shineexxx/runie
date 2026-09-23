@@ -48,13 +48,7 @@ final class FloatingPanel: NSPanel {
     /// прокрутился, сюда не попадёт ничего; а вот прокрутка над ответом, который
     /// прокручивать нечего, раньше уходила окну позади, и человек крутил чужое
     /// приложение, ведя мышью по словам Руни.
-    override func scrollWheel(with event: NSEvent) {
-        #if DEBUG
-        if UserDefaults.standard.bool(forKey: "RunieTraceScroll") {
-            RunieTrace.note("панель съела прокрутку")
-        }
-        #endif
-    }
+    override func scrollWheel(with event: NSEvent) {}
 
     override var canBecomeKey: Bool { allowsKey }
     override var canBecomeMain: Bool { false }
@@ -123,23 +117,4 @@ extension NSApplication {
     }
 }
 
-#if DEBUG
-/// Запись отладочных заметок в файл из `-RunieTrace`.
-enum RunieTrace {
-    private static let lock = NSLock()
 
-    static func note(_ text: String) {
-        guard let path = UserDefaults.standard.string(forKey: "RunieTrace") else { return }
-        lock.lock()
-        defer { lock.unlock() }
-        let line = text + "\n"
-        if let handle = FileHandle(forWritingAtPath: path) {
-            handle.seekToEndOfFile()
-            handle.write(Data(line.utf8))
-            try? handle.close()
-        } else {
-            try? line.write(toFile: path, atomically: true, encoding: .utf8)
-        }
-    }
-}
-#endif

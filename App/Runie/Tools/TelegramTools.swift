@@ -86,7 +86,15 @@ final class TelegramService {
     func startIfEnabled() {
         guard isEnabled else { return }
         Task.detached { [weak self] in
-            guard let self, hasToken else { return }
+            guard let self else { return }
+            guard hasToken else {
+                // Без ключа сбор не начнётся. Раньше это было тихо, и Телеграм
+                // просто молчал; теперь причина видна в настройках.
+                let reason = SecretStore.lastFailure
+                    ?? String(localized: "Ключ бота не найден — подключите Телеграм заново.")
+                await MainActor.run { self.lastError = reason }
+                return
+            }
             await MainActor.run { self.start() }
         }
     }
@@ -212,7 +220,9 @@ struct TelegramStatusTool: HostTool {
             "Аккаунт: \(connection.name)",
             ("Подключение: \(connection.enabled ? "включено" : "выключено")"),
             ("Право отвечать: \(connection.canReply ? "есть" : "нет")"),
-            "Чатов: \(counts.chats), сообщений: \(counts.messages)"
+            "Чатов: \(counts.chats), сообщений: \(counts.messages)",
+            // Собирать и быть подключённым — разное: опрос мог и не подняться.
+            ("Сбор: \(await service.isCollecting ? "идёт" : "стоит")")
         ]
         if let last = store.lastPoll {
             let seconds = Int(Date().timeIntervalSince(last))

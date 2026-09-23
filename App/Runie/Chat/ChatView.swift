@@ -53,6 +53,15 @@ struct ChatView: View {
 
     private func content(emergence: Double) -> some View {
         ZStack(alignment: .bottom) {
+            // Почти невидимая заливка на всю панель.
+            //
+            // Окно чата прозрачное, а macOS отдаёт нажатия и прокрутку сквозь
+            // полностью прозрачные пиксели тому окну, что под ними: событие не
+            // доходило до Руни вовсе, и человек, ведя мышью по ответу, прокручивал
+            // чужое приложение. Заливка глазу незаметна (меньше одного процента),
+            // но окно с ней становится сплошным для системы.
+            Color.black.opacity(0.008)
+
             // Свет, пришедший из орба. Лежит под блоками: они проступают из него.
             GeometryReader { proxy in
                 EmergenceGlow(
@@ -1181,13 +1190,7 @@ private struct ChatEventCatcher: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {}
 
     private final class CatcherView: NSView {
-        override func scrollWheel(with event: NSEvent) {
-            #if DEBUG
-            if UserDefaults.standard.bool(forKey: "RunieTraceScroll") {
-                RunieTrace.note("подложка чата съела прокрутку")
-            }
-            #endif
-        }
+        override func scrollWheel(with event: NSEvent) {}
         override func mouseDown(with event: NSEvent) {}
         override func rightMouseDown(with event: NSEvent) {}
         override func otherMouseDown(with event: NSEvent) {}

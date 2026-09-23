@@ -18,9 +18,25 @@ enum SecretStore {
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data else { return nil }
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess, let data = result as? Data else {
+            // Ключ есть, но Связка не отдала — это не «сервис не подключён», и
+            // молчать об этом нельзя: сбор просто не начнётся, а почему —
+            // непонятно ни человеку, ни мне.
+            lastFailure = status == errSecItemNotFound ? nil : describe(status)
+            return nil
+        }
+        lastFailure = nil
         return String(data: data, encoding: .utf8)
+    }
+
+    /// Почему последнее чтение не удалось. `nil` — всё в порядке или ключа
+    /// просто нет.
+    nonisolated(unsafe) private(set) static var lastFailure: String?
+
+    private static func describe(_ status: OSStatus) -> String {
+        let text = SecCopyErrorMessageString(status, nil) as String? ?? "\(status)"
+        return String(localized: "Связка ключей не отдала ключ: \(text)")
     }
 
     static func set(_ value: String, for account: String) {
