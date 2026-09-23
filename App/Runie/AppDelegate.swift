@@ -148,6 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         chat.onHide = { [weak self] in
             self?.button.reattach()
         }
+        greetOnLaunch()
         // `/команда` из настроек превращается в просьбу выполнить её навык.
         session.expandMessage = { text in
             QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)
@@ -437,6 +438,71 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    // MARK: - Привет и пока
+
+    /// Сколько висит приветствие, прежде чем Руни уходит обратно в орб.
+    private static let greetingDuration: TimeInterval = 2.8
+    /// Сколько висит прощание перед выходом: успеть прочесть, но не держать.
+    private static let farewellDuration: TimeInterval = 1.4
+
+    /// При запуске Руни выходит из орба, здоровается и прячется обратно.
+    ///
+    /// Реплика готовая, без ИИ: модель на приветствие — это и ожидание, и лишние
+    /// токены. Начал человек печатать или спрашивать — чат остаётся открытым.
+    private func greetOnLaunch() {
+        // Орбу нужно мгновение, чтобы встать на место; заодно команда из Spotlight
+        // или Raycast, если приложение запустила она, успевает открыть чат сама.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self, !chat.isVisible, !isQuitting else { return }
+            announce(suggestions.greeting)
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.greetingDuration) { [weak self] in
+                guard let self, chat.layout.announcement != nil, !isQuitting,
+                      !chat.layout.hasDraft, !session.isBusy
+                else { return }
+                chat.hide()
+            }
+        }
+    }
+
+    /// Показывает реплику у орба. Агента при этом не будит: ради «привет» и
+    /// «пока» поднимать Claude Code незачем.
+    private func announce(_ text: String) {
+        chat.layout.announcement = text
+        guard !chat.isVisible else { return }
+        button.detach { [weak self] in
+            guard let self else { return }
+            chat.show(anchor: button.panel.frame, focus: false)
+        }
+    }
+
+    /// Выход уже начался: прощание показано, ждём, пока его прочтут.
+    private var isQuitting = false
+
+    /// ⌘Q, «Выйти» в меню орба, обновление — Руни сначала прощается.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !isQuitting, chat != nil, !Self.isSystemShuttingDown else { return .terminateNow }
+        isQuitting = true
+        announce(SuggestionSet.farewell())
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.farewellDuration) { [weak self] in
+            self?.chat.hide()
+            // Даём чату стечь обратно в орб — и только потом закрываемся.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                NSApp.reply(toApplicationShouldTerminate: true)
+            }
+        }
+        return .terminateLater
+    }
+
+    /// Выключение, перезагрузка и выход из учётной записи: здесь прощаться некому,
+    /// а задержка только держит систему.
+    private static var isSystemShuttingDown: Bool {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent,
+              let reason = event.attributeDescriptor(forKeyword: kAEQuitReason)?.enumCodeValue
+        else { return false }
+        return [kAELogOut, kAEReallyLogOut, kAEShowRestartDialog, kAEShowShutdownDialog,
+                kAERestart, kAEShutDown].map { OSType($0) }.contains(reason)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

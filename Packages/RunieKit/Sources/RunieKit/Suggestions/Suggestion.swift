@@ -53,6 +53,29 @@ public struct SuggestionSet: Codable, Sendable, Equatable {
     }
 }
 
+extension SuggestionSet {
+    /// Прощание, когда Runie закрывают: тоже по времени суток.
+    public static func farewell(
+        at date: Date = Date(),
+        calendar: Calendar = .current,
+        language: AnswerLanguage = .current
+    ) -> String {
+        let part = SuggestionContext.partOfDay(at: date, calendar: calendar)
+        if language.isRussian {
+            return switch part {
+            case .morning, .day: "Пока! Хорошего дня."
+            case .evening: "Пока! Хорошего вечера."
+            case .night: "Спокойной ночи!"
+            }
+        }
+        return switch part {
+        case .morning, .day: "Bye! Have a good day."
+        case .evening: "Bye! Have a nice evening."
+        case .night: "Good night!"
+        }
+    }
+}
+
 /// Что известно о человеке прямо сейчас — из этого ИИ придумывает подсказки.
 ///
 /// Только то, что Руни и так может узнать без лишних разрешений: время, приложение

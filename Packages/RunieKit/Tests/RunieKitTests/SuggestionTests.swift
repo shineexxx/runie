@@ -50,6 +50,18 @@ struct SuggestionTests {
         #expect(SuggestionSet.fallbackGreeting(at: try at(3), calendar: calendar).hasPrefix("Не спится"))
     }
 
+    @Test("прощание тоже зависит от времени суток")
+    func farewell() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
+        func at(_ hour: Int) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: hour)))
+        }
+        #expect(SuggestionSet.farewell(at: try at(10), calendar: calendar).contains("дня"))
+        #expect(SuggestionSet.farewell(at: try at(20), calendar: calendar).contains("вечера"))
+        #expect(SuggestionSet.farewell(at: try at(2), calendar: calendar) == "Спокойной ночи!")
+    }
+
     @Test("негодные подсказки отбрасываются")
     func dropsBad() {
         let text = """

@@ -22,6 +22,10 @@ final class ChatLayout {
     /// Меняется при каждом открытии — чтобы поле заново «вытекло» из орба.
     private(set) var openGeneration = 0
 
+    /// Реплика вместо ленты: приветствие при запуске или прощание при выходе.
+    /// Пока она есть, чат показывает только её.
+    var announcement: String?
+
     /// Картинки и файлы к ещё не отправленному сообщению.
     var attachments: [Attachment] = []
 
@@ -166,6 +170,7 @@ final class ChatPanelController {
     /// трогает: подсказки уходят мимо него.
     func send(_ text: String) {
         guard !session.isBusy, setup.isReady else { return }
+        layout.announcement = nil
         let context = layout.includesContext ? tracker.current?.context : nil
         session.send(text, context: context, attachments: layout.attachments)
         layout.attachments = []
@@ -218,7 +223,9 @@ final class ChatPanelController {
         isVisible ? hide() : show(anchor: anchor)
     }
 
-    func show(anchor: NSRect) {
+    /// `focus: false` — показать, не забирая клавиатуру: так Руни здоровается,
+    /// пока человек печатает в другом приложении.
+    func show(anchor: NSRect, focus: Bool = true) {
         visibilityGeneration += 1
         let target = frame(anchor: anchor)
 
@@ -245,9 +252,13 @@ final class ChatPanelController {
 
         panel.setFrame(target, display: false)
         panel.alphaValue = 0
-        panel.makeKeyAndOrderFront(nil)
+        if focus {
+            panel.makeKeyAndOrderFront(nil)
+        } else {
+            panel.orderFrontRegardless()
+        }
         layout.markOpened()
-        layout.requestFocus()
+        if focus { layout.requestFocus() }
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
@@ -261,6 +272,7 @@ final class ChatPanelController {
         let generation = visibilityGeneration
         isHiding = true
         layout.isOpen = false
+        layout.announcement = nil
         GlassDropdown.shared.close()
         onHide?()
 

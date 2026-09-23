@@ -68,7 +68,14 @@ struct ChatView: View {
             do {
                 VStack(alignment: horizontalAlignment, spacing: ChatPanelController.blockSpacing) {
                     Group {
-                        if setup.isReady {
+                        if let announcement = layout.announcement {
+                            // Приветствие или прощание — одна реплика без ленты.
+                            Bubble(tail: .leading) {
+                                Text(announcement).fixedSize(horizontal: false, vertical: true)
+                            }
+                            .holdsPointer()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        } else if setup.isReady {
                             CompactFeed(
                                 session: session,
                                 greeting: suggestions.greeting,
