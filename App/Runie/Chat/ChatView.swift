@@ -70,7 +70,7 @@ struct ChatView: View {
                     Group {
                         if let announcement = layout.announcement {
                             // Приветствие или прощание — одна реплика без ленты.
-                            AnnouncementBubble(text: announcement)
+                            AnnouncementBubble(text: announcement, cue: layout.announcementCue)
                                 .id(announcement)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else if setup.isReady {
@@ -536,6 +536,7 @@ private struct CurrentTurnView: View {
 /// выглядит как сообщение, а не как надпись, которая уже была в окне.
 private struct AnnouncementBubble: View {
     let text: String
+    let cue: RunieSounds.Cue
 
     private enum Phase { case waiting, typing, sent }
     @State private var phase = Phase.waiting
@@ -567,6 +568,7 @@ private struct AnnouncementBubble: View {
             withAnimation(.spring(response: 0.32, dampingFraction: 0.75)) { phase = .typing }
             try? await Task.sleep(for: .seconds(Self.typingTime))
             withAnimation(.spring(response: 0.36, dampingFraction: 0.8)) { phase = .sent }
+            RunieSounds.shared.play(cue)
         }
     }
 }

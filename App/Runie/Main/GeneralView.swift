@@ -36,6 +36,9 @@ struct GeneralView: View {
                 }
                 .pickerStyle(.menu)
             }
+            Section("Звуки") {
+                SoundRows()
+            }
             Section("Обновления") {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
@@ -134,6 +137,30 @@ private struct MemoryModelRow: View {
                     .foregroundStyle(.secondary)
             case .absent:
                 EmptyView()
+            }
+        }
+    }
+}
+
+/// Звуки Руни: включить, громкость и прослушать.
+private struct SoundRows: View {
+    private let sounds = RunieSounds.shared
+
+    var body: some View {
+        Toggle(isOn: Binding(get: { sounds.isEnabled }, set: { sounds.isEnabled = $0 })) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Звуки Руни")
+                Text("Тихие колокольчики: чат открылся, ответ готов, Руни ждёт вашего решения. Приветствие и прощание тоже звучат.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        if sounds.isEnabled {
+            HStack {
+                Text("Громкость")
+                Slider(value: Binding(get: { sounds.volume }, set: { sounds.volume = $0 }), in: 0.05...1)
+                Button("Прослушать") { sounds.preview() }
             }
         }
     }

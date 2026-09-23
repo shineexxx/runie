@@ -853,3 +853,8 @@
 
 "Страницы, которые вы читали: %@" = "Pages you read: %@";
 "Нет доступа к медиатеке: Настройки → Конфиденциальность → Фото" = "No access to the photo library: Settings → Privacy → Photos";
+"Звуки" = "Sounds";
+"Звуки Руни" = "Runie sounds";
+"Тихие колокольчики: чат открылся, ответ готов, Руни ждёт вашего решения. Приветствие и прощание тоже звучат." = "Soft chimes: the chat opened, a reply is ready, Runie is waiting for your decision. The greeting and farewell have sounds too.";
+"Громкость" = "Volume";
+"Прослушать" = "Preview";

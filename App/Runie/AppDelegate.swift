@@ -131,6 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button = EdgeButtonController(session: session, chatLayout: chat.layout)
         // Агент стоит, пока человек не ответит: вопрос должен быть на виду.
         session.onPermissionRequest = { [weak self] in
+            RunieSounds.shared.play(.attention)
             guard let self, !chat.isVisible, !mainWindow.isShowingCurrentConversation else { return }
             openChat()
         }
@@ -149,6 +150,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.button.reattach()
         }
         greetOnLaunch()
+        watchTurns()
         // `/команда` из настроек превращается в просьбу выполнить её навык.
         session.expandMessage = { text in
             QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)
@@ -169,11 +171,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // Руни о чём-то спрашивает — вопрос должен быть на виду.
         QuestionBroker.shared.onRequest = { [weak self] in
+            RunieSounds.shared.play(.attention)
             guard let self, !chat.isVisible, !mainWindow.isShowingCurrentConversation else { return }
             openChat()
         }
         // Сервису нужен ключ — карточка ввода должна быть на виду.
         SecretBroker.shared.onRequest = { [weak self] in
+            RunieSounds.shared.play(.attention)
             guard let self, !chat.isVisible, !mainWindow.isShowingCurrentConversation else { return }
             openChat()
         }
@@ -440,6 +444,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         false
     }
 
+    // MARK: - Звук ответа
+
+    private var wasBusy = false
+
+    /// Руни закончил ход — звук ответа или ошибки. Следим за занятостью сессии.
+    private func watchTurns() {
+        withObservationTracking {
+            _ = session.isBusy
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                turnStateChanged()
+                watchTurns()
+            }
+        }
+    }
+
+    private func turnStateChanged() {
+        let busy = session.isBusy
+        defer { wasBusy = busy }
+        guard wasBusy, !busy else { return }
+        let turn = ChatTurn.split(session.timeline.items).last
+        if turn?.failure != nil {
+            RunieSounds.shared.play(.error)
+        } else if turn?.reply != nil {
+            RunieSounds.shared.play(.reply)
+        }
+    }
+
     // MARK: - Привет и пока
 
     /// Сколько чат открыт с приветствием: выход из орба, «печатает…» (около
@@ -457,7 +490,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // или Raycast, если приложение запустила она, успевает открыть чат сама.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self, !chat.isVisible, !isQuitting else { return }
-            announce(suggestions.greeting)
+            announce(suggestions.greeting, cue: .greeting)
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.greetingDuration) { [weak self] in
                 guard let self, chat.layout.announcement != nil, !isQuitting,
                       !chat.layout.hasDraft, !session.isBusy
@@ -469,7 +502,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Показывает реплику у орба. Агента при этом не будит: ради «привет» и
     /// «пока» поднимать Claude Code незачем.
-    private func announce(_ text: String) {
+    private func announce(_ text: String, cue: RunieSounds.Cue) {
+        chat.layout.announcementCue = cue
         chat.layout.announcement = text
         guard !chat.isVisible else { return }
         button.detach { [weak self] in
@@ -485,7 +519,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !isQuitting, chat != nil, !Self.isSystemShuttingDown else { return .terminateNow }
         isQuitting = true
-        announce(SuggestionSet.farewell())
+        announce(SuggestionSet.farewell(), cue: .farewell)
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.farewellDuration) { [weak self] in
             self?.chat.hide()
             // Даём чату стечь обратно в орб — и только потом закрываемся.

@@ -25,6 +25,8 @@ final class ChatLayout {
     /// Реплика вместо ленты: приветствие при запуске или прощание при выходе.
     /// Пока она есть, чат показывает только её.
     var announcement: String?
+    /// Каким звуком реплика приходит.
+    var announcementCue: RunieSounds.Cue = .greeting
 
     /// Картинки и файлы к ещё не отправленному сообщению.
     var attachments: [Attachment] = []
@@ -171,6 +173,7 @@ final class ChatPanelController {
     func send(_ text: String) {
         guard !session.isBusy, setup.isReady else { return }
         layout.announcement = nil
+        RunieSounds.shared.play(.send)
         let context = layout.includesContext ? tracker.current?.context : nil
         session.send(text, context: context, attachments: layout.attachments)
         layout.attachments = []
@@ -259,6 +262,8 @@ final class ChatPanelController {
         }
         layout.markOpened()
         if focus { layout.requestFocus() }
+        // С репликой звучит она сама, когда придёт; здесь — обычное открытие.
+        if layout.announcement == nil { RunieSounds.shared.play(.open) }
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
@@ -272,6 +277,7 @@ final class ChatPanelController {
         let generation = visibilityGeneration
         isHiding = true
         layout.isOpen = false
+        if layout.announcement == nil { RunieSounds.shared.play(.close) }
         layout.announcement = nil
         GlassDropdown.shared.close()
         onHide?()
