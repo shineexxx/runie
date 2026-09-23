@@ -47,10 +47,39 @@ final class TelegramService {
     /// Связка ключей — дело не главного потока: если macOS решит спросить доступ,
     /// главный поток встанет вместе с диалогом и окно Руни не откроется.
     nonisolated var api: TelegramAPI {
-        TelegramAPI(token: { SecretStore.value(for: TelegramService.tokenVariable) })
+        TelegramAPI(token: { TokenCache.value() })
     }
 
-    nonisolated var hasToken: Bool { SecretStore.value(for: Self.tokenVariable) != nil }
+    /// Ключ бота, прочитанный один раз за запуск.
+    ///
+    /// Связка ключей умеет спросить разрешение на доступ, и если читать её на
+    /// каждое действие, человек будет отвечать на один и тот же вопрос снова и
+    /// снова. Одно чтение за запуск — один вопрос, и тот при первом обращении.
+    enum TokenCache {
+        nonisolated(unsafe) private static var cached: String?
+        nonisolated(unsafe) private static var read = false
+        private static let lock = NSLock()
+
+        static func value() -> String? {
+            lock.lock()
+            defer { lock.unlock() }
+            if !read {
+                cached = SecretStore.value(for: TelegramService.tokenVariable)
+                read = true
+            }
+            return cached
+        }
+
+        /// Ключ поменялся: человек ввёл новый или отключил Телеграм.
+        static func forget() {
+            lock.lock()
+            defer { lock.unlock() }
+            cached = nil
+            read = false
+        }
+    }
+
+    nonisolated var hasToken: Bool { TokenCache.value() != nil }
 
     /// Поднимает опрос, если Телеграм включён. Зовётся при запуске приложения:
     /// ключ спрашиваем в стороне, чтобы запуск не ждал Связку ключей.
@@ -113,6 +142,7 @@ final class TelegramService {
 
     /// Выключает и убирает всё: ключ, переписку и настройку.
     func disconnect() {
+        TokenCache.forget()
         stop()
         opened = nil
         UserDefaults.standard.set(false, forKey: Self.enabledKey)
@@ -153,6 +183,8 @@ struct TelegramConnectTool: HostTool {
                 return HostToolResult("Человек не ввёл ключ. Предложи вернуться к этому позже.")
             }
         }
+        // Человек только что ввёл ключ — прочитать его заново.
+        await TelegramService.TokenCache.forget()
         let report = await service.connect()
         return HostToolResult(report + " " + ("""
             Последний шаг человек делает сам, в Телеграме: Настройки → Телеграм для бизнеса → Чат-боты → \

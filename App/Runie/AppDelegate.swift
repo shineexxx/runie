@@ -261,6 +261,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        // `-RunieCookieProbe lk.skolca.ru -RunieTrace путь` — что видно в куках
+        // браузеров для этого сайта. Значения не печатаются: только домены и счёт.
+        if let host = UserDefaults.standard.string(forKey: "RunieCookieProbe") {
+            Task.detached {
+                var report: [String] = ["Сайт: \(host)"]
+                do {
+                    let all = try SafariCookies.cookies()
+                    report.append("Safari: всего кук \(all.count)")
+                    let mine = all.filter { $0.matches(host: host) }
+                    report.append("Safari: для сайта \(mine.count), живых \(mine.filter { !$0.isExpired() }.count)")
+                    let near = Set(all.map(\.domain).filter { $0.contains(host.split(separator: ".").first ?? "") })
+                    report.append("Safari: похожие домены — \(near.sorted().prefix(8).joined(separator: ", "))")
+                    report.append("Safari: примеры доменов — \(Set(all.map(\.domain)).sorted().prefix(10).joined(separator: ", "))")
+                } catch {
+                    report.append("Safari: \(error.localizedDescription)")
+                }
+                do {
+                    let mine = try ChromeCookies.cookies(for: host)
+                    report.append("Chrome: для сайта \(mine.count), живых \(mine.filter { !$0.isExpired() }.count)")
+                } catch {
+                    report.append("Chrome: \(error.localizedDescription)")
+                }
+                if let path = UserDefaults.standard.string(forKey: "RunieTrace") {
+                    try? report.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
+                }
+            }
+        }
         // `-RunieOpenIndexIntro YES` — окно про указатель, для снимков.
         if UserDefaults.standard.bool(forKey: "RunieOpenIndexIntro") {
             IndexIntroWindowController.shared.show()

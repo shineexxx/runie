@@ -84,7 +84,11 @@ final class HeadlessBrowser {
         // Чтение идёт в стороне от главного потока: у Chrome ключ лежит в
         // Связке ключей, а она умеет спросить разрешение и подождать ответа.
         let safari = await Task.detached { (try? SafariCookies.cookies(for: host)) ?? [] }.value
-        let chrome = await Task.detached { (try? ChromeCookies.cookies(for: host)) ?? [] }.value
+        // К Chrome идём, только если в Safari ничего не нашлось: иначе macOS
+        // спрашивала бы про его ключ шифрования при каждом заходе на сайт.
+        let chrome = safari.contains { !$0.isExpired() }
+            ? []
+            : await Task.detached { (try? ChromeCookies.cookies(for: host)) ?? [] }.value
 
         for (source, cookies) in [(BrowserCookieSource.safari, safari), (.chrome, chrome)] {
             let fresh = cookies.filter { !$0.isExpired() }
@@ -97,11 +101,43 @@ final class HeadlessBrowser {
             report.append("\(source.title): \(fresh.count)")
         }
         guard total > 0 else {
-            return "Куки для \(host) не нашлись. Возможно, вы туда ещё не входили — "
-                 + "или у Руни нет полного доступа к диску."
+            return await Self.explainMissing(host: host)
         }
         signedInHosts.insert(host)
         return "Взял куки \(host) — \(report.joined(separator: ", "))."
+    }
+
+    /// Почему кук не нашлось. Разбирается по шагам: видно ли файл Safari, есть
+    /// ли там вообще куки, есть ли похожие домены. Значения не показываются —
+    /// в ответ уходит только счёт и имена узлов.
+    private static func explainMissing(host: String) async -> String {
+        let safari = await Task.detached { () -> String in
+            do {
+                let all = try SafariCookies.cookies()
+                guard !all.isEmpty else { return "файл Safari прочитан, но он пуст" }
+                let root = host.split(separator: ".").dropLast().last.map(String.init) ?? host
+                let near = Set(all.map(\.domain)).filter { $0.localizedCaseInsensitiveContains(root) }
+                return near.isEmpty
+                    ? "в Safari \(all.count) кук, но ни одной похожей на \(host)"
+                    : "в Safari есть близкие домены: \(near.sorted().prefix(5).joined(separator: ", "))"
+            } catch {
+                return error.localizedDescription
+            }
+        }.value
+        let chrome = await Task.detached { () -> String in
+            do {
+                _ = try ChromeCookies.cookies(for: host)
+                return "в Chrome для этого сайта ничего нет"
+            } catch {
+                return error.localizedDescription
+            }
+        }.value
+        return """
+            Куки для \(host) не нашлись.
+            Safari: \(safari)
+            Chrome: \(chrome)
+            Если вы входили на сайт в другом браузере — Руни умеет брать куки только из Safari и Chrome.             Если входили в Safari, но их нет, сайт мог сохранить вход не в куках, а в хранилище страницы:             тогда придётся войти прямо в браузере Руни — откройте страницу входа через web_open и             заполните поля web_fill.
+            """
     }
 
     private static func convert(_ cookie: BrowserCookie) -> HTTPCookie? {

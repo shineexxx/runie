@@ -1168,7 +1168,13 @@ private struct ChatEventCatcher: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {}
 
     private final class CatcherView: NSView {
-        override func scrollWheel(with event: NSEvent) {}
+        override func scrollWheel(with event: NSEvent) {
+            #if DEBUG
+            if UserDefaults.standard.bool(forKey: "RunieTraceScroll") {
+                RunieTrace.note("подложка чата съела прокрутку")
+            }
+            #endif
+        }
         override func mouseDown(with event: NSEvent) {}
         override func rightMouseDown(with event: NSEvent) {}
         override func otherMouseDown(with event: NSEvent) {}

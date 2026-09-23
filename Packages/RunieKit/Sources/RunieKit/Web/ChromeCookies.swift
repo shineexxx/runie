@@ -26,8 +26,22 @@ public enum ChromeCookies {
 
     /// Куки для узла из всех профилей.
     public static func cookies(for host: String, root: URL = ChromeCookies.standardRoot) throws -> [BrowserCookie] {
-        let key = try encryptionKey()
+        let key = try sharedKey()
         return try profiles(root: root).flatMap { try cookies(for: host, in: $0, key: key) }
+    }
+
+    /// Ключ, прочитанный один раз за запуск: Связка ключей умеет спросить
+    /// разрешение, и повторять этот вопрос на каждый заход незачем.
+    nonisolated(unsafe) private static var cachedKey: Data?
+    private static let keyLock = NSLock()
+
+    static func sharedKey() throws -> Data {
+        keyLock.lock()
+        defer { keyLock.unlock() }
+        if let cachedKey { return cachedKey }
+        let key = try encryptionKey()
+        cachedKey = key
+        return key
     }
 
     /// Ключ AES: выводится из пароля в Связке ключей по правилам Chrome.
