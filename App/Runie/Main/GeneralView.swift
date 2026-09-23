@@ -197,6 +197,13 @@ private struct IndexRows: View {
             return switch source {
             case .files: String(localized: "Документы, заметки и тексты из ваших папок")
             case .notes: String(localized: "Ваши заметки; Руни читает их, когда Заметки открыты")
+            case .history:
+                {
+                    let browsers = HistoryCollector().availableBrowsers()
+                    return browsers.isEmpty
+                        ? String(localized: "Ни один браузер не открылся для чтения")
+                        : String(localized: "Страницы, которые вы читали: \(browsers.joined(separator: ", "))")
+                }()
             case .photos: String(localized: "Когда что снято и что написано на снимках экрана")
             case .messages: MessagesCollector().canRead
                 ? String(localized: "Переписка из Сообщений, разговорами по дням")

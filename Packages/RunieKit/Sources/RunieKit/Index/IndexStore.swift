@@ -18,6 +18,7 @@ public final class IndexStore: @unchecked Sendable {
         case notes
         case messages
         case photos
+        case history
 
         public var title: String {
             switch self {
@@ -26,6 +27,7 @@ public final class IndexStore: @unchecked Sendable {
             case .notes: t("Заметки")
             case .messages: t("Сообщения")
             case .photos: t("Фото")
+            case .history: t("История браузера")
             }
         }
     }
@@ -91,17 +93,6 @@ public final class IndexStore: @unchecked Sendable {
             throw Failure.cannotOpen(url.lastPathComponent)
         }
         database = handle
-        // `runie_fold` — наша свёртка «ё» к «е»: её зовут триггеры индекса.
-        sqlite3_create_function(handle, "runie_fold", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, nil, { context, _, values in
-            guard let values, let raw = sqlite3_value_text(values[0]) else {
-                sqlite3_result_null(context)
-                return
-            }
-            let folded = String(cString: raw)
-                .replacingOccurrences(of: "ё", with: "е")
-                .replacingOccurrences(of: "Ё", with: "Е")
-            sqlite3_result_text(context, folded, -1, IndexStore.copyText)
-        }, nil, nil)
         try migrate()
     }
 
@@ -138,25 +129,30 @@ public final class IndexStore: @unchecked Sendable {
         // Индекс слов живёт на триггерах: таблица внешняя, и трогать её руками
         // нельзя — SQLite считает такую базу испорченной. По дороге «ё» заменяется
         // на «е»: диакритику SQLite снимает сам, а вот эти две буквы считает
-        // разными, и «съемка» не нашла бы «съёмку».
+        // разными, и «съемка» не нашла бы «съёмку». Замену делает встроенный
+        // `replace`, а не наша функция: иначе базу не открыть обычным sqlite3 —
+        // ни посмотреть, ни починить.
+        for name in ["items_after_insert", "items_after_delete", "items_after_update"] {
+            try execute("DROP TRIGGER IF EXISTS \(name)")
+        }
         try execute("""
             CREATE TRIGGER IF NOT EXISTS items_after_insert AFTER INSERT ON items BEGIN
                 INSERT INTO items_fts (rowid, title, body)
-                VALUES (new.id, runie_fold(new.title), runie_fold(new.body));
+                VALUES (new.id, replace(replace(new.title, 'ё', 'е'), 'Ё', 'Е'), replace(replace(new.body, 'ё', 'е'), 'Ё', 'Е'));
             END
             """)
         try execute("""
             CREATE TRIGGER IF NOT EXISTS items_after_delete AFTER DELETE ON items BEGIN
                 INSERT INTO items_fts (items_fts, rowid, title, body)
-                VALUES ('delete', old.id, runie_fold(old.title), runie_fold(old.body));
+                VALUES ('delete', old.id, replace(replace(old.title, 'ё', 'е'), 'Ё', 'Е'), replace(replace(old.body, 'ё', 'е'), 'Ё', 'Е'));
             END
             """)
         try execute("""
             CREATE TRIGGER IF NOT EXISTS items_after_update AFTER UPDATE ON items BEGIN
                 INSERT INTO items_fts (items_fts, rowid, title, body)
-                VALUES ('delete', old.id, runie_fold(old.title), runie_fold(old.body));
+                VALUES ('delete', old.id, replace(replace(old.title, 'ё', 'е'), 'Ё', 'Е'), replace(replace(old.body, 'ё', 'е'), 'Ё', 'Е'));
                 INSERT INTO items_fts (rowid, title, body)
-                VALUES (new.id, runie_fold(new.title), runie_fold(new.body));
+                VALUES (new.id, replace(replace(new.title, 'ё', 'е'), 'Ё', 'Е'), replace(replace(new.body, 'ё', 'е'), 'Ё', 'Е'));
             END
             """)
         try execute("CREATE INDEX IF NOT EXISTS items_date ON items (date)")
@@ -464,8 +460,6 @@ public final class IndexStore: @unchecked Sendable {
     }
 
     private static let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-    /// SQLite должен скопировать строку себе: наша уйдёт сразу после вызова.
-    static let copyText = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
     private func prepare(_ sql: String) throws -> OpaquePointer? {
         var statement: OpaquePointer?

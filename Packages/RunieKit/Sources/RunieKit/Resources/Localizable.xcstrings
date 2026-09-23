@@ -409,6 +409,17 @@
         }
       }
     },
+    "История браузера": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browsing history"
+          }
+        }
+      }
+    },
     "Ищет «%@»": {
       "extractionState": "manual",
       "localizations": {
