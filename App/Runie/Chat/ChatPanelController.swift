@@ -127,6 +127,7 @@ final class ChatPanelController {
             onOpenWindow: { [weak self] in self?.onOpenWindow?() },
             onPickFiles: { [weak self] in self?.pickFiles() },
             onCapture: { [weak self] in self?.captureScreenshot() },
+            onCaptureScreen: { [weak self] in self?.captureScreen() },
             onPaste: { [weak self] in self?.pasteClipboard() },
             onRetry: { [weak self] in self?.retry() },
             onRefocus: { [weak self] in
@@ -205,6 +206,18 @@ final class ChatPanelController {
     }
 
     /// Буфер обмена: файлы и картинка — во вложения, текст — в поле ввода.
+    /// Кнопка у поля: весь экран за чатом — сразу во вложения. Чат остаётся на месте:
+    /// его окна в кадр не попадают.
+    func captureScreen() {
+        let center = NSPoint(x: panel.frame.midX, y: panel.frame.midY)
+        Task { @MainActor in
+            guard let shot = await AttachmentStore.captureScreen(containing: center) else { return }
+            RunieSounds.shared.play(.capture)
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { layout.attachments.append(shot) }
+            layout.requestFocus()
+        }
+    }
+
     func pasteClipboard() {
         let (files, text) = AttachmentStore.readClipboard()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { layout.attachments += files }

@@ -1,5 +1,6 @@
 import AppKit
 import ImageIO
+import ScreenCaptureKit
 import RunieKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -37,6 +38,46 @@ enum AttachmentStore {
         defer { try? FileManager.default.removeItem(at: raw) }
         let name = String(localized: "Снимок \(Date().formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(.runie)))")
         return importImage(raw, name: name)
+    }
+
+    /// Снимок всего экрана, на котором стоит `point`, — одним нажатием, без выделения.
+    ///
+    /// Окна самого Runie в кадр не попадают: ни чат, ни орб. Руни видит то, что
+    /// человек видит за ними. Нужно разрешение на запись экрана; без него система
+    /// показывает запрос, а снимка пока нет.
+    static func captureScreen(containing point: NSPoint) async -> Attachment? {
+        guard CGPreflightScreenCaptureAccess() else {
+            CGRequestScreenCaptureAccess()
+            return nil
+        }
+        do {
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            let screen = NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main
+            let number = screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+            guard let display = content.displays.first(where: { $0.displayID == number?.uint32Value })
+                    ?? content.displays.first
+            else { return nil }
+            let own = content.applications.filter { $0.processID == ProcessInfo.processInfo.processIdentifier }
+            let filter = SCContentFilter(display: display, excludingApplications: own, exceptingWindows: [])
+            let configuration = SCStreamConfiguration()
+            let scale = CGFloat(filter.pointPixelScale)
+            configuration.width = Int(filter.contentRect.width * scale)
+            configuration.height = Int(filter.contentRect.height * scale)
+            configuration.showsCursor = false
+            let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+
+            let raw = FileManager.default.temporaryDirectory.appending(path: "runie-screen-\(UUID().uuidString).png")
+            defer { try? FileManager.default.removeItem(at: raw) }
+            guard let destination = CGImageDestinationCreateWithURL(raw as CFURL, UTType.png.identifier as CFString, 1, nil)
+            else { return nil }
+            CGImageDestinationAddImage(destination, image, nil)
+            guard CGImageDestinationFinalize(destination) else { return nil }
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let name = String(localized: "Экран \(Date().formatted(.dateTime.hour().minute().locale(.runie)))")
+            return importImage(raw, name: name)
+        } catch {
+            return nil
+        }
     }
 
     /// Файлы, выбранные или перетащенные. Картинки копируются уменьшенными,
@@ -142,6 +183,24 @@ enum AttachmentStore {
 }
 
 // MARK: - Кнопки и полоска вложений
+
+/// Снимок экрана одним нажатием: сразу во вложения, без выделения и вставки.
+struct ScreenshotButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "display")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 26, height: 26)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help("Приложить снимок экрана — Руни увидит, что у вас открыто")
+        .accessibilityLabel("Приложить снимок экрана")
+    }
+}
 
 /// «+» у поля ввода. Нажатие открывает список: снимок области, буфер обмена, файлы.
 struct AttachmentButtons: View {

@@ -23,6 +23,8 @@ enum RunieSoundCue: CaseIterable, Sendable {
     case error
     /// Орб прилип к краю экрана.
     case dock
+    /// Снимок экрана приложен к сообщению.
+    case capture
 }
 
 /// Звуки Руни: короткие стеклянные колокольчики в тон бирюзовому орбу.
@@ -111,7 +113,7 @@ final class RunieSounds {
 
     /// Прослушать в настройках: всё по очереди, как оно звучит в работе.
     func preview() {
-        let order: [Cue] = [.greeting, .open, .send, .reply, .attention, .close, .dock, .error, .farewell]
+        let order: [Cue] = [.greeting, .open, .send, .capture, .reply, .attention, .close, .dock, .error, .farewell]
         Task { @MainActor in
             for cue in order {
                 play(cue)
@@ -193,6 +195,10 @@ final class RunieSounds {
             // сразу за ним. Коротко — это отклик на жест, а не событие.
             [Note(frequency: 392.0, start: 0, amplitude: 0.5, decay: 0.07),
              Note(frequency: 1568.0, start: 0.014, amplitude: 0.2, decay: 0.05)]
+        case .capture:
+            // Затвор: два быстрых сухих щелчка, как у камеры, но стеклянных.
+            [Note(frequency: 2637.0, start: 0, amplitude: 0.3, decay: 0.03),
+             Note(frequency: 1975.5, start: 0.05, amplitude: 0.26, decay: 0.05)]
         case .error:
             // Низко и вниз на полтона — без тревожной сирены.
             [Note(frequency: 523.25, start: 0, amplitude: 0.36, decay: 0.2),
@@ -207,6 +213,7 @@ final class RunieSounds {
         case .send: 0.55
         case .open: 0.75
         case .dock: 0.6
+        case .capture: 0.55
         case .error: 0.8
         default: 1
         }

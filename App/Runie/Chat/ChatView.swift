@@ -21,6 +21,7 @@ struct ChatView: View {
     let onOpenWindow: () -> Void
     let onPickFiles: () -> Void
     let onCapture: () -> Void
+    let onCaptureScreen: () -> Void
     let onPaste: () -> Void
     let onRetry: () -> Void
     /// Вернуть клавиатуру в поле ввода — после списка с поиском.
@@ -141,6 +142,7 @@ struct ChatView: View {
                         settings: settings,
                         onPickFiles: onPickFiles,
                         onCapture: onCapture,
+                        onCaptureScreen: onCaptureScreen,
                         onPaste: onPaste,
                         layout: layout,
                         onSubmitDraft: submitDraft,
@@ -878,6 +880,7 @@ private struct InputRow: View {
     let settings: AppSettings
     let onPickFiles: () -> Void
     let onCapture: () -> Void
+    let onCaptureScreen: () -> Void
     let onPaste: () -> Void
     @Bindable var layout: ChatLayout
     let onSubmitDraft: () -> Void
@@ -917,7 +920,10 @@ private struct InputRow: View {
         // и многострочное поле подпрыгивает над центром.
         HStack(spacing: 4) {
             if layout.orbSide == .leading { sendButton }
-            if layout.orbSide == .trailing { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste) }
+            if layout.orbSide == .trailing {
+                AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste)
+                ScreenshotButton(action: onCaptureScreen)
+            }
 
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -958,7 +964,10 @@ private struct InputRow: View {
                 .layoutPriority(1)
 
             ModelMenu(session: session, settings: settings)
-            if layout.orbSide == .leading { AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste) }
+            if layout.orbSide == .leading {
+                ScreenshotButton(action: onCaptureScreen)
+                AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste)
+            }
             if layout.orbSide == .trailing { sendButton }
         }
         .padding(.leading, layout.orbSide == .trailing ? 8 : 7)
