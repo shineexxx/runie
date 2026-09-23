@@ -122,7 +122,7 @@ struct ChatView: View {
                             set: { layout.attachments = $0 }
                         ))
                         .frame(height: 68)
-                        .frame(maxWidth: 360, alignment: frameAlignment)
+                        .frame(maxWidth: 420, alignment: frameAlignment)
                         .readableSurface(RoundedRectangle(cornerRadius: 20))
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
@@ -567,11 +567,11 @@ private struct Bubble<Content: View>: View {
             .textSelection(.enabled)
             .padding(.horizontal, 18)
             .padding(.vertical, 13)
-            // Ширина — не больше 360 и не шире текста, высота — ровно под текст при этой
+            // Ширина — не больше 420 и не шире текста, высота — ровно под текст при этой
             // ширине. «Идеальная» ширина здесь не годится: её меряют по самой длинной
             // строке без переносов, а рисуют уже, и длинный ответ вылезал из облачка.
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 360, alignment: .leading)
+            .frame(maxWidth: 420, alignment: .leading)
             .readableSurface(MessageBubbleShape(tail: tail))
             // Хвостик выходит за рамку пузыря — место под него.
             .padding(tail == .trailing ? .trailing : .leading, MessageBubbleShape.tailReach)
@@ -737,7 +737,7 @@ struct PermissionCard: View {
             }
         }
         .padding(16)
-        .frame(width: 360, alignment: .leading)
+        .frame(width: 420, alignment: .leading)
         .readableSurface(RoundedRectangle(cornerRadius: 24))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Руни просит разрешения: \(description.title)")
@@ -798,7 +798,7 @@ private struct InputRow: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        // Плотно: две круглые кнопки и поле делят 380 точек, а подсказке в поле
+        // Плотно: две круглые кнопки и поле делят 480 точек, а подсказке в поле
         // нужна одна строка.
         HStack(spacing: 6) {
             // Кнопки с дальней от орба стороны: разговоры, затем «развернуть».
@@ -832,9 +832,22 @@ private struct InputRow: View {
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.system(size: 14))
-                .lineLimit(1...3)
+                // Пять строк: с переносами по Shift+Enter в трёх уже тесно.
+                .lineLimit(1...5)
                 .focused($isFocused)
                 .onSubmit(onSubmitDraft)
+                // Shift+Enter — перенос строки, обычный Enter отправляет.
+                // Перенос вставляем в место курсора, а не в конец: человек мог
+                // вернуться в середину написанного.
+                .onKeyPress(.return, phases: .down) { press in
+                    guard press.modifiers.contains(.shift) else { return .ignored }
+                    if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
+                        editor.insertText("\n", replacementRange: editor.selectedRange())
+                    } else {
+                        layout.draft += "\n"
+                    }
+                    return .handled
+                }
                 // Tab на «/…» подставляет первую подходящую команду.
                 .onKeyPress(.tab) {
                     guard let first = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands).first

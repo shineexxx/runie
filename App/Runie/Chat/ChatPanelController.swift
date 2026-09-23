@@ -49,7 +49,8 @@ final class ChatLayout {
 final class ChatPanelController {
 
     /// Наибольший размер окна. Высота подстраивается под место над орбом.
-    static let size = NSSize(width: 380 + shadowMargin * 2, height: 640)
+    /// Ширина — ради поля ввода: в 380 точек ему доставалось едва на «Спросите Руни…».
+    static let size = NSSize(width: 480 + shadowMargin * 2, height: 640)
     /// Прозрачное поле вокруг блоков. Тень блока выходит далеко за его край,
     /// и если поля не хватает, край окна обрезает её прямой линией.
     static let shadowMargin: CGFloat = 40

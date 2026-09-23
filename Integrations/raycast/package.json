@@ -1,0 +1,66 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "runie",
+  "title": "Runie",
+  "description": "Ask Runie and search everything it has indexed on your Mac: files, mail, notes, messages and browsing history.",
+  "icon": "icon.png",
+  "author": "shineexxx",
+  "categories": ["Productivity", "Applications"],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "ask",
+      "title": "Спросить Руни",
+      "subtitle": "Runie",
+      "description": "Открывает чат у орба и сразу задаёт вопрос.",
+      "mode": "no-view",
+      "arguments": [
+        {
+          "name": "question",
+          "placeholder": "Вопрос",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "title": "Найти у себя",
+      "subtitle": "Runie",
+      "description": "Поиск по указателю Руни: файлы, письма, заметки, переписка, история браузера.",
+      "mode": "view"
+    },
+    {
+      "name": "open-chat",
+      "title": "Открыть чат Руни",
+      "subtitle": "Runie",
+      "description": "Открывает чат у орба.",
+      "mode": "no-view"
+    },
+    {
+      "name": "new-conversation",
+      "title": "Новый разговор",
+      "subtitle": "Runie",
+      "description": "Начинает с Руни разговор с чистого листа.",
+      "mode": "no-view"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.93.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.0.4",
+    "@types/node": "22.13.10",
+    "@types/react": "19.0.10",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "publish": "npx @raycast/api@latest publish"
+  }
+}

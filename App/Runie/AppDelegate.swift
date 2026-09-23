@@ -93,6 +93,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // Указатель обновляется сам: при запуске и дальше раз в час.
         IndexModel.shared.start()
+        // Команды снаружи: Spotlight, Быстрые команды, Raycast.
+        RunieCommands.openChat = { [weak self] in self?.openChatIfHidden() }
+        RunieCommands.newConversation = { [weak self] in
+            guard let self else { return }
+            session.startOver()
+            openChatIfHidden()
+        }
+        RunieCommands.ask = { [weak self] text, send in
+            guard let self else { return }
+            openChatIfHidden()
+            // Чату нужно мгновение, чтобы выйти из орба: поле появляется не сразу.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                guard let self else { return }
+                if send, !session.isBusy {
+                    chat.send(text)
+                } else {
+                    // Руни занят или вопрос пришёл от чужого — пусть решит человек.
+                    chat.layout.draft = text
+                }
+            }
+        }
         briefing = MorningBriefing()
         setup = SetupModel(settings: settings)
         var needsBackend = backend is UnavailableBackend
@@ -329,6 +350,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             openChat()
         }
+    }
+
+    /// Ссылки `runie://…` — от Raycast, из Терминала, откуда угодно.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        let sender = RunieCommands.currentSender()
+        for url in urls {
+            RunieCommands.handle(url, sender: sender)
+        }
+    }
+
+    /// Открыть чат, если он ещё не открыт: повторный вызов его бы закрыл.
+    private func openChatIfHidden() {
+        if !chat.isVisible { openChat() }
+        NSApp.activate()
     }
 
     private func openChat() {

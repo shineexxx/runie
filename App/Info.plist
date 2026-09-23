@@ -32,6 +32,17 @@
 	<string>Runie</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.runie.Runie</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>runie</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Runie управляет приложениями от вашего имени, чтобы выполнять задачи, о которых вы просите. Каждое необратимое действие требует подтверждения.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
