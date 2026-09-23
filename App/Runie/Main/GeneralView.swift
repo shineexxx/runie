@@ -1,3 +1,4 @@
+import Photos
 import RunieKit
 import SwiftUI
 
@@ -204,7 +205,9 @@ private struct IndexRows: View {
                         ? String(localized: "Ни один браузер не открылся для чтения")
                         : String(localized: "Страницы, которые вы читали: \(browsers.joined(separator: ", "))")
                 }()
-            case .photos: String(localized: "Когда что снято и что написано на снимках экрана")
+            case .photos: PhotosCollector.authorization == .denied || PhotosCollector.authorization == .restricted
+                ? String(localized: "Нет доступа к медиатеке: Настройки → Конфиденциальность → Фото")
+                : String(localized: "Когда что снято и что написано на снимках экрана")
             case .messages: MessagesCollector().canRead
                 ? String(localized: "Переписка из Сообщений, разговорами по дням")
                 : String(localized: "Нужен доступ к диску")

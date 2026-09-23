@@ -17,6 +17,10 @@
 	<!-- Контакты: найти почту или телефон, когда человек просит что-то отправить. -->
 	<key>com.apple.security.personal-information.addressbook</key>
 	<true/>
+	<!-- Медиатека для указателя. Без этого права Hardened Runtime отказывает
+	     молча: система даже не показывает запрос доступа. -->
+	<key>com.apple.security.personal-information.photos-library</key>
+	<true/>
 	<!-- Hardened Runtime: Runie запускает сторонний исполняемый файл (claude),
 	     подписанный не нами. -->
 	<key>com.apple.security.cs.disable-library-validation</key>
