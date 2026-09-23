@@ -301,6 +301,12 @@ final class EdgeButtonController {
             state.dock = nil
             position.x = (center.x - visible.minX) / max(visible.width, 1)
         }
+        // Прилип к краю — щелчок в момент, когда орб долетает до кромки.
+        if state.dock != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                RunieSounds.shared.play(.dock)
+            }
+        }
         // При открытом чате прицепленный орб остаётся в стороне от края до закрытия.
         state.isDetached = state.dock != nil && chatLayout.isOpen
         position.y = (center.y - visible.minY) / max(visible.height, 1)
