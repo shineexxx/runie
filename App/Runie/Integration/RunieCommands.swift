@@ -13,6 +13,21 @@ enum RunieCommands {
     static var openChat: (() -> Void)?
     static var newConversation: (() -> Void)?
 
+    /// Когда пришла последняя команда снаружи.
+    ///
+    /// Spotlight, запуская действие, «будит» приложение так же, как клик по
+    /// значку в Dock, — и Руни открывал бы главное окно поверх чата. По этой
+    /// отметке делегат понимает, что это не человек тянется к окну.
+    static var lastCommand: Date?
+
+    static func noteCommand() { lastCommand = Date() }
+
+    /// Была ли команда снаружи рядом с этим моментом — до или после.
+    static func isNearCommand(_ moment: Date, within seconds: TimeInterval = 3) -> Bool {
+        guard let lastCommand else { return false }
+        return abs(lastCommand.timeIntervalSince(moment)) < seconds
+    }
+
     /// Приложения, которым можно отправлять вопрос без подтверждения.
     ///
     /// Ссылку `runie://` может открыть любой сайт, и вопрос от него — это чужие
@@ -27,6 +42,7 @@ enum RunieCommands {
     ///     runie://new         — новый разговор
     static func handle(_ url: URL, sender: String?) {
         guard url.scheme?.lowercased() == "runie" else { return }
+        noteCommand()
         let command = (url.host() ?? url.path()).lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first { $0.name == "q" || $0.name == "text" }?.value ?? ""

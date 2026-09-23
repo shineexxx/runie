@@ -1,4 +1,11 @@
-import { Action, ActionPanel, Icon, List, showToast, Toast } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Icon,
+  List,
+  showToast,
+  Toast,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { hasIndex, Hit, openRunie, search, Source } from "./runie";
 
@@ -33,7 +40,11 @@ export default function Command() {
         if (!cancelled) setHits(found);
       })
       .catch((error: Error) => {
-        showToast({ style: Toast.Style.Failure, title: "Указатель не открылся", message: error.message });
+        showToast({
+          style: Toast.Style.Failure,
+          title: "Указатель не открылся",
+          message: error.message,
+        });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -52,7 +63,11 @@ export default function Command() {
           description="Включите его в Руни: Настройки → Общие → Индекс."
           actions={
             <ActionPanel>
-              <Action title="Открыть Руни" icon={Icon.Bubble} onAction={() => openRunie("open")} />
+              <Action
+                title="Открыть Руни"
+                icon={Icon.Bubble}
+                onAction={() => openRunie("open")}
+              />
             </ActionPanel>
           }
         />
@@ -105,9 +120,17 @@ function Detail({ hit }: { hit: Hit }) {
       markdown={`### ${escape(hit.title)}\n\n${escape(hit.body)}`}
       metadata={
         <List.Item.Detail.Metadata>
-          <List.Item.Detail.Metadata.Label title="Откуда" text={sourceTitle[hit.source]} />
-          <List.Item.Detail.Metadata.Label title="Когда" text={new Date(hit.date * 1000).toLocaleString("ru-RU")} />
-          {from ? <List.Item.Detail.Metadata.Label title="Кто или где" text={from} /> : null}
+          <List.Item.Detail.Metadata.Label
+            title="Откуда"
+            text={sourceTitle[hit.source]}
+          />
+          <List.Item.Detail.Metadata.Label
+            title="Когда"
+            text={new Date(hit.date * 1000).toLocaleString("ru-RU")}
+          />
+          {from ? (
+            <List.Item.Detail.Metadata.Label title="Кто или где" text={from} />
+          ) : null}
         </List.Item.Detail.Metadata>
       }
     />
@@ -119,8 +142,13 @@ function HitActions({ hit, query }: { hit: Hit; query: string }) {
     <Action
       title="Спросить Руни об этом"
       icon={Icon.Bubble}
-      shortcut={{ modifiers: ["cmd"], key: "r" }}
-      onAction={() => openRunie("ask", `Расскажи подробнее: «${hit.title}»${query ? ` (искал «${query}»)` : ""}`)}
+      shortcut={{ modifiers: ["cmd", "shift"], key: "r" }}
+      onAction={() =>
+        openRunie(
+          "ask",
+          `Расскажи подробнее: «${hit.title}»${query ? ` (искал «${query}»)` : ""}`,
+        )
+      }
     />
   );
   return (
@@ -131,10 +159,20 @@ function HitActions({ hit, query }: { hit: Hit; query: string }) {
           <Action.ShowInFinder path={hit.externalID} />
         </>
       ) : null}
-      {hit.source === "history" ? <Action.OpenInBrowser url={hit.externalID.replace(/^page:/, "")} /> : null}
+      {hit.source === "history" ? (
+        <Action.OpenInBrowser url={hit.externalID.replace(/^page:/, "")} />
+      ) : null}
       {ask}
-      <Action.CopyToClipboard title="Скопировать название" content={hit.title} />
-      {hit.source === "files" ? <Action.CopyToClipboard title="Скопировать путь" content={hit.externalID} /> : null}
+      <Action.CopyToClipboard
+        title="Скопировать название"
+        content={hit.title}
+      />
+      {hit.source === "files" ? (
+        <Action.CopyToClipboard
+          title="Скопировать путь"
+          content={hit.externalID}
+        />
+      ) : null}
     </ActionPanel>
   );
 }

@@ -424,8 +424,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Клик по значку в Dock, пока открыто окно, — вернуть окно.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        mainWindow.show()
-        return true
+        // Так же будит приложение и Spotlight, когда запускает действие Руни.
+        // Команда может прийти чуть раньше или чуть позже — поэтому окно
+        // показываем с задержкой и только если рядом не было команды снаружи.
+        let moment = Date()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard !RunieCommands.isNearCommand(moment) else { return }
+            self?.mainWindow.show()
+        }
+        return false
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

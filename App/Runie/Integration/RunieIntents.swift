@@ -18,8 +18,12 @@ struct AskRunieIntent: AppIntent {
         Summary("Спросить Руни: \(\.$question)")
     }
 
+    /// Руни и так на экране — орбом; его главное окно здесь не нужно.
+    static let openAppWhenRun = false
+
     @MainActor
     func perform() async throws -> some IntentResult {
+        RunieCommands.noteCommand()
         RunieCommands.ask?(question, true)
         return .result()
     }
@@ -29,8 +33,11 @@ struct OpenRunieChatIntent: AppIntent {
     static let title: LocalizedStringResource = "Открыть чат Руни"
     static let description = IntentDescription("Открывает чат у орба.")
 
+    static let openAppWhenRun = false
+
     @MainActor
     func perform() async throws -> some IntentResult {
+        RunieCommands.noteCommand()
         RunieCommands.openChat?()
         return .result()
     }
@@ -40,8 +47,11 @@ struct NewRunieConversationIntent: AppIntent {
     static let title: LocalizedStringResource = "Новый разговор с Руни"
     static let description = IntentDescription("Начинает разговор с чистого листа и открывает чат.")
 
+    static let openAppWhenRun = false
+
     @MainActor
     func perform() async throws -> some IntentResult {
+        RunieCommands.noteCommand()
         RunieCommands.newConversation?()
         return .result()
     }
@@ -146,6 +156,7 @@ struct OpenIndexItemIntent: OpenIntent {
             }
         default:
             // Письмо, заметку или переписку проще всего показать через Руни.
+            RunieCommands.noteCommand()
             RunieCommands.ask?("Покажи: «\(target.title)»", true)
         }
         return .result()

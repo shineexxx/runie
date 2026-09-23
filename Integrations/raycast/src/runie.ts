@@ -8,7 +8,10 @@ import { promisify } from "node:util";
 const run = promisify(execFile);
 
 /** Команда Руни через его ссылку `runie://…`. Руни поднимется сам, если был закрыт. */
-export async function openRunie(command: "ask" | "open" | "new", text?: string) {
+export async function openRunie(
+  command: "ask" | "open" | "new",
+  text?: string,
+) {
   const query = text ? `?q=${encodeURIComponent(text)}` : "";
   try {
     await open(`runie://${command}${query}`);
@@ -19,11 +22,15 @@ export async function openRunie(command: "ask" | "open" | "new", text?: string) 
 }
 
 /** Указатель Руни: обычная база SQLite рядом с приложением. */
-export const indexPath = join(homedir(), "Library/Application Support/Runie/Index/index.sqlite");
+export const indexPath = join(
+  homedir(),
+  "Library/Application Support/Runie/Index/index.sqlite",
+);
 
 export const hasIndex = () => existsSync(indexPath);
 
-export type Source = "files" | "mail" | "notes" | "messages" | "photos" | "history";
+export type Source =
+  "files" | "mail" | "notes" | "messages" | "photos" | "history";
 
 export interface Hit {
   source: Source;
@@ -73,11 +80,17 @@ export async function search(text: string, limit = 40): Promise<Hit[]> {
     : `SELECT ${columns} FROM items ORDER BY items.date DESC LIMIT ${limit};`;
 
   // Базу открываем только на чтение: указатель ведёт Руни, не мы.
-  const { stdout } = await run("/usr/bin/sqlite3", ["-readonly", "-json", indexPath, sql], {
-    maxBuffer: 16 * 1024 * 1024,
-  });
+  const { stdout } = await run(
+    "/usr/bin/sqlite3",
+    ["-readonly", "-json", indexPath, sql],
+    {
+      maxBuffer: 16 * 1024 * 1024,
+    },
+  );
   if (!stdout.trim()) return [];
-  const rows = JSON.parse(stdout) as Array<Omit<Hit, "details"> & { details: string }>;
+  const rows = JSON.parse(stdout) as Array<
+    Omit<Hit, "details"> & { details: string }
+  >;
   return rows.map((row) => ({ ...row, details: safeJSON(row.details) }));
 }
 
