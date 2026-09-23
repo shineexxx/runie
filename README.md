@@ -28,14 +28,13 @@ of its own, no cloud of its own, no account of its own.
 2. Open Runie. If Claude Code is not installed yet, or you are not signed in, Runie walks you
    through it right in the chat — it installs Claude Code itself and opens the sign-in page.
 
-The app is signed with a Developer ID certificate but is not notarized by Apple yet, so on the
-first launch macOS says it cannot verify the developer. Open it once through the context menu:
-**right-click Runie → Open → Open**. After that it launches normally.
+The app is signed with a Developer ID certificate and notarized by Apple, so it opens with a
+regular double-click.
 
 From then on the app updates itself: once a day it checks the releases on GitHub and installs the
 new version without Terminal. Every release is signed with the author’s key.
 
-**Requirements:** macOS 26 or newer and a Claude subscription (Pro or Max).
+**Requirements:** a Mac with Apple Silicon, macOS 26 or newer and a Claude subscription (Pro or Max).
 
 ## What it does
 
@@ -101,7 +100,7 @@ swift test --package-path Packages/RunieKit
 Release (build, sign, DMG, appcast and a GitHub release):
 
 ```bash
-scripts/release.sh 0.2.1
+scripts/release.sh 0.3.0
 ```
 
 By default it signs with the local certificate from `scripts/make-signing-cert.sh`. With a
@@ -109,7 +108,7 @@ Developer ID and notarization:
 
 ```bash
 RUNIE_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
-RUNIE_NOTARY_PROFILE=runie scripts/release.sh 0.2.1
+RUNIE_NOTARY_PROFILE=runie scripts/release.sh 0.3.0
 ```
 
 ## Layout

@@ -153,7 +153,7 @@ cp -f "$RELEASES/appcast.xml" "$ROOT/appcast.xml"
 # 8. Релиз на GitHub и коммит версии с appcast
 echo "▸ Релиз $TAG"
 git add Runie.xcodeproj/project.pbxproj appcast.xml
-git commit -m "Runie $VERSION" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+git commit -m "Runie $VERSION" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 git tag -f "$TAG"
 git push origin HEAD
 git push -f origin "$TAG"

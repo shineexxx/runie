@@ -28,15 +28,13 @@ Runie — нативное macOS-приложение: орб у края экр
 2. Откройте Runie. Если Claude Code ещё не установлен или вы не вошли в аккаунт, Руни проведёт по
    шагам прямо в чате: установит Claude Code сам и откроет страницу входа.
 
-Приложение подписано сертификатом Developer ID, но пока не прошло нотаризацию Apple, поэтому при
-первом запуске macOS скажет, что не может проверить разработчика. Откройте его один раз через
-контекстное меню: **правый клик по Runie → «Открыть» → «Открыть»**. Дальше оно запускается обычным
-двойным щелчком.
+Приложение подписано сертификатом Developer ID и прошло нотаризацию Apple, поэтому открывается
+обычным двойным щелчком.
 
 После установки приложение обновляется само: раз в сутки смотрит релизы на GitHub и ставит новую
 версию без Терминала. Каждый выпуск подписан ключом автора.
 
-**Нужно:** macOS 26 или новее и подписка Claude (Pro или Max).
+**Нужно:** Mac на Apple Silicon, macOS 26 или новее и подписка Claude (Pro или Max).
 
 ## Что умеет
 
@@ -102,7 +100,7 @@ swift test --package-path Packages/RunieKit
 Выпуск (сборка, подпись, DMG, appcast и релиз на GitHub):
 
 ```bash
-scripts/release.sh 0.2.1
+scripts/release.sh 0.3.0
 ```
 
 По умолчанию подписывает локальным сертификатом из `scripts/make-signing-cert.sh`. С Developer ID
@@ -110,7 +108,7 @@ scripts/release.sh 0.2.1
 
 ```bash
 RUNIE_SIGN_IDENTITY="Developer ID Application: Имя (TEAMID)" \
-RUNIE_NOTARY_PROFILE=runie scripts/release.sh 0.2.1
+RUNIE_NOTARY_PROFILE=runie scripts/release.sh 0.3.0
 ```
 
 ## Структура
