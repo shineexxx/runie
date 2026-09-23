@@ -416,8 +416,22 @@ private struct CompactFeed: View {
                 // Раскрытая лента уходит вверх в прозрачность, а не обрывается краем.
                 .mask {
                     VStack(spacing: 0) {
-                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                            .frame(height: expanded || currentHeight > available ? Self.shadowRoom + 40 : 0)
+                        if expanded || currentHeight > available {
+                            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                                .frame(height: Self.shadowRoom + 40)
+                        } else {
+                            // Свёрнутая лента: в запас под тень сверху заглядывает низ
+                            // прошлой реплики. Обрезанный ровной линией кусок стекла
+                            // выглядел как граница над чатом — прячем его, оставляя
+                            // только хвост тени текущего облачка.
+                            LinearGradient(
+                                stops: [.init(color: .clear, location: 0),
+                                        .init(color: .clear, location: 0.7),
+                                        .init(color: .black, location: 1)],
+                                startPoint: .top, endPoint: .bottom
+                            )
+                            .frame(height: Self.shadowRoom)
+                        }
                         Color.black
                     }
                 }
