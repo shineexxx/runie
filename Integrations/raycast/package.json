@@ -2,22 +2,25 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "runie",
   "title": "Runie",
-  "description": "Ask Runie and search everything it has indexed on your Mac: files, mail, notes, messages and browsing history.",
+  "description": "Ask Runie, the Mac assistant built on Claude Code, and search everything it has indexed: files, mail, notes, messages and browsing history.",
   "icon": "icon.png",
   "author": "shineexxx",
-  "categories": ["Productivity", "Applications"],
+  "categories": [
+    "Productivity",
+    "Applications"
+  ],
   "license": "MIT",
   "commands": [
     {
       "name": "ask",
-      "title": "Спросить Руни",
+      "title": "Ask Runie",
       "subtitle": "Runie",
-      "description": "Открывает чат у орба и сразу задаёт вопрос.",
+      "description": "Open the chat next to the orb and ask a question right away.",
       "mode": "no-view",
       "arguments": [
         {
           "name": "question",
-          "placeholder": "Вопрос",
+          "placeholder": "Question",
           "type": "text",
           "required": true
         }
@@ -25,23 +28,23 @@
     },
     {
       "name": "search",
-      "title": "Найти у себя",
+      "title": "Search Index",
       "subtitle": "Runie",
-      "description": "Поиск по указателю Руни: файлы, письма, заметки, переписка, история браузера.",
+      "description": "Search Runie's index of your files, mail, notes, messages and browsing history.",
       "mode": "view"
     },
     {
       "name": "open-chat",
-      "title": "Открыть чат Руни",
+      "title": "Open Chat",
       "subtitle": "Runie",
-      "description": "Открывает чат у орба.",
+      "description": "Open the chat next to the orb.",
       "mode": "no-view"
     },
     {
       "name": "new-conversation",
-      "title": "Новый разговор",
+      "title": "Start New Conversation",
       "subtitle": "Runie",
-      "description": "Начинает с Руни разговор с чистого листа.",
+      "description": "Start a fresh conversation with Runie.",
       "mode": "no-view"
     }
   ],
@@ -62,5 +65,8 @@
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
     "publish": "npx @raycast/api@latest publish"
-  }
+  },
+  "platforms": [
+    "macOS"
+  ]
 }

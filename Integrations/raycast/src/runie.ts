@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 
 const run = promisify(execFile);
 
-/** Команда Руни через его ссылку `runie://…`. Руни поднимется сам, если был закрыт. */
+/** Sends a command to Runie through its `runie://` link. Runie launches itself if it was closed. */
 export async function openRunie(
   command: "ask" | "open" | "new",
   text?: string,
@@ -17,11 +17,11 @@ export async function openRunie(
     await open(`runie://${command}${query}`);
     await closeMainWindow();
   } catch {
-    await showHUD("Руни не установлен — нужен Runie.app в «Программах»");
+    await showHUD("Runie is not installed — put Runie.app in Applications");
   }
 }
 
-/** Указатель Руни: обычная база SQLite рядом с приложением. */
+/** Runie's index: a plain SQLite database next to the app. */
 export const indexPath = join(
   homedir(),
   "Library/Application Support/Runie/Index/index.sqlite",
@@ -42,8 +42,8 @@ export interface Hit {
 }
 
 /**
- * Основа слова, как её режет сам Руни: у длинных русских слов хвост с окончанием
- * отрезается, чтобы «бюджета» находило «бюджет». Латиница — как есть.
+ * Word stem, cut the same way Runie cuts it: long Russian words lose their
+ * ending so that "бюджета" still finds "бюджет". Latin words stay as they are.
  */
 export function stem(word: string): string {
   if (!/[а-яё]/i.test(word)) return word;
@@ -53,7 +53,7 @@ export function stem(word: string): string {
   return folded.slice(0, keep);
 }
 
-/** Запрос для полнотекстового поиска. Остаются только буквы и цифры — ни кавычек, ни операторов. */
+/** Full-text query. Only letters and digits survive — no quotes, no operators. */
 export function ftsQuery(text: string): string {
   const words = text
     .toLowerCase()
@@ -67,8 +67,8 @@ const columns = `items.source AS source, items.external_id AS externalID, items.
   substr(items.body, 1, 400) AS body, items.date AS date, items.details AS details`;
 
 /**
- * Ищет по словам. Смысловой поиск живёт в самом Руни — ему нужна модель;
- * для него в списке есть действие «Спросить Руни».
+ * Searches by words. Searching by meaning lives in Runie itself — it needs its
+ * model — so the list offers "Ask Runie" for that.
  */
 export async function search(text: string, limit = 40): Promise<Hit[]> {
   if (!hasIndex()) return [];
@@ -79,7 +79,7 @@ export async function search(text: string, limit = 40): Promise<Hit[]> {
        ORDER BY bm25(items_fts, 3.0, 1.0) LIMIT ${limit};`
     : `SELECT ${columns} FROM items ORDER BY items.date DESC LIMIT ${limit};`;
 
-  // Базу открываем только на чтение: указатель ведёт Руни, не мы.
+  // Read-only: the index belongs to Runie, not to us.
   const { stdout } = await run(
     "/usr/bin/sqlite3",
     ["-readonly", "-json", indexPath, sql],
