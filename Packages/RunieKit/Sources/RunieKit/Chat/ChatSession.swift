@@ -28,6 +28,8 @@ public final class ChatSession {
     @ObservationIgnored private var pump: Task<Void, Never>?
     /// Что человек разрешил «всегда» в этом разговоре. Такие запросы не показываются.
     @ObservationIgnored private var standingGrants: Set<String> = []
+    /// Разрешения изменились изнутри разговора — приложению нужно их сохранить.
+    @ObservationIgnored public var onPolicyUpdate: ((PermissionPolicy) -> Void)?
 
     // MARK: Модель
 
@@ -184,6 +186,13 @@ public final class ChatSession {
         guard timeline.pendingPermissions.contains(request) else { return }
         if allow, remember {
             standingGrants.insert(PermissionGrant.key(for: request))
+            // Вход под учётной записью запоминается насовсем и по сайтам: человек
+            // разрешает его один раз для дневника, а не для всего интернета.
+            if PermissionClassifier.categories(for: request).contains(.signInAsYou),
+               let site = PermissionClassifier.site(of: request) {
+                policy.signedInSites.insert(site)
+                onPolicyUpdate?(policy)
+            }
         }
         timeline.resolvePermission(request, allowed: allow)
         do {

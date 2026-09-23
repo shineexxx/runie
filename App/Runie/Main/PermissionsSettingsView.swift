@@ -37,6 +37,31 @@ struct PermissionsSettingsView: View {
                 .padding(.vertical, 4)
             }
 
+            // Сайты, на которые человек разрешил заходить под своей учётной
+            // записью. Разрешение даётся один раз и живёт, пока его не уберут.
+            if !settings.policy.signedInSites.isEmpty {
+                Section {
+                    ForEach(settings.policy.signedInSites.sorted(), id: \.self) { site in
+                        HStack {
+                            Label(site, systemImage: "person.badge.key")
+                                .font(.system(size: 13))
+                            Spacer()
+                            Button("Убрать") {
+                                settings.policy.signedInSites.remove(site)
+                            }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Заходит под вашей учётной записью")
+                } footer: {
+                    Text("На эти сайты Руни заходит вашими куками из Safari и Chrome без лишних вопросов. Остальные — только с вашего разрешения, каждый раз.")
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             Section("Ничего не меняют") {
                 ForEach(PermissionCategory.allCases.filter { !$0.isRisky }) { category in
                     CategoryRow(category: category, settings: settings)

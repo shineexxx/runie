@@ -69,6 +69,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.onPolicyChange = { [weak self] policy in
             self?.session.policy = policy
         }
+        // «Всегда» на входе под учётной записью — сайт запоминается в настройках.
+        session.onPolicyUpdate = { [weak self] policy in
+            self?.settings.policy = policy
+        }
         mainWindow = MainWindowController(session: session, settings: settings, store: store)
         mainWindow.onContinue = { [weak self] record in
             guard let self else { return }

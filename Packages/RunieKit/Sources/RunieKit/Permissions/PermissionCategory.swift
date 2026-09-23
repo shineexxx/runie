@@ -247,6 +247,13 @@ public enum PermissionClassifier {
     }
 
     /// Нейтральные команды сами по себе ничего не делают с файлами и системой.
+    /// Узел из адреса в запросе. Человек мог написать его без «https://».
+    public static func site(of request: PermissionRequest) -> String? {
+        guard let address = request.input["url"]?.stringValue else { return nil }
+        let text = address.contains("://") ? address : "https://" + address
+        return URL(string: text)?.host()?.lowercased()
+    }
+
     private static let neutral: Set<String> = ["echo", "printf", "true", "false", "cd", "test", "[", "sleep", "exit"]
 
     private static let table: [String: PermissionCategory] = {
@@ -425,8 +432,23 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
 
     public var rules: [PermissionCategory: Rule]
 
-    public init(rules: [PermissionCategory: Rule] = [:]) {
+    /// Сайты, на которые человек разрешил заходить под своей учётной записью.
+    ///
+    /// Вход хранится по узлам, а не одним выключателем: разрешив дневник, человек
+    /// не разрешает почту. Список виден в настройках, и любой сайт из него можно
+    /// убрать.
+    public var signedInSites: Set<String>
+
+    public init(rules: [PermissionCategory: Rule] = [:], signedInSites: Set<String> = []) {
         self.rules = rules
+        self.signedInSites = signedInSites
+    }
+
+    // Старые настройки про сайты ничего не знают — читаем их без ошибки.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        rules = try container.decodeIfPresent([PermissionCategory: Rule].self, forKey: .rules) ?? [:]
+        signedInSites = try container.decodeIfPresent(Set<String>.self, forKey: .signedInSites) ?? []
     }
 
     public func rule(for category: PermissionCategory) -> Rule {
@@ -436,7 +458,14 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
     /// Разрешать без вопроса, только если разрешены все группы, которые затрагивает
     /// запрос. Запрос без групп — одни нейтральные команды — тоже разрешается.
     public func allows(_ request: PermissionRequest) -> Bool {
-        PermissionClassifier.categories(for: request).allSatisfy { rule(for: $0) == .allow }
+        let categories = PermissionClassifier.categories(for: request)
+        // Вход под учётной записью спрашивается один раз на сайт: дальше этот
+        // сайт в списке разрешённых, а все остальные — по-прежнему через вопрос.
+        if categories.contains(.signInAsYou),
+           let site = PermissionClassifier.site(of: request), signedInSites.contains(site) {
+            return categories.filter { $0 != .signInAsYou }.allSatisfy { rule(for: $0) == .allow }
+        }
+        return categories.allSatisfy { rule(for: $0) == .allow }
     }
 
     // MARK: Готовые наборы

@@ -53,6 +53,43 @@ struct PermissionPresetTests {
         #expect(policy.rule(for: .install) == .ask)
     }
 
+    @Test("разрешённый сайт больше не спрашивает, остальные — спрашивают")
+    func signedInSites() {
+        let diary = request("mcp__runie__web_open",
+                            .object(["url": .string("https://lk.skolca.ru/homework"), "sign_in": .bool(true)]))
+        let bank = request("mcp__runie__web_open",
+                           .object(["url": .string("https://bank.example"), "sign_in": .bool(true)]))
+        var policy = PermissionPolicy.permissive
+        #expect(!policy.allows(diary))
+
+        policy.signedInSites.insert("lk.skolca.ru")
+        #expect(policy.allows(diary))
+        // Разрешив дневник, человек не разрешил банк.
+        #expect(!policy.allows(bank))
+
+        // В строгом режиме сам заход в браузер всё равно через вопрос.
+        var strict = PermissionPolicy.strict
+        strict.signedInSites.insert("lk.skolca.ru")
+        #expect(!strict.allows(diary))
+    }
+
+    @Test("старые настройки читаются: про сайты там ничего нет")
+    func oldSettings() throws {
+        // Так выглядели сохранённые разрешения до появления списка сайтов:
+        // словарь с ключом-перечислением Swift записывает парами в массив.
+        let old = Data("""
+            {"rules":["readFiles","allow"]}
+            """.utf8)
+        let policy = try JSONDecoder().decode(PermissionPolicy.self, from: old)
+        #expect(policy.rule(for: .readFiles) == .allow)
+        #expect(policy.signedInSites.isEmpty)
+        // И записывается обратно вместе с сайтами.
+        var updated = policy
+        updated.signedInSites.insert("lk.skolca.ru")
+        let restored = try JSONDecoder().decode(PermissionPolicy.self, from: JSONEncoder().encode(updated))
+        #expect(restored.signedInSites == ["lk.skolca.ru"])
+    }
+
     @Test("заранее не разрешается только необратимое и вход под учётной записью")
     func alwaysAsks() {
         let asking = PermissionCategory.allCases.filter(\.alwaysAsks)
