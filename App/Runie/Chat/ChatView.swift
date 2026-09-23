@@ -53,15 +53,6 @@ struct ChatView: View {
 
     private func content(emergence: Double) -> some View {
         ZStack(alignment: .bottom) {
-            // Почти невидимая заливка на всю панель.
-            //
-            // Окно чата прозрачное, а macOS отдаёт нажатия и прокрутку сквозь
-            // полностью прозрачные пиксели тому окну, что под ними: событие не
-            // доходило до Руни вовсе, и человек, ведя мышью по ответу, прокручивал
-            // чужое приложение. Заливка глазу незаметна (меньше одного процента),
-            // но окно с ней становится сплошным для системы.
-            Color.black.opacity(0.008)
-
             // Свет, пришедший из орба. Лежит под блоками: они проступают из него.
             GeometryReader { proxy in
                 EmergenceGlow(
@@ -94,6 +85,7 @@ struct ChatView: View {
                     // Один раз предлагаем скачать модель смыслового поиска по памяти.
                     if setup.offersMemory {
                         MemoryOfferCard(setup: setup)
+                            .holdsPointer()
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
 
@@ -101,12 +93,14 @@ struct ChatView: View {
                     // Руни спрашивает — карточка с вариантами прямо над полем.
                     if let question = QuestionBroker.shared.pending {
                         QuestionCard(request: question, broker: QuestionBroker.shared)
+                            .holdsPointer()
                             .id(question.id)
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
 
                     if let secret = SecretBroker.shared.pending {
                         SecretCard(request: secret, broker: SecretBroker.shared)
+                            .holdsPointer()
                             .id(secret.id)
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
@@ -114,6 +108,7 @@ struct ChatView: View {
                     // Агент стоит и ждёт ответа — вопрос прямо над полем ввода.
                     if let request = session.pendingPermission {
                         PermissionCard(request: request, session: session)
+                            .holdsPointer()
                             .id(request.requestID)
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
@@ -149,6 +144,7 @@ struct ChatView: View {
                         onRefocus: onRefocus
                     )
                     .frame(height: ChatPanelController.inputHeight)
+                    .holdsPointer()
                     // Поле первым вытягивается из света вдоль строки, от орба.
                     .modifier(EmergeFromLight(
                         progress: emergence,
@@ -169,6 +165,7 @@ struct ChatView: View {
                     .opacity(setup.isReady ? 1 : 0)
                     .allowsHitTesting(setup.isReady)
                     .frame(height: ChatPanelController.chipsHeight)
+                    .holdsPointer()
                     .modifier(EmergeFromLight(progress: emergence, window: 0.26...0.72, anchor: orbCornerAnchor))
                 }
                 // Поля шире тени блоков, иначе край окна её обрезает.
@@ -408,6 +405,9 @@ private struct CompactFeed: View {
                 .onChange(of: currentHeight) { followBottom() }
                 .onChange(of: feedHeight) { followBottom() }
                 .frame(height: feedHeight + Self.shadowRoom * 2)
+                // Лента держит мышь только там, где она есть: выше неё окно пропускает
+                // клики к тому, что позади.
+                .holdsPointer()
                 // Раскрытая лента уходит вверх в прозрачность, а не обрывается краем.
                 .mask {
                     VStack(spacing: 0) {
@@ -1195,6 +1195,19 @@ private struct ChatEventCatcher: NSViewRepresentable {
         override func rightMouseDown(with event: NSEvent) {}
         override func otherMouseDown(with event: NSEvent) {}
         override func magnify(with event: NSEvent) {}
+    }
+}
+
+extension View {
+    /// Почти невидимая заливка под блоком.
+    ///
+    /// Окно чата прозрачное, и macOS отдаёт нажатия и прокрутку сквозь полностью
+    /// прозрачные пиксели окну позади. Над ответом без подложки это значило, что
+    /// колесо мыши крутило чужое приложение. Заливка глазу незаметна (меньше
+    /// одного процента), но делает блок сплошным для системы. Кладём её только
+    /// под блоки: пустое место над чатом должно оставаться проницаемым.
+    func holdsPointer() -> some View {
+        background(Color.black.opacity(0.008))
     }
 }
 
