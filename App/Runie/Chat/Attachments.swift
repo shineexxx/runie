@@ -46,11 +46,9 @@ enum AttachmentStore {
     /// человек видит за ними. Нужно разрешение на запись экрана; без него система
     /// показывает запрос, а снимка пока нет.
     static func captureScreen(containing point: NSPoint) async -> Attachment? {
-        guard CGPreflightScreenCaptureAccess() else {
-            CGRequestScreenCaptureAccess()
-            return nil
-        }
         do {
+            // Сначала пробуем снять, а не спрашиваем быструю проверку: она бывает
+            // «нет» при уже выданном разрешении, и Руни просил его снова и снова.
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             let screen = NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main
             let number = screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
@@ -76,6 +74,9 @@ enum AttachmentStore {
             let name = String(localized: "Экран \(Date().formatted(.dateTime.hour().minute().locale(.runie)))")
             return importImage(raw, name: name)
         } catch {
+            // Снять не вышло — вот теперь просим разрешение (система покажет запрос
+            // только если его действительно нет).
+            if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
             return nil
         }
     }
