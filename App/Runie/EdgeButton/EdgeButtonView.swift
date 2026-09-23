@@ -22,9 +22,12 @@ struct EdgeButtonView: View {
                     .opacity(state.isAttached ? 1 : 0)
 
                 // Спрятанный орб светится из-за горбика: видно, что Руни рядом.
-                EdgeGlow(edge: dock, energy: mood.energy)
-                    .opacity(state.isAttached && state.isRetracted ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.35), value: state.isRetracted)
+                // Свечение живёт, только пока орб спрятан: невидимое, оно всё равно
+                // перерисовывалось бы 20 раз в секунду.
+                if state.isAttached && state.isRetracted {
+                    EdgeGlow(edge: dock, energy: mood.energy)
+                        .transition(.opacity)
+                }
             }
 
             RunieOrb(
@@ -32,7 +35,8 @@ struct EdgeButtonView: View {
                 collapse: chatLayout.isOpen ? 1 : 0,
                 release: release,
                 releaseDirection: releaseDirection,
-                glyph: chatLayout.isOpen ? .close : .none
+                glyph: chatLayout.isOpen ? .close : .none,
+                isPaused: state.isRetracted
             )
             .scaleEffect(state.isPressed && !state.isDragging ? 0.92 : 1)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: state.isPressed)
@@ -41,6 +45,7 @@ struct EdgeButtonView: View {
             .opacity(state.isRetracted ? 0 : 1)
             .animation(.spring(response: 0.16, dampingFraction: 0.9), value: state.isRetracted)
         }
+        .animation(.easeInOut(duration: 0.35), value: state.isRetracted)
         .frame(width: EdgeButtonController.panelSize.width, height: EdgeButtonController.panelSize.height)
         .help(chatLayout.isOpen ? "Закрыть чат" : "Руни")
         .accessibilityElement()
@@ -154,7 +159,7 @@ private struct EdgeGlow: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
+        TimelineView(.animation(minimumInterval: 1 / 20, paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             let breath = reduceMotion ? 0.5 : (sin(time * 1.3) + 1) / 2
             let strength = (0.35 + 0.2 * breath) * (1 + 0.5 * energy)

@@ -58,6 +58,9 @@ struct RunieOrb: View {
     /// Куда уходит свет: −1 влево, +1 вправо.
     var releaseDirection: Double = -1
     var glyph: OrbGlyph = .none
+    /// Орб не виден — например, спрятан за краем экрана. Тогда свет замирает:
+    /// перерисовывать то, чего никто не видит, — пустая трата процессора.
+    var isPaused = false
 
     /// Во сколько раз холст света больше самого шара. Свет выплёскивается за край
     /// и уходит в сторону чата; холст должен вмещать его целиком вместе с хвостом
@@ -71,7 +74,8 @@ struct RunieOrb: View {
             release: release,
             collapse: collapse,
             releaseDirection: releaseDirection,
-            size: size
+            size: size,
+            isPaused: isPaused
         )
         .overlay { GlyphView(glyph: glyph, size: size * EdgeButtonController.openScale) }
         .scaleEffect(mood == .carried ? 1.08 : 1)
@@ -108,6 +112,7 @@ private struct OrbFluid: View, @preconcurrency Animatable {
     var collapse: Double
     let releaseDirection: Double
     let size: CGFloat
+    let isPaused: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -138,7 +143,9 @@ private struct OrbFluid: View, @preconcurrency Animatable {
     ]
 
     var body: some View {
-        TimelineView(.animation(paused: reduceMotion)) { timeline in
+        // 30 кадров в секунду, а не частота экрана: свет плывёт медленно, и на 120 Гц
+        // разницы не видно, а процессор орб в покое грузил на пятую часть.
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || isPaused)) { timeline in
             let time = reduceMotion ? 12 : timeline.date.timeIntervalSinceReferenceDate
             orb(time: time)
         }
