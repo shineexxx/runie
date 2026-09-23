@@ -430,6 +430,31 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
         case allow
     }
 
+    /// Выбранный человеком набор. Помнится отдельно от правил, чтобы новые
+    /// группы разрешений вели себя так, как он однажды решил.
+    ///
+    /// Без этого каждая новая возможность Руни начинала спрашивать заново:
+    /// правила сохранены только для тех групп, что были в момент выбора, а про
+    /// новую в настройках ничего нет.
+    public enum Preset: String, Codable, Sendable {
+        case strict
+        case safe
+        case permissive
+        /// Человек настраивал группы по одной.
+        case custom
+
+        func rule(for category: PermissionCategory) -> Rule {
+            switch self {
+            case .strict: .ask
+            case .safe: category.isRisky ? .ask : .allow
+            case .permissive: category.alwaysAsks ? .ask : .allow
+            case .custom: category.defaultRule
+            }
+        }
+    }
+
+    public var preset: Preset
+
     public var rules: [PermissionCategory: Rule]
 
     /// Сайты, на которые человек разрешил заходить под своей учётной записью.
@@ -439,9 +464,11 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
     /// убрать.
     public var signedInSites: Set<String>
 
-    public init(rules: [PermissionCategory: Rule] = [:], signedInSites: Set<String> = []) {
+    public init(rules: [PermissionCategory: Rule] = [:], signedInSites: Set<String> = [],
+                preset: Preset = .custom) {
         self.rules = rules
         self.signedInSites = signedInSites
+        self.preset = preset
     }
 
     // Старые настройки про сайты ничего не знают — читаем их без ошибки.
@@ -449,10 +476,26 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         rules = try container.decodeIfPresent([PermissionCategory: Rule].self, forKey: .rules) ?? [:]
         signedInSites = try container.decodeIfPresent(Set<String>.self, forKey: .signedInSites) ?? []
+        // Настройки, сохранённые до появления наборов: узнаём набор по правилам,
+        // иначе человек, однажды нажавший «Разрешить почти всё», снова начнёт
+        // отвечать на вопросы о каждой новой группе.
+        preset = try container.decodeIfPresent(Preset.self, forKey: .preset) ?? Self.infer(from: rules)
     }
 
+    /// Какому набору соответствуют сохранённые правила.
+    static func infer(from rules: [PermissionCategory: Rule]) -> Preset {
+        // Меньше половины групп — человек явно настраивал их по одной.
+        guard rules.count >= PermissionCategory.allCases.count / 2 else { return .custom }
+        for preset in [Preset.permissive, .safe, .strict]
+        where rules.allSatisfy({ $0.value == preset.rule(for: $0.key) }) {
+            return preset
+        }
+        return .custom
+    }
+
+    /// Правило для группы: своё, если человек его задал, иначе — из набора.
     public func rule(for category: PermissionCategory) -> Rule {
-        rules[category] ?? category.defaultRule
+        rules[category] ?? preset.rule(for: category)
     }
 
     /// Разрешать без вопроса, только если разрешены все группы, которые затрагивает
@@ -472,14 +515,17 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
 
     /// Спрашивать обо всём: ни одна группа не разрешена заранее.
     public static var strict: PermissionPolicy {
-        PermissionPolicy(rules: Dictionary(uniqueKeysWithValues: PermissionCategory.allCases.map { ($0, .ask) }))
+        PermissionPolicy(
+            rules: Dictionary(uniqueKeysWithValues: PermissionCategory.allCases.map { ($0, .ask) }),
+            preset: .strict
+        )
     }
 
     /// Разрешено то, что ничего не меняет: чтение, просмотр, сведения о системе.
     public static var safe: PermissionPolicy {
-        var policy = PermissionPolicy()
-        for category in PermissionCategory.allCases where !category.isRisky {
-            policy.rules[category] = .allow
+        var policy = PermissionPolicy(preset: .safe)
+        for category in PermissionCategory.allCases {
+            policy.rules[category] = category.isRisky ? .ask : .allow
         }
         return policy
     }
@@ -487,7 +533,7 @@ public struct PermissionPolicy: Codable, Sendable, Equatable {
     /// Разрешено всё, кроме необратимого: перемещения с удалением и установки
     /// программ. Для тех, кому вопрос на каждое действие мешает работать.
     public static var permissive: PermissionPolicy {
-        var policy = PermissionPolicy()
+        var policy = PermissionPolicy(preset: .permissive)
         for category in PermissionCategory.allCases {
             policy.rules[category] = category.alwaysAsks ? .ask : .allow
         }

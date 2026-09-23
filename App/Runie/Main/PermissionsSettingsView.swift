@@ -26,7 +26,7 @@ struct PermissionsSettingsView: View {
                     }
                     // Самый доверчивый режим стоит объяснить словами, а не оставлять
                     // человека гадать, что именно он только что разрешил.
-                    if settings.policy == .permissive {
+                    if settings.policy.preset == .permissive {
                         Label("Разрешено всё, кроме перемещения с удалением и установки программ — "
                               + "о них Руни спросит.", systemImage: "bolt.fill")
                             .font(.system(size: 12))

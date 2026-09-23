@@ -53,6 +53,60 @@ struct PermissionPresetTests {
         #expect(policy.rule(for: .install) == .ask)
     }
 
+    @Test("новая группа разрешений наследует выбранный набор, а не спрашивает заново")
+    func newCategoryFollowsPreset() {
+        // Так выглядят настройки человека, нажавшего «Разрешить почти всё» до
+        // того, как в Руни появилась новая группа: правила есть для всех, кроме неё.
+        var saved = PermissionPolicy.permissive
+        saved.rules.removeValue(forKey: .quietBrowser)
+        #expect(saved.rule(for: .quietBrowser) == .allow)
+
+        var strict = PermissionPolicy.strict
+        strict.rules.removeValue(forKey: .quietBrowser)
+        #expect(strict.rule(for: .quietBrowser) == .ask)
+
+        var safe = PermissionPolicy.safe
+        safe.rules.removeValue(forKey: .readFiles)
+        #expect(safe.rule(for: .readFiles) == .allow)
+        safe.rules.removeValue(forKey: .moveDelete)
+        #expect(safe.rule(for: .moveDelete) == .ask)
+    }
+
+    @Test("набор узнаётся в настройках, сохранённых до его появления")
+    func inferPreset() throws {
+        // Старые настройки хранили только правила. Если они в точности повторяют
+        // набор, значит человек нажимал его кнопку.
+        func saved(withoutPreset policy: PermissionPolicy) throws -> PermissionPolicy {
+            let encoded = try JSONEncoder().encode(policy)
+            var fields = try #require(
+                JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+            )
+            fields.removeValue(forKey: "preset")
+            let old = try JSONSerialization.data(withJSONObject: fields)
+            return try JSONDecoder().decode(PermissionPolicy.self, from: old)
+        }
+
+        #expect(try saved(withoutPreset: .permissive).preset == .permissive)
+        #expect(try saved(withoutPreset: .strict).preset == .strict)
+        #expect(try saved(withoutPreset: .safe).preset == .safe)
+        // Несколько групп, настроенных руками, набором не считаются.
+        #expect(try saved(withoutPreset: PermissionPolicy(rules: [.readFiles: .allow, .internet: .allow])).preset == .custom)
+    }
+
+    @Test("в режиме «почти всё» браузер Руни работает без вопросов, кроме входа")
+    func quietBrowserIsAllowed() {
+        let policy = PermissionPolicy.permissive
+        for tool in ["web_open", "web_read", "web_elements", "web_click", "web_fill", "web_snapshot", "web_forget"] {
+            #expect(policy.allows(request("mcp__runie__\(tool)", .object(["url": .string("https://lk.skolca.ru")]))),
+                    "\(tool)")
+        }
+        // Свой JavaScript на странице — тоже часть работы браузера.
+        #expect(policy.allows(request("mcp__runie__web_run_js", .object(["code": .string("document.title")]))))
+        // А вход под учётной записью — по-прежнему с разрешения.
+        #expect(!policy.allows(request("mcp__runie__web_open",
+                                       .object(["url": .string("https://lk.skolca.ru"), "sign_in": .bool(true)]))))
+    }
+
     @Test("разрешённый сайт больше не спрашивает, остальные — спрашивают")
     func signedInSites() {
         let diary = request("mcp__runie__web_open",
