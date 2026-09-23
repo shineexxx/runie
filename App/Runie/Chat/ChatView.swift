@@ -614,16 +614,16 @@ private struct ReplyBubble: View {
     let text: String
     var onRetry: (() -> Void)?
 
-    @State private var hovering = false
-
     var body: some View {
-        Bubble(tail: .leading) {
-            RichMessageText(text: text, imageWidth: 300)
-                // Полужирный пузыря хорош для коротких реплик, а в абзаце тяжелит.
-                .fontWeight(.regular)
-                .lineSpacing(2)
-        }
-        .overlay(alignment: .topTrailing) {
+        // Кнопки под облачком и видны всегда: искать их наведением неудобно,
+        // а над ответом они заслоняли его первую строку.
+        VStack(alignment: .leading, spacing: 4) {
+            Bubble(tail: .leading) {
+                RichMessageText(text: text, imageWidth: 300)
+                    // Полужирный пузыря хорош для коротких реплик, а в абзаце тяжелит.
+                    .fontWeight(.regular)
+                    .lineSpacing(2)
+            }
             HStack(spacing: 0) {
                 CopyButton(text: text, label: String(localized: "Скопировать ответ"), size: 12)
                 if let onRetry {
@@ -641,11 +641,9 @@ private struct ReplyBubble: View {
             }
             .padding(.horizontal, 3)
             .readableSurface(Capsule(), interactive: true)
-            .offset(x: -6, y: -12)
-            .opacity(hovering ? 1 : 0)
-            .animation(.easeOut(duration: 0.15), value: hovering)
+            // Вровень с телом облачка, а не с его хвостиком.
+            .padding(.leading, MessageBubbleShape.tailReach + 4)
         }
-        .onHover { hovering = $0 }
     }
 }
 
