@@ -133,7 +133,7 @@ struct ConversationDetail: View {
                     .frame(height: 68)
             }
             HStack(alignment: .bottom, spacing: 10) {
-                AttachmentButtons(onPickFiles: pickFiles, onCapture: capture, onPaste: paste)
+                AttachmentButtons(onPickFiles: pickFiles, onCapture: capture, onCaptureScreen: captureScreen, onPaste: paste)
                     .padding(.bottom, 5)
                 TextField(placeholder, text: $draft, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -221,6 +221,16 @@ struct ConversationDetail: View {
     private func capture() {
         Task { @MainActor in
             guard let shot = await AttachmentStore.captureArea() else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments.append(shot) }
+        }
+    }
+
+    /// Весь экран, где сейчас курсор, — окно Runie в кадр не попадает.
+    private func captureScreen() {
+        let point = NSEvent.mouseLocation
+        Task { @MainActor in
+            guard let shot = await AttachmentStore.captureScreen(containing: point) else { return }
+            RunieSounds.shared.play(.capture)
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { attachments.append(shot) }
         }
     }

@@ -858,6 +858,6 @@
 "Тихие колокольчики: чат открылся, ответ готов, Руни ждёт вашего решения. Приветствие и прощание тоже звучат." = "Soft chimes: the chat opened, a reply is ready, Runie is waiting for your decision. The greeting and farewell have sounds too.";
 "Громкость" = "Volume";
 "Прослушать" = "Preview";
-"Приложить снимок экрана — Руни увидит, что у вас открыто" = "Attach a screenshot — Runie will see what you have open";
-"Приложить снимок экрана" = "Attach a screenshot";
+"Снимок экрана" = "Screenshot";
+"Руни увидит, что у вас открыто" = "Runie will see what you have open";
 "Экран %@" = "Screen %@";

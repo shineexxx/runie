@@ -184,28 +184,12 @@ enum AttachmentStore {
 
 // MARK: - Кнопки и полоска вложений
 
-/// Снимок экрана одним нажатием: сразу во вложения, без выделения и вставки.
-struct ScreenshotButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "display")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 26, height: 26)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .help("Приложить снимок экрана — Руни увидит, что у вас открыто")
-        .accessibilityLabel("Приложить снимок экрана")
-    }
-}
-
-/// «+» у поля ввода. Нажатие открывает список: снимок области, буфер обмена, файлы.
+/// «+» у поля ввода. Нажатие открывает список: снимок экрана, снимок области,
+/// буфер обмена, файлы.
 struct AttachmentButtons: View {
     let onPickFiles: () -> Void
     let onCapture: () -> Void
+    let onCaptureScreen: () -> Void
     let onPaste: () -> Void
 
     @State private var anchor = WindowAnchor()
@@ -242,6 +226,10 @@ struct AttachmentButtons: View {
         dropdown.show(
             below: rect,
             items: [
+                // Первым — весь экран: сразу во вложения, без выделения.
+                DropdownItem(id: "screen", title: String(localized: "Снимок экрана"),
+                             detail: String(localized: "Руни увидит, что у вас открыто"), symbol: "display",
+                             action: onCaptureScreen),
                 DropdownItem(id: "capture", title: String(localized: "Снимок области экрана"),
                              detail: String(localized: "Выделите, что показать Руни"), symbol: "viewfinder", action: onCapture),
                 DropdownItem(id: "clipboard", title: String(localized: "Буфер обмена"),

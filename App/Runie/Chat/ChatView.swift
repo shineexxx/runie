@@ -913,6 +913,13 @@ private struct InputRow: View {
         }
     }
 
+    private var attachButtons: some View {
+        AttachmentButtons(
+            onPickFiles: onPickFiles, onCapture: onCapture,
+            onCaptureScreen: onCaptureScreen, onPaste: onPaste
+        )
+    }
+
     /// Кнопка отправки — у ближнего к орбу конца поля, откуда пришёл свет.
     private var inputPill: some View {
         // Плотно: скрепка, снимок, модель и отправка делят поле с текстом, и тексту
@@ -920,10 +927,7 @@ private struct InputRow: View {
         // и многострочное поле подпрыгивает над центром.
         HStack(spacing: 4) {
             if layout.orbSide == .leading { sendButton }
-            if layout.orbSide == .trailing {
-                AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste)
-                ScreenshotButton(action: onCaptureScreen)
-            }
+            if layout.orbSide == .trailing { attachButtons }
 
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -964,10 +968,7 @@ private struct InputRow: View {
                 .layoutPriority(1)
 
             ModelMenu(session: session, settings: settings)
-            if layout.orbSide == .leading {
-                ScreenshotButton(action: onCaptureScreen)
-                AttachmentButtons(onPickFiles: onPickFiles, onCapture: onCapture, onPaste: onPaste)
-            }
+            if layout.orbSide == .leading { attachButtons }
             if layout.orbSide == .trailing { sendButton }
         }
         .padding(.leading, layout.orbSide == .trailing ? 8 : 7)
