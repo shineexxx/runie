@@ -160,14 +160,14 @@ git push -f origin "$TAG"
 # Первый запуск зависит от того, чем подписано: у Developer ID без нотаризации
 # macOS просит открыть через меню, у локального сертификата — снять карантин.
 if [[ "$IDENTITY" == Developer\ ID* && -z "$NOTARY_PROFILE" ]]; then
-    FIRST_RUN='**Первый запуск.** Приложение подписано сертификатом Developer ID, но ещё не прошло нотаризацию Apple,
-поэтому macOS в первый раз скажет, что не может проверить разработчика. Откройте его через контекстное меню:
-правый клик по Runie → «Открыть» → «Открыть». Дальше оно запускается обычным двойным щелчком.'
+    FIRST_RUN='**First launch.** The app is signed with a Developer ID certificate but is not notarized yet,
+so on the first launch macOS says it cannot verify the developer. Open it through the context menu:
+right-click Runie → Open → Open. After that it launches normally.'
 elif [[ "$IDENTITY" == Developer\ ID* ]]; then
-    FIRST_RUN='**Первый запуск.** Приложение подписано и нотаризовано — просто откройте его двойным щелчком.'
+    FIRST_RUN='**First launch.** The app is signed and notarized by Apple — just double-click it.'
 else
-    FIRST_RUN='**Первый запуск.** Приложение подписано локальным сертификатом, поэтому macOS сначала не даст его открыть.
-Выполните в Терминале одну команду:
+    FIRST_RUN='**First launch.** The app is signed with a local certificate, so macOS will not open it at first.
+Run one command in Terminal:
 
 ```
 xattr -dr com.apple.quarantine /Applications/Runie.app
@@ -177,14 +177,15 @@ fi
 gh release create "$TAG" "$INSTALLERS/$DMG_NAME" "$RELEASES/$ZIP_NAME" \
     --title "Runie $VERSION" \
     --notes-file <(cat <<NOTES
-Скачайте \`$DMG_NAME\`, откройте и перетащите Runie в «Программы».
+Download \`$DMG_NAME\`, open it and drag Runie into Applications.
 
 $FIRST_RUN
 
-Дальше Runie обновляется сам: новые версии он ставит без Терминала. Архив \`$ZIP_NAME\` — тот же
-выпуск для самообновления, скачивать его вручную не нужно.
+After that Runie updates itself. \`$ZIP_NAME\` is the same build for the auto-updater; there is no need
+to download it by hand.
 
-**Нужен Claude Code** с подпиской Claude. Если его нет, Runie предложит установить всё сам при первом запуске.
+**Requires** a Mac with Apple Silicon, macOS 26 or newer and Claude Code with a Claude subscription.
+If Claude Code is missing, Runie offers to install it on first launch.
 NOTES
 )
 echo "▸ Готово: $REPO_URL/releases/tag/$TAG"

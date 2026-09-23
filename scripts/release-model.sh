@@ -15,11 +15,11 @@ for file in matrix.bin vocab.txt; do
     [[ -f "$DIR/$file" ]] || { echo "Нет $DIR/$file — сначала scripts/make-embedding-model.py $DIR" >&2; exit 1; }
 done
 
-NOTES='Модель смыслового поиска по памяти Руни.
+NOTES='Semantic search model for Runie memory.
 
-Статическая многоязычная модель [sentence-transformers/static-similarity-mrl-multilingual-v1](https://huggingface.co/sentence-transformers/static-similarity-mrl-multilingual-v1) (Apache 2.0): первые 256 измерений из 1024 и веса в fp16 — 434 МБ ужимаются до 54 МБ почти без потери качества.
+A static multilingual model, [sentence-transformers/static-similarity-mrl-multilingual-v1](https://huggingface.co/sentence-transformers/static-similarity-mrl-multilingual-v1) (Apache 2.0): the first 256 of 1024 dimensions with fp16 weights, which shrinks 434 MB to 54 MB with almost no loss in quality.
 
-Runie качает эти файлы по желанию человека и держит в `~/Library/Application Support/Runie/Model`. Всё считается на самом Mac.'
+Runie downloads these files only if the user agrees and keeps them in `~/Library/Application Support/Runie/Model`. Everything runs on the Mac itself.'
 
 if gh release view "$TAG" >/dev/null 2>&1; then
     echo "▸ Обновляю релиз $TAG"
@@ -27,6 +27,6 @@ if gh release view "$TAG" >/dev/null 2>&1; then
 else
     echo "▸ Создаю релиз $TAG"
     gh release create "$TAG" "$DIR/matrix.bin" "$DIR/vocab.txt" \
-        --title "Модель смыслового поиска" --notes "$NOTES"
+        --title "Semantic search model" --notes "$NOTES"
 fi
 echo "▸ Готово: $(gh release view "$TAG" --json url --jq .url)"
