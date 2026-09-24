@@ -3,14 +3,14 @@
     <channel>
         <title>Runie</title>
         <item>
-            <title>0.3.3</title>
-            <pubDate>Wed, 23 Sep 2026 22:52:10 +0300</pubDate>
+            <title>0.4.0</title>
+            <pubDate>Thu, 24 Sep 2026 19:10:46 +0300</pubDate>
             <link>https://github.com/shineexxx/runie</link>
-            <sparkle:version>129</sparkle:version>
-            <sparkle:shortVersionString>0.3.3</sparkle:shortVersionString>
+            <sparkle:version>138</sparkle:version>
+            <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/shineexxx/runie/releases/download/v0.3.3/Runie-0.3.3.zip" length="4997493" type="application/octet-stream" sparkle:edSignature="krD0MXE5W2pOjTtWLnYyMTEhnGYveoga9lQ3jCpKhNoArdu9zyg/1tE1WbtgXnQMPrCQN36FyjKcnuGXeg+EAA=="/>
+            <enclosure url="https://github.com/shineexxx/runie/releases/download/v0.4.0/Runie-0.4.0.zip" length="5052403" type="application/octet-stream" sparkle:edSignature="9GuZwH7eom+RiXXlhDWtIz8TcpbaY12XhBN4hva9DP8LiXx7vXVsfy3mCHmj99LdERjVbWGFRqmXnKUe8OQwBg=="/>
         </item>
     </channel>
 </rss>
