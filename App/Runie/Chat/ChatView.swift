@@ -150,7 +150,9 @@ struct ChatView: View {
                         onOpenWindow: onOpenWindow,
                         onRefocus: onRefocus
                     )
-                    .frame(height: ChatPanelController.inputHeight)
+                    // Не ниже орба, а длинное сообщение в несколько строк поле растит вверх.
+                    .frame(minHeight: ChatPanelController.inputHeight)
+                    .fixedSize(horizontal: false, vertical: true)
                     .holdsPointer()
                     // Поле первым вытягивается из света вдоль строки, от орба.
                     .modifier(EmergeFromLight(
@@ -890,17 +892,22 @@ private struct InputRow: View {
 
     var body: some View {
         // Плотно: две круглые кнопки и поле делят 480 точек, а подсказке в поле
-        // нужна одна строка.
-        HStack(spacing: 6) {
+        // нужна одна строка. Кнопки по нижнему краю: выросшее поле тянется вверх,
+        // а они остаются вровень с орбом.
+        HStack(alignment: .bottom, spacing: 6) {
             // Кнопки с дальней от орба стороны: разговоры, затем «развернуть».
+            // В ряду высотой в однострочное поле: так их центры вровень с кнопкой
+            // отправки, как бы поле ни выросло.
             if layout.orbSide == .trailing {
                 ConversationsButton(session: session, onDone: onRefocus)
-                expandButton
+                    .frame(height: ChatPanelController.inputHeight)
+                expandButton.frame(height: ChatPanelController.inputHeight)
             }
             inputPill
             if layout.orbSide == .leading {
-                expandButton
+                expandButton.frame(height: ChatPanelController.inputHeight)
                 ConversationsButton(session: session, onDone: onRefocus)
+                    .frame(height: ChatPanelController.inputHeight)
             }
         }
         .onAppear { isFocused = true }
@@ -919,13 +926,16 @@ private struct InputRow: View {
     }
 
     /// Кнопка отправки — у ближнего к орбу конца поля, откуда пришёл свет.
+    /// Высота ряда кнопок в поле: 56 точек поля минус поля сверху и снизу.
+    private static let row: CGFloat = ChatPanelController.inputHeight - 14
+
     private var inputPill: some View {
         // Плотно: скрепка, снимок, модель и отправка делят поле с текстом, и тексту
         // должно хватать ширины на подсказку в одну строку — иначе она переносится,
         // и многострочное поле подпрыгивает над центром.
-        HStack(spacing: 4) {
-            if layout.orbSide == .leading { sendButton }
-            if layout.orbSide == .trailing { attachButtons }
+        HStack(alignment: .bottom, spacing: 4) {
+            if layout.orbSide == .leading { sendButton.frame(height: Self.row) }
+            if layout.orbSide == .trailing { attachButtons.frame(height: Self.row) }
 
             TextField(placeholder, text: $layout.draft, axis: .vertical)
                 .textFieldStyle(.plain)
@@ -962,18 +972,25 @@ private struct InputRow: View {
                     return .handled
                 }
                 .padding(.horizontal, 4)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // В одну строку — по центру ряда кнопок, длиннее — растёт вверх.
+                .frame(maxWidth: .infinity, minHeight: Self.row, alignment: .leading)
                 .layoutPriority(1)
 
-            ModelMenu(session: session, settings: settings)
-            if layout.orbSide == .leading { attachButtons }
-            if layout.orbSide == .trailing { sendButton }
+            ModelMenu(session: session, settings: settings).frame(height: Self.row)
+            if layout.orbSide == .leading { attachButtons.frame(height: Self.row) }
+            if layout.orbSide == .trailing { sendButton.frame(height: Self.row) }
         }
         .padding(.leading, layout.orbSide == .trailing ? 8 : 7)
         .padding(.trailing, layout.orbSide == .trailing ? 7 : 8)
+        .padding(.vertical, 7)
         .frame(maxWidth: .infinity)
-        .frame(height: ChatPanelController.inputHeight)
-        .readableSurface(Capsule(), interactive: true)
+        .frame(minHeight: ChatPanelController.inputHeight)
+        // Скругление постоянное: в одну строку это та же капсула, а выросшее поле
+        // остаётся прямоугольником со скруглёнными углами, а не овалом.
+        .readableSurface(
+            RoundedRectangle(cornerRadius: ChatPanelController.inputHeight / 2, style: .continuous),
+            interactive: true
+        )
     }
 
     /// Стрелка отправки, пока Руни свободен, и «стоп», пока работает.
