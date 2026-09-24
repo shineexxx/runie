@@ -22,6 +22,8 @@ final class EdgeButtonState {
     var isRetracted = false
     /// Руни зовёт человека: орб вышел из-за края и светится ярче.
     var isCalling = false
+    /// Свободный орб стянулся в точку — переезжает на другой монитор.
+    var isShrunk = false
 
     /// Держится за край тёмной перемычкой прямо сейчас.
     var isAttached: Bool { dock != nil && !isDetached && !isDragging }
@@ -128,6 +130,7 @@ final class EdgeButtonController {
             MainActor.assumeIsolated { self?.layout(animated: false) }
         }
         watchPointer()
+        watchFocus()
         scheduleRetract()
     }
 
@@ -318,6 +321,118 @@ final class EdgeButtonController {
 
     fileprivate func menu() -> NSMenu? {
         makeMenu?()
+    }
+
+    // MARK: - Переезд на активный монитор
+
+    /// Настройка «Переезжать на активный монитор».
+    nonisolated static let followsFocusKey = "orb.followsFocus"
+
+    private var followsFocus: Bool {
+        UserDefaults.standard.object(forKey: Self.followsFocusKey) as? Bool ?? true
+    }
+
+    private var focusTask: Task<Void, Never>?
+    private var isChangingScreen = false
+
+    /// Орб живёт на том мониторе, где человек сейчас работает. Смотрим, где окно
+    /// приложения, в которое он переключился, и где он кликнул.
+    private func watchFocus() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            let pid = app?.processIdentifier
+            MainActor.assumeIsolated {
+                guard let self, let pid, pid != ProcessInfo.processInfo.processIdentifier else { return }
+                // Окно новой программы встаёт вперёд не сразу — смотрим чуть позже.
+                self.focusChanged { Self.frontWindowCenter(of: pid) }
+            }
+        }
+        if let monitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown, handler: { [weak self] _ in
+            MainActor.assumeIsolated {
+                let point = NSEvent.mouseLocation
+                self?.focusChanged { point }
+            }
+        }) {
+            monitors.append(monitor)
+        }
+    }
+
+    /// Переезд с задержкой: мышь, пролетевшая через чужой монитор, орб не дёргает.
+    private func focusChanged(_ point: @escaping @MainActor () -> NSPoint?) {
+        focusTask?.cancel()
+        focusTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard let self, !Task.isCancelled, let point = point() else { return }
+            guard followsFocus, NSScreen.screens.count > 1, !isChangingScreen,
+                  !chatLayout.isOpen, pressLocation == nil, !state.isDragging
+            else { return }
+            let target = screen(containing: point)
+            guard target.frame != currentScreen.frame else { return }
+            await move(to: target)
+        }
+    }
+
+    /// Центр самого переднего обычного окна программы в координатах AppKit.
+    private static func frontWindowCenter(of pid: pid_t) -> NSPoint? {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return nil }
+        // Список идёт спереди назад: первое окно этой программы — переднее.
+        for window in windows {
+            guard (window[kCGWindowOwnerPID as String] as? pid_t) == pid,
+                  (window[kCGWindowLayer as String] as? Int) == 0,
+                  let bounds = window[kCGWindowBounds as String] as? NSDictionary,
+                  let rect = CGRect(dictionaryRepresentation: bounds),
+                  rect.width > 80, rect.height > 80
+            else { continue }
+            // У CoreGraphics начало сверху слева главного экрана, у AppKit — снизу.
+            let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
+            return NSPoint(x: rect.midX, y: primaryHeight - rect.midY)
+        }
+        return nil
+    }
+
+    /// Прилипший орб уходит за край старого монитора и выезжает из-за края нового;
+    /// свободный стягивается в точку и растекается на новом месте.
+    private func move(to target: NSScreen) async {
+        isChangingScreen = true
+        defer { isChangingScreen = false }
+        cancelRetract()
+
+        if state.dock != nil {
+            // Уход за край — то же движение, каким орб прячется сам.
+            if !state.isRetracted {
+                state.isRetracted = true
+                try? await Task.sleep(for: .milliseconds(260))
+            }
+            await fadePanel(to: 0, duration: 0.14)
+            layout(animated: false, on: target)
+            await fadePanel(to: 1, duration: 0.14)
+            try? await Task.sleep(for: .milliseconds(80))
+            state.isRetracted = false
+            try? await Task.sleep(for: .milliseconds(300))
+            scheduleRetract()
+        } else {
+            withAnimation(.easeIn(duration: 0.2)) { state.isShrunk = true }
+            try? await Task.sleep(for: .milliseconds(220))
+            layout(animated: false, on: target)
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.68)) { state.isShrunk = false }
+            try? await Task.sleep(for: .milliseconds(300))
+        }
+    }
+
+    private func fadePanel(to alpha: CGFloat, duration: TimeInterval) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = duration
+                panel.animator().alphaValue = alpha
+            } completionHandler: {
+                continuation.resume()
+            }
+        }
     }
 
     // MARK: - Геометрия

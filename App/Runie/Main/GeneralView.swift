@@ -14,11 +14,22 @@ struct GeneralView: View {
         return String(localized: "Последняя проверка: ") + date.formatted(.dateTime.day().month().hour().minute().locale(.runie))
     }
 
+    @AppStorage(EdgeButtonController.followsFocusKey) private var followsFocus = true
+
     var body: some View {
         Form {
             Section("Руни") {
                 LabeledContent("Версия", value: Runie.version)
                 LabeledContent("Как вызвать", value: String(localized: "Нажмите на орб у края экрана"))
+                Toggle(isOn: $followsFocus) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Переезжать на активный монитор")
+                        Text("С несколькими мониторами орб уходит туда, где вы сейчас работаете.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
             Section("Язык") {
                 Picker(selection: Binding(get: { settings.answerLanguage }, set: { settings.answerLanguage = $0 })) {

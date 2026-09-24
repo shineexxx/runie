@@ -39,6 +39,9 @@ struct EdgeButtonView: View {
                 isPaused: state.isRetracted
             )
             .scaleEffect(state.isPressed && !state.isDragging ? 0.92 : 1)
+            // Переезд на другой монитор: стягивается в точку и растекается там.
+            .scaleEffect(state.isShrunk ? 0.04 : 1)
+            .opacity(state.isShrunk ? 0 : 1)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: state.isPressed)
             // Спрятанный шар уезжает за кромку и гаснет, чтобы свет не торчал из-за края.
             .offset(x: retractOffset)

@@ -876,3 +876,5 @@
 "Убрать сочетание" = "Remove shortcut";
 "Нажмите…" = "Press keys…";
 "Не задано" = "Not set";
+"Переезжать на активный монитор" = "Follow the active display";
+"С несколькими мониторами орб уходит туда, где вы сейчас работаете." = "With several displays, the orb moves to the one you are working on.";
