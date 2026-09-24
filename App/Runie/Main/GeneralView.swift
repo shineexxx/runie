@@ -36,6 +36,9 @@ struct GeneralView: View {
                 }
                 .pickerStyle(.menu)
             }
+            Section("Сочетания клавиш") {
+                ShortcutRows()
+            }
             Section("Звуки") {
                 SoundRows()
             }

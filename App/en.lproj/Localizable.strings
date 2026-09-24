@@ -404,7 +404,6 @@
 "Открыть у орба" = "Open at the orb";
 
 /* No comment provided by engineer. */
-"Открыть чат" = "Open chat";
 
 /* No comment provided by engineer. */
 "Открыть Runie…" = "Open Runie…";
@@ -861,3 +860,19 @@
 "Снимок экрана" = "Screenshot";
 "Руни увидит, что у вас открыто" = "Runie will see what you have open";
 "Экран %@" = "Screen %@";
+"Сочетания клавиш" = "Keyboard shortcuts";
+"Двойной ⌥" = "Double ⌥";
+"Своё сочетание" = "Custom shortcut";
+"Выключено" = "Off";
+"Открыть чат" = "Open chat";
+"Из любого приложения, без похода к краю экрана. Повторное нажатие закрывает чат." = "From any app, without reaching for the screen edge. Press again to close the chat.";
+"Сочетание для чата" = "Chat shortcut";
+"Чтобы Руни слышал двойной ⌥ в других приложениях, нужен Универсальный доступ." = "Runie needs Accessibility access to hear a double ⌥ in other apps.";
+"Открыть настройки" = "Open Settings";
+"Спросить про экран" = "Ask about the screen";
+"Открывает чат со снимком экрана во вложении" = "Opens the chat with a screenshot attached";
+"Нажмите сочетание, Esc — отмена" = "Press a shortcut, Esc to cancel";
+"Нажмите, чтобы записать новое сочетание" = "Click to record a new shortcut";
+"Убрать сочетание" = "Remove shortcut";
+"Нажмите…" = "Press keys…";
+"Не задано" = "Not set";

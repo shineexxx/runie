@@ -151,6 +151,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         greetOnLaunch()
         watchTurns()
+        // Сочетания клавиш: чат, вопрос про экран, новый разговор — из любого приложения.
+        GlobalShortcuts.shared.handler = { [weak self] action in
+            self?.runShortcut(action)
+        }
+        GlobalShortcuts.shared.start()
         // `/команда` из настроек превращается в просьбу выполнить её навык.
         session.expandMessage = { text in
             QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)
@@ -395,6 +400,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             chat.hide()
         } else {
             openChat()
+        }
+    }
+
+    private func runShortcut(_ action: GlobalShortcuts.Action) {
+        switch action {
+        case .toggleChat:
+            orbClicked()
+        case .askAboutScreen:
+            // Снимок идёт после открытия: окна Runie в кадр всё равно не попадают.
+            if !chat.isVisible { openChat() }
+            chat.captureScreen()
+        case .newConversation:
+            session.startOver()
+            if !chat.isVisible { openChat() }
         }
     }
 
