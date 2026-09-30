@@ -22,31 +22,24 @@ struct EdgeButtonView: View {
                     .opacity(state.isAttached ? 1 : 0)
 
                 // Спрятанный орб светится из-за горбика: видно, что Руни рядом.
-                // Свечение живёт, только пока орб спрятан: невидимое, оно всё равно
-                // перерисовывалось бы 20 раз в секунду.
+                // Свечение неподвижное и есть только у спрятанного орба.
                 if state.isAttached && state.isRetracted {
                     EdgeGlow(edge: dock, energy: mood.energy)
                         .transition(.opacity)
                 }
             }
 
-            RunieOrb(
-                mood: mood,
-                collapse: chatLayout.isOpen ? 1 : 0,
-                release: release,
-                releaseDirection: releaseDirection,
-                glyph: chatLayout.isOpen ? .close : .none,
-                isPaused: state.isRetracted
-            )
-            .scaleEffect(state.isPressed && !state.isDragging ? 0.92 : 1)
-            // Переезд на другой монитор: стягивается в точку и растекается там.
-            .scaleEffect(state.isShrunk ? 0.04 : 1)
-            .opacity(state.isShrunk ? 0 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: state.isPressed)
-            // Спрятанный шар уезжает за кромку и гаснет, чтобы свет не торчал из-за края.
-            .offset(x: retractOffset)
-            .opacity(state.isRetracted ? 0 : 1)
-            .animation(.spring(response: 0.16, dampingFraction: 0.9), value: state.isRetracted)
+            // Спрятанного за краем шара нет вовсе: ни света, ни стекла, ни кадров.
+            if !state.isOrbHidden && !state.isOutOfSight {
+                orb
+                    // Возвращаясь, шар выезжает из-за кромки, а не возникает на месте.
+                    .transition(.asymmetric(
+                        insertion: .offset(x: state.dock == .left ? -EdgeButtonController.orbDiameter
+                                                                  : EdgeButtonController.orbDiameter)
+                            .combined(with: .opacity),
+                        removal: .identity
+                    ))
+            }
         }
         .animation(.easeInOut(duration: 0.35), value: state.isRetracted)
         .frame(width: EdgeButtonController.panelSize.width, height: EdgeButtonController.panelSize.height)
@@ -55,6 +48,26 @@ struct EdgeButtonView: View {
         .accessibilityLabel("Руни")
         .accessibilityValue(accessibilityStatus)
         .accessibilityHint(chatLayout.isOpen ? "Закрыть чат" : "Открыть чат")
+    }
+
+    private var orb: some View {
+        RunieOrb(
+            mood: mood,
+            collapse: chatLayout.isOpen ? 1 : 0,
+            release: release,
+            releaseDirection: releaseDirection,
+            glyph: chatLayout.isOpen ? .close : .none,
+            isPaused: state.isRetracted
+        )
+        .scaleEffect(state.isPressed && !state.isDragging ? 0.92 : 1)
+        // Переезд на другой монитор: стягивается в точку и растекается там.
+        .scaleEffect(state.isShrunk ? 0.04 : 1)
+        .opacity(state.isShrunk ? 0 : 1)
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: state.isPressed)
+        // Спрятанный шар уезжает за кромку и гаснет, чтобы свет не торчал из-за края.
+        .offset(x: retractOffset)
+        .opacity(state.isRetracted ? 0 : 1)
+        .animation(.spring(response: 0.16, dampingFraction: 0.9), value: state.isRetracted)
     }
 
     /// Горб во весь рост у выглянувшего орба, маленький горбик у спрятанного.
@@ -159,26 +172,23 @@ private struct EdgeGlow: View {
     /// Тот же размер горбика, что у спрятанного орба.
     static let extent: CGFloat = 0.32
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 20, paused: reduceMotion)) { timeline in
-            let time = timeline.date.timeIntervalSinceReferenceDate
-            let breath = reduceMotion ? 0.5 : (sin(time * 1.3) + 1) / 2
-            let strength = (0.35 + 0.2 * breath) * (1 + 0.5 * energy)
-
-            ZStack {
-                // Широкий мягкий ореол — свет расходится от горбика наружу.
-                OrbTether(edge: edge, extent: Self.extent)
-                    .stroke(OrbPalette.cyan.opacity(min(strength * 0.7, 1)), lineWidth: 14)
-                    .blur(radius: 11)
-                // Ярче у самого края горбика.
-                OrbTether(edge: edge, extent: Self.extent)
-                    .stroke(OrbPalette.cyan.opacity(min(strength * 0.6, 1)), lineWidth: 3)
-                    .blur(radius: 4)
-            }
-            .blendMode(.plusLighter)
+        // Без анимации: спрятанный орб должен стоить ноль. Раньше свечение «дышало»
+        // двадцать раз в секунду с двумя размытиями — и держало процессор, пока
+        // Руни просто ждал за краем.
+        let strength = 0.45 * (1 + 0.5 * energy)
+        ZStack {
+            // Широкий мягкий ореол — свет расходится от горбика наружу.
+            OrbTether(edge: edge, extent: Self.extent)
+                .stroke(OrbPalette.cyan.opacity(min(strength * 0.7, 1)), lineWidth: 14)
+                .blur(radius: 11)
+            // Ярче у самого края горбика.
+            OrbTether(edge: edge, extent: Self.extent)
+                .stroke(OrbPalette.cyan.opacity(min(strength * 0.6, 1)), lineWidth: 3)
+                .blur(radius: 4)
         }
+        .blendMode(.plusLighter)
+        .drawingGroup()
         .allowsHitTesting(false)
     }
 }

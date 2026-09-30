@@ -19,7 +19,28 @@ final class EdgeButtonState {
     var isPressed = false
     var isDragging = false
     /// Прицепленный орб, которого давно не трогали, ушёл за край: торчит только горбик.
-    var isRetracted = false
+    var isRetracted = false {
+        didSet {
+            guard isRetracted != oldValue else { return }
+            hideTask?.cancel()
+            if isRetracted {
+                // Шар уезжает за край и гаснет — потом убираем его из отрисовки
+                // совсем: невидимый, он всё равно пересчитывал свет каждый кадр.
+                hideTask = Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .milliseconds(450))
+                    guard let self, !Task.isCancelled, self.isRetracted else { return }
+                    self.isOrbHidden = true
+                }
+            } else {
+                isOrbHidden = false
+            }
+        }
+    }
+    /// Шара нет в отрисовке вовсе: он за краем, или экран спит.
+    private(set) var isOrbHidden = false
+    @ObservationIgnored private var hideTask: Task<Void, Never>?
+    /// Экран заблокирован или погас, окно орба никто не видит — ничего не рисуем.
+    var isOutOfSight = false
     /// Руни зовёт человека: орб вышел из-за края и светится ярче.
     var isCalling = false
     /// Свободный орб стянулся в точку — переезжает на другой монитор.
@@ -131,6 +152,7 @@ final class EdgeButtonController {
         }
         watchPointer()
         watchFocus()
+        watchVisibility()
         scheduleRetract()
     }
 
@@ -321,6 +343,38 @@ final class EdgeButtonController {
 
     fileprivate func menu() -> NSMenu? {
         makeMenu?()
+    }
+
+    // MARK: - Когда рисовать нечего
+
+    /// Экран погас, заблокирован, или окно орба ничем не видно — анимации стоят.
+    private func watchVisibility() {
+        let workspace = NSWorkspace.shared.notificationCenter
+        let asleep: [Notification.Name] = [NSWorkspace.screensDidSleepNotification,
+                                           NSWorkspace.sessionDidResignActiveNotification]
+        let awake: [Notification.Name] = [NSWorkspace.screensDidWakeNotification,
+                                          NSWorkspace.sessionDidBecomeActiveNotification]
+        for name in asleep {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.state.isOutOfSight = true }
+            }
+        }
+        for name in awake {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateOcclusion() }
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.didChangeOcclusionStateNotification,
+            object: panel,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.updateOcclusion() }
+        }
+    }
+
+    private func updateOcclusion() {
+        state.isOutOfSight = !panel.occlusionState.contains(.visible)
     }
 
     // MARK: - Переезд на активный монитор
