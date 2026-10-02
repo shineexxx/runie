@@ -878,3 +878,6 @@
 "Не задано" = "Not set";
 "Переезжать на активный монитор" = "Follow the active display";
 "С несколькими мониторами орб уходит туда, где вы сейчас работаете." = "With several displays, the orb moves to the one you are working on.";
+"Клавиша Spotlight открывает Руни" = "The Spotlight key opens Runie";
+"Лупа на F4 вызывает чат вместо Spotlight. ⌘Space по-прежнему открывает Spotlight." = "The magnifier key on F4 opens the chat instead of Spotlight. ⌘Space still opens Spotlight.";
+"Перехватывать клавишу Руни может только с Универсальным доступом." = "Runie can only take over the key with Accessibility access.";

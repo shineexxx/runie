@@ -156,6 +156,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.runShortcut(action)
         }
         GlobalShortcuts.shared.start()
+        // Клавиша Spotlight (F4) — Руни вместо Spotlight, если человек так выбрал.
+        SpotlightKey.shared.onPress = { [weak self] in
+            self?.runShortcut(.toggleChat)
+        }
+        SpotlightKey.shared.apply()
         // `/команда` из настроек превращается в просьбу выполнить её навык.
         session.expandMessage = { text in
             QuickCommand.expand(text, commands: QuickCommandsModel.shared.commands)

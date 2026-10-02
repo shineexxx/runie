@@ -4,6 +4,7 @@ import SwiftUI
 /// Раздел «Сочетания клавиш» в настройках.
 struct ShortcutRows: View {
     private let shortcuts = GlobalShortcuts.shared
+    @AppStorage(SpotlightKey.enabledKey) private var spotlightKey = false
 
     var body: some View {
         Picker(selection: Binding(get: { shortcuts.chatTrigger }, set: { shortcuts.chatTrigger = $0 })) {
@@ -27,6 +28,30 @@ struct ShortcutRows: View {
         if shortcuts.needsAccessibility {
             HStack {
                 Text("Чтобы Руни слышал двойной ⌥ в других приложениях, нужен Универсальный доступ.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Открыть настройки") { shortcuts.openAccessibilitySettings() }
+            }
+        }
+
+        Toggle(isOn: $spotlightKey) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Клавиша Spotlight открывает Руни")
+                Text("Лупа на F4 вызывает чат вместо Spotlight. ⌘Space по-прежнему открывает Spotlight.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .onChange(of: spotlightKey) { _, isOn in
+            if isOn, !AXIsProcessTrusted() { shortcuts.openAccessibilitySettings() }
+            SpotlightKey.shared.apply()
+        }
+        if spotlightKey, !AXIsProcessTrusted() {
+            HStack {
+                Text("Перехватывать клавишу Руни может только с Универсальным доступом.")
                     .font(.system(size: 11))
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
