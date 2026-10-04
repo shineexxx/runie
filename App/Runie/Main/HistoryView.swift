@@ -26,11 +26,6 @@ struct ConversationDetail: View {
         isLive ? session.timeline.items : (record?.items ?? [])
     }
 
-    /// Агент занят другим разговором — этот продолжить нельзя, не оборвав тот.
-    private var isBlockedByOther: Bool {
-        !isLive && session.isBusy
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             transcript
@@ -120,13 +115,6 @@ struct ConversationDetail: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            if isBlockedByOther {
-                Label("Руни сейчас занят другим разговором. Дождитесь ответа или остановите его.",
-                      systemImage: "hourglass")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-            }
-
             VStack(alignment: .leading, spacing: 0) {
             if !attachments.isEmpty {
                 AttachmentStrip(attachments: $attachments)
@@ -154,7 +142,6 @@ struct ConversationDetail: View {
                         draft = text
                         return .handled
                     }
-                    .disabled(isBlockedByOther)
                     .padding(.vertical, 8)
 
                 ModelMenu(session: session, settings: settings, compact: false)
@@ -237,7 +224,7 @@ struct ConversationDetail: View {
 
     private var sendButton: some View {
         let busy = isLive && session.isBusy
-        let enabled = busy || (hasDraft && !isBlockedByOther)
+        let enabled = busy || hasDraft
         return Button(action: busy ? { session.stop() } : send) {
             Image(systemName: busy ? "stop.fill" : "arrow.up")
                 .font(.system(size: busy ? 12 : 15, weight: .bold))
@@ -260,7 +247,8 @@ struct ConversationDetail: View {
             return
         }
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard hasDraft, !session.isBusy else { return }
+        // Занят другой разговор — не беда: он доработает в фоне.
+        guard hasDraft, !(isLive && session.isBusy) else { return }
         if let record, record.id != session.conversationID {
             session.open(record)
         }

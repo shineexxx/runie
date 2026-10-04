@@ -156,6 +156,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.runShortcut(action)
         }
         GlobalShortcuts.shared.start()
+        // Фоновый разговор ждёт решения человека — даём знать звуком.
+        session.onBackgroundAttention = { _ in RunieSounds.shared.play(.attention) }
         // Клавиша Spotlight (F4) — Руни вместо Spotlight, если человек так выбрал.
         SpotlightKey.shared.onPress = { [weak self] in
             self?.runShortcut(.toggleChat)
@@ -565,7 +567,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        session?.stop()
+        // И фоновые разговоры: их процессы Claude Code не должны пережить Runie.
+        session?.stopAll()
     }
 
     private func makeButtonMenu() -> NSMenu {

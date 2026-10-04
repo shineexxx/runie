@@ -78,7 +78,6 @@ struct ChatView: View {
                             CompactFeed(
                                 session: session,
                                 greeting: suggestions.greeting,
-                                openGeneration: layout.openGeneration,
                                 onRetry: onRetry
                             )
                         } else {
@@ -369,7 +368,6 @@ private struct CompactFeed: View {
     let session: ChatSession
     let greeting: String
     /// Меняется при каждом открытии чата — развёрнутая лента снова сворачивается.
-    let openGeneration: Int
     let onRetry: () -> Void
 
     /// Сколько места над полем ввода.
@@ -442,7 +440,8 @@ private struct CompactFeed: View {
                 // Поле под тень выходит за блоки, а облачка остаются на своих местах.
                 .padding(-Self.shadowRoom)
             }
-            .onChange(of: openGeneration) { collapse() }
+            // Закрыл и открыл чат — лента там же, где человек её оставил. К последней
+            // строке она возвращается, только когда в разговоре появился новый ход.
             .onChange(of: turns.count) { collapse() }
     }
 
@@ -1054,9 +1053,7 @@ private struct ConversationsButton: View {
         .buttonStyle(.plain)
         .readableSurface(Circle(), interactive: true)
         .background(WindowAnchorReader(anchor: anchor))
-        .opacity(session.isBusy ? 0.45 : 1)
-        .disabled(session.isBusy)
-        .help(session.isBusy ? "Руни занят — дождитесь ответа" : "Другие разговоры")
+        .help("Другие разговоры")
         .accessibilityLabel("Другие разговоры")
         #if DEBUG
         .onReceive(NotificationCenter.default.publisher(for: .runieDebugOpenConversations)) { _ in toggle() }
@@ -1069,7 +1066,7 @@ private struct ConversationsButton: View {
             dropdown.close()
             return
         }
-        guard let rect = anchor.screenRect(), !session.isBusy else { return }
+        guard let rect = anchor.screenRect() else { return }
         isOpen = true
         let current = session.conversationID
         let hasItems = !session.timeline.items.isEmpty
@@ -1077,6 +1074,7 @@ private struct ConversationsButton: View {
             DropdownItem(
                 id: "new", title: "Новый разговор", detail: nil, symbol: "square.and.pencil",
                 alwaysVisible: true,
+                // Занятый разговор не обрывается: он доработает в фоне.
                 action: { if hasItems { session.startOver() } }
             )
         ]
@@ -1085,7 +1083,10 @@ private struct ConversationsButton: View {
             DropdownItem(
                 id: record.id.uuidString,
                 title: record.title,
-                detail: Self.when(record.updatedAt),
+                detail: session.runningInBackground.contains(record.id)
+                    ? String(localized: "Руни работает…")
+                    : Self.when(record.updatedAt),
+                symbol: session.runningInBackground.contains(record.id) ? "ellipsis.circle" : nil,
                 isSelected: record.id == current,
                 action: { if record.id != session.conversationID { session.open(record) } }
             )

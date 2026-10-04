@@ -232,4 +232,58 @@ struct ChatSessionTests {
         session.send("с чистого листа")
         #expect(backend.resumedWith.last == .some(nil))
     }
+
+    private func temporaryStore() -> ChatHistoryStore {
+        ChatHistoryStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("runie-bg-\(UUID().uuidString)"))
+    }
+
+    @Test("занятый разговор при переходе в другой дорабатывает в фоне и сохраняется")
+    func busyConversationFinishesInBackground() async throws {
+        let backend = FakeBackend()
+        let session = ChatSession(backend: backend)
+        session.store = temporaryStore()
+        session.send("долгая задача")
+        let first = try #require(backend.connections.first)
+        let busyID = session.conversationID
+
+        session.startOver()
+        #expect(session.runningInBackground == [busyID])
+        #expect(!first.stopped)
+        #expect(!session.isBusy)
+        #expect(session.timeline.items.isEmpty)
+
+        for event in try FixtureLoader.events("tool-use") {
+            first.continuation.yield(.event(event))
+        }
+        #expect(await eventually { session.runningInBackground.isEmpty })
+        // Ход дописан в историю, а на экране по-прежнему новый разговор.
+        let saved = try #require(session.store?.list().first { $0.id == busyID })
+        #expect(saved.items.contains { if case .action = $0 { true } else { false } })
+        #expect(session.timeline.items.isEmpty)
+    }
+
+    @Test("вернуться в фоновый разговор — тот же живой процесс, а не новый")
+    func reopeningBackgroundConversationReattaches() async throws {
+        let backend = FakeBackend()
+        let session = ChatSession(backend: backend)
+        session.store = temporaryStore()
+        session.send("долгая задача")
+        let first = try #require(backend.connections.first)
+        let busyID = session.conversationID
+
+        session.startOver()
+        let record = try #require(session.store?.list().first { $0.id == busyID })
+        session.open(record)
+
+        #expect(session.conversationID == busyID)
+        #expect(session.runningInBackground.isEmpty)
+        #expect(session.isBusy)
+        #expect(backend.connections.count == 1)
+
+        for event in try FixtureLoader.events("tool-use") {
+            first.continuation.yield(.event(event))
+        }
+        #expect(await eventually { !session.isBusy })
+    }
 }

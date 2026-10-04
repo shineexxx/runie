@@ -31,6 +31,36 @@ public final class ChatSession {
     /// Разрешения изменились изнутри разговора — приложению нужно их сохранить.
     @ObservationIgnored public var onPolicyUpdate: ((PermissionPolicy) -> Void)?
 
+    // MARK: Разговоры в фоне
+
+    /// Разговор, который продолжает работать, пока человек открыл другой.
+    /// Свой процесс агента, своя лента — ход доводится до конца и сохраняется.
+    @MainActor
+    private final class BackgroundRun {
+        let conversationID: UUID
+        let createdAt: Date
+        var timeline: ChatTimeline
+        let connection: any AgentConnection
+        let pump: Task<Void, Never>?
+        let standingGrants: Set<String>
+
+        init(conversationID: UUID, createdAt: Date, timeline: ChatTimeline,
+             connection: any AgentConnection, pump: Task<Void, Never>?, standingGrants: Set<String>) {
+            self.conversationID = conversationID
+            self.createdAt = createdAt
+            self.timeline = timeline
+            self.connection = connection
+            self.pump = pump
+            self.standingGrants = standingGrants
+        }
+    }
+
+    @ObservationIgnored private var backgroundRuns: [UUID: BackgroundRun] = [:]
+    /// Какие разговоры сейчас работают в фоне — для значка в списке.
+    public private(set) var runningInBackground: Set<UUID> = []
+    /// В фоновом разговоре Руни ждёт разрешения — человеку надо туда вернуться.
+    @ObservationIgnored public var onBackgroundAttention: ((UUID) -> Void)?
+
     // MARK: Модель
 
     /// Модели, которые предлагает Claude Code. Пусто, пока CLI не ответил и кэша нет.
@@ -164,7 +194,7 @@ public final class ChatSession {
             + disabledMCPServers.sorted().map(MCPServerInfo.denyRule(forServer:))
         let handle = try backend.connect(resuming: timeline.sessionID, disallowedTools: rules)
         connection = handle.connection
-        consume(handle.stream)
+        consume(handle.stream, conversation: conversationID)
         let requestID = UUID().uuidString
         initializeRequestID = requestID
         if let hostTools {
@@ -243,10 +273,13 @@ public final class ChatSession {
 
     /// Начинает разговор с чистого листа: новая сессия, пустая лента.
     public func startOver() {
-        pump?.cancel()
-        pump = nil
-        connection?.stop()
-        connection = nil
+        // Руни занят — разговор доработает в фоне, а не оборвётся.
+        if !sendToBackgroundIfBusy() {
+            pump?.cancel()
+            pump = nil
+            connection?.stop()
+            connection = nil
+        }
         timeline = ChatTimeline()
         diagnostics.removeAll()
         standingGrants.removeAll()
@@ -256,7 +289,13 @@ public final class ChatSession {
 
     /// Открывает сохранённый разговор: следующее сообщение продолжит его сессию.
     public func open(_ record: ConversationRecord) {
+        guard record.id != conversationID else { return }
         startOver()
+        // Этот разговор ещё работает в фоне — возвращаем его живым, а не из файла.
+        if let run = backgroundRuns[record.id] {
+            bringBack(run)
+            return
+        }
         timeline = ChatTimeline(restoring: record.items, sessionID: record.sessionID)
         conversationID = record.id
         conversationCreatedAt = record.createdAt
@@ -264,12 +303,16 @@ public final class ChatSession {
 
     /// Сохраняет разговор, если в нём что-то есть.
     private func persist() {
+        persist(timeline, id: conversationID, createdAt: conversationCreatedAt)
+    }
+
+    private func persist(_ timeline: ChatTimeline, id: UUID, createdAt: Date) {
         guard let store, !timeline.items.isEmpty else { return }
         let record = ConversationRecord(
-            id: conversationID,
+            id: id,
             sessionID: timeline.sessionID,
             title: ConversationRecord.title(for: timeline.items),
-            createdAt: conversationCreatedAt,
+            createdAt: createdAt,
             updatedAt: Date(),
             items: timeline.items
         )
@@ -281,14 +324,110 @@ public final class ChatSession {
         }
     }
 
-    private func consume(_ stream: AsyncStream<AgentStreamItem>) {
+    /// Читает события агента. Каждое уходит в свой разговор: если человек уже
+    /// открыл другой, этот доработает в фоне.
+    private func consume(_ stream: AsyncStream<AgentStreamItem>, conversation: UUID) {
         pump?.cancel()
         pump = Task { [weak self] in
             for await item in stream {
                 guard let self else { return }
-                self.handle(item)
+                self.route(item, conversation: conversation)
             }
         }
+    }
+
+    private func route(_ item: AgentStreamItem, conversation: UUID) {
+        if let run = backgroundRuns[conversation] {
+            handleInBackground(item, run: run)
+        } else if conversation == conversationID {
+            handle(item)
+        }
+        // Иначе это хвост разговора, который уже закрыли, — его не показываем.
+    }
+
+    /// Отправляет текущий разговор работать в фон, если Руни сейчас занят им.
+    private func sendToBackgroundIfBusy() -> Bool {
+        guard isBusy, let connection else { return false }
+        let run = BackgroundRun(
+            conversationID: conversationID, createdAt: conversationCreatedAt, timeline: timeline,
+            connection: connection, pump: pump, standingGrants: standingGrants
+        )
+        backgroundRuns[conversationID] = run
+        runningInBackground.insert(conversationID)
+        // Процесс и его поток событий теперь принадлежат фоновому разговору.
+        self.connection = nil
+        pump = nil
+        return true
+    }
+
+    /// Фоновый разговор снова на экране: та же лента, тот же живой процесс.
+    private func bringBack(_ run: BackgroundRun) {
+        backgroundRuns[run.conversationID] = nil
+        runningInBackground.remove(run.conversationID)
+        timeline = run.timeline
+        connection = run.connection
+        pump = run.pump
+        standingGrants = run.standingGrants
+        conversationID = run.conversationID
+        conversationCreatedAt = run.createdAt
+    }
+
+    private func handleInBackground(_ item: AgentStreamItem, run: BackgroundRun) {
+        switch item {
+        case .event(let event):
+            run.timeline.apply(event)
+            if case .mcpMessage(let message) = event, let hostTools, message.serverName == hostTools.name {
+                let connection = run.connection
+                Task {
+                    let response = await hostTools.handle(message.message)
+                    try? connection.respondToMCP(MCPReply(requestID: message.requestID, response: response))
+                }
+            }
+            if case .permissionRequested(let request) = event {
+                if policy.allows(request) || run.standingGrants.contains(PermissionGrant.key(for: request)) {
+                    run.timeline.resolvePermission(request, allowed: true)
+                    try? run.connection.respond(to: request, with: .allow)
+                } else {
+                    // Вопрос ждёт, пока человек вернётся в этот разговор.
+                    onBackgroundAttention?(run.conversationID)
+                }
+            }
+            switch event {
+            case .turnCompleted, .turnFailed:
+                persist(run.timeline, id: run.conversationID, createdAt: run.createdAt)
+                finish(run)
+            case .sessionStarted:
+                persist(run.timeline, id: run.conversationID, createdAt: run.createdAt)
+            default:
+                break
+            }
+        case .diagnostic:
+            break
+        case .ended(let exitCode, let stoppedByUser):
+            run.timeline.markConnectionEnded(exitCode: exitCode, stoppedByUser: stoppedByUser)
+            persist(run.timeline, id: run.conversationID, createdAt: run.createdAt)
+            finish(run)
+        }
+    }
+
+    /// Фоновый ход закончился: процесс больше не нужен, следующее сообщение в этом
+    /// разговоре поднимет его заново с продолжением сессии.
+    private func finish(_ run: BackgroundRun) {
+        backgroundRuns[run.conversationID] = nil
+        runningInBackground.remove(run.conversationID)
+        run.pump?.cancel()
+        run.connection.stop()
+    }
+
+    /// Останавливает всё: и разговор на экране, и фоновые. Для выхода из приложения.
+    public func stopAll() {
+        stop()
+        for run in backgroundRuns.values {
+            persist(run.timeline, id: run.conversationID, createdAt: run.createdAt)
+            run.connection.stop()
+        }
+        backgroundRuns.removeAll()
+        runningInBackground.removeAll()
     }
 
     private func handle(_ item: AgentStreamItem) {
