@@ -31,6 +31,11 @@ final class ChatLayout {
     /// Поле быстрого вопроса открыто, и что в нём набрано.
     var isQuickAskOpen = false
     var quickDraft = ""
+    /// Быстрый вопрос вызван сочетанием при закрытом чате — после отправки
+    /// чат возвращается в орб.
+    var quickAskReturnsToOrb = false
+    /// Закрыть чат — назначает контроллер панели.
+    @ObservationIgnored var hideChat: (() -> Void)?
     /// Разговоры, доработавшие в фоне: карточки «ответ готов».
     var notices: [BackgroundNotice] = []
 
@@ -160,6 +165,16 @@ final class ChatPanelController {
         settingsMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             // Сравниваем и символ, и физическую клавишу (код 43 — «,» на английской
             // раскладке): на русской та же клавиша даёт «б», и по символу ⌘, не ловится.
+            // ⌘K — поле быстрого вопроса. Код 40 — «K» на любой раскладке.
+            if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command, event.keyCode == 40 {
+                let windowNumber = event.windowNumber
+                let handled = MainActor.assumeIsolated { () -> Bool in
+                    guard windowNumber == panel.windowNumber, let layout = self?.layout else { return false }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { layout.isQuickAskOpen.toggle() }
+                    return true
+                }
+                if handled { return nil }
+            }
             guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
                   event.keyCode == 43 || event.charactersIgnoringModifiers == ","
             else { return event }
@@ -179,18 +194,27 @@ final class ChatPanelController {
         touchMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
             let windowNumber = event.windowNumber
             MainActor.assumeIsolated {
-                if windowNumber == panel.windowNumber { self?.wasTouched = true }
+                if windowNumber == panel.windowNumber { self?.touched() }
             }
             return event
         }
+        layout.hideChat = { [weak self] in self?.hide() }
         keyObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didBecomeKeyNotification, object: panel, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.wasTouched = true }
+            MainActor.assumeIsolated { self?.touched() }
         }
         // Орб решает по движению курсора, пропускать ли клики сквозь себя; над чатом
         // эти события приходят только в окно чата.
         panel.acceptsMouseMovedEvents = true
+    }
+
+    /// Человек взялся за чат: приветствие уступает место обычной ленте разговора.
+    private func touched() {
+        wasTouched = true
+        if layout.announcementCue == .greeting, layout.announcement != nil {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { layout.announcement = nil }
+        }
     }
 
     /// Видим и не уезжает прямо сейчас.
@@ -319,6 +343,7 @@ final class ChatPanelController {
         let generation = visibilityGeneration
         isHiding = true
         layout.isOpen = false
+        layout.quickAskReturnsToOrb = false
         if layout.announcement == nil { RunieSounds.shared.play(.close) }
         layout.announcement = nil
         GlassDropdown.shared.close()

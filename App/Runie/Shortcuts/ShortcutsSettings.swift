@@ -27,7 +27,7 @@ struct ShortcutRows: View {
         }
         if shortcuts.needsAccessibility {
             HStack {
-                Text("Чтобы Руни слышал двойной ⌥ в других приложениях, нужен Универсальный доступ.")
+                Text("Чтобы Руни слышал двойные ⌥ и ⇧ в других приложениях, нужен Универсальный доступ.")
                     .font(.system(size: 11))
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
@@ -66,6 +66,23 @@ struct ShortcutRows: View {
             action: .askAboutScreen
         )
         ShortcutRow(title: String(localized: "Новый разговор"), action: .newConversation)
+        Picker(selection: Binding(get: { shortcuts.quickTrigger }, set: { shortcuts.quickTrigger = $0 })) {
+            Text("Двойной ⇧").tag(GlobalShortcuts.QuickTrigger.doubleShift)
+            Text("Своё сочетание").tag(GlobalShortcuts.QuickTrigger.combo)
+            Text("Выключено").tag(GlobalShortcuts.QuickTrigger.off)
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Быстрый вопрос")
+                Text("В новом разговоре, не уходя из текущего. В открытом чате — ещё и ⌘K.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .pickerStyle(.menu)
+        if shortcuts.quickTrigger == .combo {
+            ShortcutRow(title: String(localized: "Сочетание для быстрого вопроса"), action: .quickAsk)
+        }
     }
 }
 

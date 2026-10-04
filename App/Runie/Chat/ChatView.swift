@@ -50,6 +50,10 @@ struct ChatView: View {
         }
         .onAppear(perform: emerge)
         .onChange(of: layout.openGeneration) { emerge() }
+        // Открыли другой разговор, пока висит приветствие, — показываем разговор.
+        .onChange(of: session.conversationID) {
+            if layout.announcementCue == .greeting { layout.announcement = nil }
+        }
     }
 
     private func content(emergence: Double) -> some View {

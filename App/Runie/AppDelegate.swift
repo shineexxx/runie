@@ -458,6 +458,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .newConversation:
             session.startOver()
             if !chat.isVisible { openChat() }
+        case .quickAsk:
+            // Чат был закрыт — после отправки вопроса он сам уйдёт обратно в орб.
+            chat.layout.quickAskReturnsToOrb = !chat.isVisible
+            chat.layout.isQuickAskOpen = true
+            if !chat.isVisible { openChat() }
         }
     }
 

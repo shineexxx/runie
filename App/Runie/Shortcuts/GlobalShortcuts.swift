@@ -90,6 +90,7 @@ final class GlobalShortcuts {
         case toggleChat
         case askAboutScreen
         case newConversation
+        case quickAsk
     }
 
     /// Как вызывать чат.
@@ -103,6 +104,18 @@ final class GlobalShortcuts {
         didSet { save(); apply() }
     }
 
+    /// Как вызывать быстрый вопрос.
+    enum QuickTrigger: String, CaseIterable, Sendable {
+        case doubleShift
+        case combo
+        case off
+    }
+
+    /// Двойной ⇧ по умолчанию: одна клавиша, как двойной ⌥ для чата.
+    var quickTrigger: QuickTrigger {
+        didSet { save(); apply() }
+    }
+
     /// Сочетания по действиям. `nil` — у действия сочетания нет.
     private(set) var combos: [Action: KeyCombo]
 
@@ -112,11 +125,13 @@ final class GlobalShortcuts {
     static let defaults: [Action: KeyCombo] = [
         .toggleChat: KeyCombo(keyCode: kVK_Space, modifiers: optionKey | cmdKey, key: "Space"),
         .askAboutScreen: KeyCombo(keyCode: kVK_ANSI_S, modifiers: controlKey | optionKey, key: "S"),
-        .newConversation: KeyCombo(keyCode: kVK_ANSI_N, modifiers: controlKey | optionKey, key: "N")
+        .newConversation: KeyCombo(keyCode: kVK_ANSI_N, modifiers: controlKey | optionKey, key: "N"),
+        .quickAsk: KeyCombo(keyCode: kVK_ANSI_Q, modifiers: controlKey | optionKey, key: "Q")
     ]
 
     private enum Key {
         static let trigger = "shortcuts.chatTrigger"
+        static let quickTrigger = "shortcuts.quickTrigger"
         static let combos = "shortcuts.combos"
     }
 
@@ -131,6 +146,8 @@ final class GlobalShortcuts {
     private init() {
         let stored = UserDefaults.standard.string(forKey: Key.trigger).flatMap(ChatTrigger.init(rawValue:))
         chatTrigger = stored ?? .doubleOption
+        quickTrigger = UserDefaults.standard.string(forKey: Key.quickTrigger)
+            .flatMap(QuickTrigger.init(rawValue:)) ?? .doubleShift
         if let data = UserDefaults.standard.data(forKey: Key.combos),
            let saved = try? JSONDecoder().decode([String: KeyCombo?].self, from: data) {
             var combos = Self.defaults
@@ -160,11 +177,17 @@ final class GlobalShortcuts {
     func resetToDefaults() {
         combos = Self.defaults
         chatTrigger = .doubleOption
+        quickTrigger = .doubleShift
     }
 
     /// Двойной ⌥ слышен только с Универсальным доступом.
     var needsAccessibility: Bool {
-        chatTrigger == .doubleOption && !AXIsProcessTrusted()
+        usesDoubleTaps && !AXIsProcessTrusted()
+    }
+
+    /// Двойные нажатия модификаторов Руни слушает сам.
+    private var usesDoubleTaps: Bool {
+        chatTrigger == .doubleOption || quickTrigger == .doubleShift
     }
 
     func openAccessibilitySettings() {
@@ -176,6 +199,7 @@ final class GlobalShortcuts {
 
     private func save() {
         UserDefaults.standard.set(chatTrigger.rawValue, forKey: Key.trigger)
+        UserDefaults.standard.set(quickTrigger.rawValue, forKey: Key.quickTrigger)
         var stored: [String: KeyCombo?] = [:]
         // updateValue, а не подстановка: `= nil` удалило бы ключ, и снятое
         // сочетание после перезапуска вернулось бы к стандартному.
@@ -215,28 +239,31 @@ final class GlobalShortcuts {
 
         for (index, action) in Action.allCases.enumerated() {
             if action == .toggleChat, chatTrigger != .combo { continue }
+            if action == .quickAsk, quickTrigger != .combo { continue }
             guard let combo = combo(for: action) else { continue }
             var ref: EventHotKeyRef?
             let id = EventHotKeyID(signature: OSType(0x524E_4945), id: UInt32(index)) // 'RNIE'
             let status = RegisterEventHotKey(combo.keyCode, combo.modifiers, id, GetApplicationEventTarget(), 0, &ref)
             if status == noErr, let ref { registered.append(ref) }
         }
-        if chatTrigger == .doubleOption { watchDoubleOption() }
+        if usesDoubleTaps { watchDoubleTaps() }
     }
 
-    // MARK: Двойной ⌥
+    // MARK: Двойной ⌥ и двойной ⇧
 
-    /// Когда отпустили ⌥ в последний раз — если отпустят снова быстро, это двойное нажатие.
-    @ObservationIgnored private var lastTap: Date?
-    /// Когда нажали ⌥ сейчас. Долгое удержание — не нажатие.
-    @ObservationIgnored private var pressedAt: Date?
-    /// Пока ⌥ зажат, нажали другую клавишу: это сочетание или спецсимвол, не нажатие.
+    /// Когда и какой модификатор отпустили в последний раз — если тот же отпустят
+    /// снова быстро, это двойное нажатие.
+    @ObservationIgnored private var lastTap: (modifier: Action, at: Date)?
+    /// Какой модификатор нажат сейчас и когда. Долгое удержание — не нажатие.
+    @ObservationIgnored private var pressed: (modifier: Action, at: Date)?
+    /// Пока модификатор зажат, нажали другую клавишу: это сочетание, спецсимвол
+    /// или заглавная буква, не нажатие.
     @ObservationIgnored private var interrupted = false
 
     private static let tapLength: TimeInterval = 0.3
     private static let doubleTapGap: TimeInterval = 0.4
 
-    private func watchDoubleOption() {
+    private func watchDoubleTaps() {
         let flags: (NSEvent) -> Void = { event in
             MainActor.assumeIsolated { GlobalShortcuts.shared.modifiersChanged(event) }
         }
@@ -268,31 +295,38 @@ final class GlobalShortcuts {
         lastTap = nil
     }
 
+    /// Какое действие у одиночного модификатора: ⌥ — чат, ⇧ — быстрый вопрос.
+    private func action(for flags: NSEvent.ModifierFlags) -> Action? {
+        if flags == .option, chatTrigger == .doubleOption { return .toggleChat }
+        if flags == .shift, quickTrigger == .doubleShift { return .quickAsk }
+        return nil
+    }
+
     private func modifiersChanged(_ event: NSEvent) {
         let flags = event.modifierFlags.intersection([.command, .option, .control, .shift, .function])
         let now = Date()
-        if flags == .option {
-            // Нажали один ⌥ — без других модификаторов.
-            pressedAt = now
+        if let action = action(for: flags) {
+            // Нажали один модификатор — без других.
+            pressed = (action, now)
             interrupted = false
             return
         }
-        guard flags.isEmpty, let pressed = pressedAt else {
+        guard flags.isEmpty, let down = pressed else {
             // Добавили ещё модификатор — это уже сочетание.
-            pressedAt = nil
+            pressed = nil
             lastTap = nil
             return
         }
-        pressedAt = nil
-        guard !interrupted, now.timeIntervalSince(pressed) < Self.tapLength else {
+        pressed = nil
+        guard !interrupted, now.timeIntervalSince(down.at) < Self.tapLength else {
             lastTap = nil
             return
         }
-        if let last = lastTap, now.timeIntervalSince(last) < Self.doubleTapGap {
+        if let last = lastTap, last.modifier == down.modifier, now.timeIntervalSince(last.at) < Self.doubleTapGap {
             lastTap = nil
-            handler?(.toggleChat)
+            handler?(down.modifier)
         } else {
-            lastTap = now
+            lastTap = (down.modifier, now)
         }
     }
 }

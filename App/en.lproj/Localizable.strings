@@ -867,7 +867,7 @@
 "Открыть чат" = "Open chat";
 "Из любого приложения, без похода к краю экрана. Повторное нажатие закрывает чат." = "From any app, without reaching for the screen edge. Press again to close the chat.";
 "Сочетание для чата" = "Chat shortcut";
-"Чтобы Руни слышал двойной ⌥ в других приложениях, нужен Универсальный доступ." = "Runie needs Accessibility access to hear a double ⌥ in other apps.";
+"Чтобы Руни слышал двойные ⌥ и ⇧ в других приложениях, нужен Универсальный доступ." = "Runie needs Accessibility access to hear double ⌥ and ⇧ in other apps.";
 "Открыть настройки" = "Open Settings";
 "Спросить про экран" = "Ask about the screen";
 "Открывает чат со снимком экрана во вложении" = "Opens the chat with a screenshot attached";
@@ -888,3 +888,6 @@
 "Не получилось — откройте, чтобы посмотреть" = "Didn't work — open it to see why";
 "Скрыть" = "Dismiss";
 "Открыть разговор" = "Open conversation";
+"В новом разговоре, не уходя из текущего. В открытом чате — ещё и ⌘K." = "In a new conversation without leaving the current one. Also ⌘K while the chat is open.";
+"Двойной ⇧" = "Double ⇧";
+"Сочетание для быстрого вопроса" = "Quick question shortcut";

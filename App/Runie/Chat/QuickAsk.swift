@@ -57,12 +57,19 @@ struct QuickAskField: View {
         .readableSurface(Capsule(), interactive: true)
         .holdsPointer()
         .onAppear { isFocused = true }
+        .onChange(of: layout.focusGeneration) { isFocused = true }
     }
 
     private func send() {
         guard session.sendInBackground(layout.quickDraft) != nil else { return }
         RunieSounds.shared.play(.send)
         layout.quickDraft = ""
+        // Позвали сочетанием из другого приложения — чат возвращается в орб.
+        if layout.quickAskReturnsToOrb {
+            layout.isQuickAskOpen = false
+            layout.hideChat?()
+            return
+        }
         close()
     }
 
