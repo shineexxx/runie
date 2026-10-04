@@ -8,9 +8,10 @@ struct ShortcutRows: View {
 
     var body: some View {
         Picker(selection: Binding(get: { shortcuts.chatTrigger }, set: { shortcuts.chatTrigger = $0 })) {
-            Text("Двойной ⌥").tag(GlobalShortcuts.ChatTrigger.doubleOption)
-            Text("Своё сочетание").tag(GlobalShortcuts.ChatTrigger.combo)
-            Text("Выключено").tag(GlobalShortcuts.ChatTrigger.off)
+            Text("Двойной ⇧").tag(GlobalShortcuts.Trigger.doubleShift)
+            Text("Двойной ⌥").tag(GlobalShortcuts.Trigger.doubleOption)
+            Text("Своё сочетание").tag(GlobalShortcuts.Trigger.combo)
+            Text("Выключено").tag(GlobalShortcuts.Trigger.off)
         } label: {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Открыть чат")
@@ -67,9 +68,10 @@ struct ShortcutRows: View {
         )
         ShortcutRow(title: String(localized: "Новый разговор"), action: .newConversation)
         Picker(selection: Binding(get: { shortcuts.quickTrigger }, set: { shortcuts.quickTrigger = $0 })) {
-            Text("Двойной ⇧").tag(GlobalShortcuts.QuickTrigger.doubleShift)
-            Text("Своё сочетание").tag(GlobalShortcuts.QuickTrigger.combo)
-            Text("Выключено").tag(GlobalShortcuts.QuickTrigger.off)
+            Text("Сочетание").tag(GlobalShortcuts.Trigger.combo)
+            Text("Двойной ⇧").tag(GlobalShortcuts.Trigger.doubleShift)
+            Text("Двойной ⌥").tag(GlobalShortcuts.Trigger.doubleOption)
+            Text("Выключено").tag(GlobalShortcuts.Trigger.off)
         } label: {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Быстрый вопрос")

@@ -93,27 +93,31 @@ final class GlobalShortcuts {
         case quickAsk
     }
 
-    /// Как вызывать чат.
-    enum ChatTrigger: String, CaseIterable, Sendable {
+    /// Как вызывать действие: двойным нажатием модификатора или сочетанием.
+    enum Trigger: String, CaseIterable, Sendable {
+        case doubleShift
         case doubleOption
         case combo
         case off
+
+        var isDoubleTap: Bool { self == .doubleShift || self == .doubleOption }
     }
 
-    var chatTrigger: ChatTrigger {
-        didSet { save(); apply() }
+    /// Чат — двойным ⇧ по умолчанию: одна клавиша, одним пальцем.
+    var chatTrigger: Trigger {
+        didSet {
+            // Одно двойное нажатие на два действия не делим — второе уходит на сочетание.
+            if chatTrigger.isDoubleTap, quickTrigger == chatTrigger { quickTrigger = .combo }
+            save(); apply()
+        }
     }
 
-    /// Как вызывать быстрый вопрос.
-    enum QuickTrigger: String, CaseIterable, Sendable {
-        case doubleShift
-        case combo
-        case off
-    }
-
-    /// Двойной ⇧ по умолчанию: одна клавиша, как двойной ⌥ для чата.
-    var quickTrigger: QuickTrigger {
-        didSet { save(); apply() }
+    /// Быстрый вопрос — сочетанием ⇧⌘Space по умолчанию.
+    var quickTrigger: Trigger {
+        didSet {
+            if quickTrigger.isDoubleTap, chatTrigger == quickTrigger { chatTrigger = .combo }
+            save(); apply()
+        }
     }
 
     /// Сочетания по действиям. `nil` — у действия сочетания нет.
@@ -126,14 +130,19 @@ final class GlobalShortcuts {
         .toggleChat: KeyCombo(keyCode: kVK_Space, modifiers: optionKey | cmdKey, key: "Space"),
         .askAboutScreen: KeyCombo(keyCode: kVK_ANSI_S, modifiers: controlKey | optionKey, key: "S"),
         .newConversation: KeyCombo(keyCode: kVK_ANSI_N, modifiers: controlKey | optionKey, key: "N"),
-        .quickAsk: KeyCombo(keyCode: kVK_ANSI_Q, modifiers: controlKey | optionKey, key: "Q")
+        .quickAsk: KeyCombo(keyCode: kVK_Space, modifiers: shiftKey | cmdKey, key: "Space")
     ]
 
     private enum Key {
         static let trigger = "shortcuts.chatTrigger"
         static let quickTrigger = "shortcuts.quickTrigger"
         static let combos = "shortcuts.combos"
+        /// Какая раскладка сочетаний уже применена: при смене раскладки по
+        /// умолчанию старые стандартные значения переходят на новые.
+        static let layoutVersion = "shortcuts.layoutVersion"
     }
+
+    private static let layoutVersion = 2
 
     @ObservationIgnored private var registered: [EventHotKeyRef] = []
     @ObservationIgnored private var handlerRef: EventHandlerRef?
@@ -144,10 +153,16 @@ final class GlobalShortcuts {
     }
 
     private init() {
-        let stored = UserDefaults.standard.string(forKey: Key.trigger).flatMap(ChatTrigger.init(rawValue:))
-        chatTrigger = stored ?? .doubleOption
-        quickTrigger = UserDefaults.standard.string(forKey: Key.quickTrigger)
-            .flatMap(QuickTrigger.init(rawValue:)) ?? .doubleShift
+        let defaults = UserDefaults.standard
+        // Вторая раскладка: чат — двойной ⇧, быстрый вопрос — ⇧⌘Space. Кто жил с
+        // первой (чат — двойной ⌥, вопрос — ⌃⌥Q), переходит на неё один раз.
+        let migrating = defaults.integer(forKey: Key.layoutVersion) < Self.layoutVersion
+        if migrating {
+            defaults.removeObject(forKey: Key.trigger)
+            defaults.removeObject(forKey: Key.quickTrigger)
+        }
+        chatTrigger = defaults.string(forKey: Key.trigger).flatMap(Trigger.init(rawValue:)) ?? .doubleShift
+        quickTrigger = defaults.string(forKey: Key.quickTrigger).flatMap(Trigger.init(rawValue:)) ?? .combo
         if let data = UserDefaults.standard.data(forKey: Key.combos),
            let saved = try? JSONDecoder().decode([String: KeyCombo?].self, from: data) {
             var combos = Self.defaults
@@ -158,6 +173,11 @@ final class GlobalShortcuts {
             self.combos = combos
         } else {
             combos = Self.defaults
+        }
+        if migrating {
+            combos[.quickAsk] = Self.defaults[.quickAsk]
+            defaults.set(Self.layoutVersion, forKey: Key.layoutVersion)
+            save()
         }
     }
 
@@ -176,8 +196,8 @@ final class GlobalShortcuts {
 
     func resetToDefaults() {
         combos = Self.defaults
-        chatTrigger = .doubleOption
-        quickTrigger = .doubleShift
+        chatTrigger = .doubleShift
+        quickTrigger = .combo
     }
 
     /// Двойной ⌥ слышен только с Универсальным доступом.
@@ -187,7 +207,7 @@ final class GlobalShortcuts {
 
     /// Двойные нажатия модификаторов Руни слушает сам.
     private var usesDoubleTaps: Bool {
-        chatTrigger == .doubleOption || quickTrigger == .doubleShift
+        chatTrigger.isDoubleTap || quickTrigger.isDoubleTap
     }
 
     func openAccessibilitySettings() {
@@ -295,10 +315,16 @@ final class GlobalShortcuts {
         lastTap = nil
     }
 
-    /// Какое действие у одиночного модификатора: ⌥ — чат, ⇧ — быстрый вопрос.
+    /// Какое действие повешено на двойное нажатие этого модификатора.
     private func action(for flags: NSEvent.ModifierFlags) -> Action? {
-        if flags == .option, chatTrigger == .doubleOption { return .toggleChat }
-        if flags == .shift, quickTrigger == .doubleShift { return .quickAsk }
+        let trigger: Trigger
+        switch flags {
+        case .shift: trigger = .doubleShift
+        case .option: trigger = .doubleOption
+        default: return nil
+        }
+        if chatTrigger == trigger { return .toggleChat }
+        if quickTrigger == trigger { return .quickAsk }
         return nil
     }
 
