@@ -108,6 +108,12 @@ final class ChatPanelController {
     /// Чат появился на экране.
     var onShow: (() -> Void)?
 
+    /// С момента открытия человек кликнул в чат или поставил в него фокус.
+    /// Тогда чат сам не закрывается — например, после приветствия при запуске.
+    private(set) var wasTouched = false
+    private var touchMonitor: Any?
+    private var keyObserver: Any?
+
     init(
         session: ChatSession,
         tracker: FrontmostAppTracker,
@@ -168,6 +174,19 @@ final class ChatPanelController {
         pasteMonitor = AttachmentStore.installPasteHandler(for: { [weak self] in self?.panel }) { [weak self] files in
             guard let self else { return }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { self.layout.attachments += files }
+        }
+        // Клик в чат или фокус в нём — человек взялся за чат, сам он не закроется.
+        touchMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
+            let windowNumber = event.windowNumber
+            MainActor.assumeIsolated {
+                if windowNumber == panel.windowNumber { self?.wasTouched = true }
+            }
+            return event
+        }
+        keyObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification, object: panel, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.wasTouched = true }
         }
         // Орб решает по движению курсора, пропускать ли клики сквозь себя; над чатом
         // эти события приходят только в окно чата.
@@ -276,6 +295,7 @@ final class ChatPanelController {
 
         panel.setFrame(target, display: false)
         panel.alphaValue = 0
+        wasTouched = false
         if focus {
             panel.makeKeyAndOrderFront(nil)
         } else {

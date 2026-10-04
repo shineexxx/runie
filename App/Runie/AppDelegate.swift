@@ -555,8 +555,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, !chat.isVisible, !isQuitting else { return }
             announce(suggestions.greeting, cue: .greeting)
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.greetingDuration) { [weak self] in
+                // Человек кликнул в чат, начал печатать или спрашивать — остаёмся.
                 guard let self, chat.layout.announcement != nil, !isQuitting,
-                      !chat.layout.hasDraft, !session.isBusy
+                      !chat.wasTouched, !chat.layout.hasDraft, !session.isBusy
                 else { return }
                 chat.hide()
             }
