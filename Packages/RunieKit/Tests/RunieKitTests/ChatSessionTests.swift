@@ -286,4 +286,29 @@ struct ChatSessionTests {
         }
         #expect(await eventually { !session.isBusy })
     }
+
+    @Test("быстрый запрос создаёт фоновый разговор и не трогает открытый")
+    func quickRequestRunsInBackground() async throws {
+        let backend = FakeBackend()
+        let session = ChatSession(backend: backend)
+        session.store = temporaryStore()
+        let openID = session.conversationID
+        var finished: [ChatSession.BackgroundResult] = []
+        session.onBackgroundFinished = { finished.append($0) }
+
+        let id = try #require(session.sendInBackground("сколько дней до нового года"))
+        #expect(session.conversationID == openID)
+        #expect(session.timeline.items.isEmpty)
+        #expect(session.runningInBackground == [id])
+        let connection = try #require(backend.connections.first)
+        #expect(connection.sent == ["сколько дней до нового года"])
+
+        for event in try FixtureLoader.events("tool-use") {
+            connection.continuation.yield(.event(event))
+        }
+        #expect(await eventually { !finished.isEmpty })
+        #expect(finished.first?.conversationID == id)
+        #expect(session.runningInBackground.isEmpty)
+        #expect(session.store?.list().contains { $0.id == id } == true)
+    }
 }

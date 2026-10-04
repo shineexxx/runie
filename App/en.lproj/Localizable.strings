@@ -882,3 +882,9 @@
 "Лупа на F4 вызывает чат вместо Spotlight. ⌘Space по-прежнему открывает Spotlight." = "The magnifier key on F4 opens the chat instead of Spotlight. ⌘Space still opens Spotlight.";
 "Перехватывать клавишу Руни может только с Универсальным доступом." = "Runie can only take over the key with Accessibility access.";
 "Руни работает…" = "Runie is working…";
+"Быстрый вопрос — ответ придёт в новый разговор, а вы останетесь здесь" = "Quick question — the answer goes to a new conversation while you stay here";
+"Быстрый вопрос" = "Quick question";
+"Быстрый вопрос в новом разговоре…" = "Quick question in a new conversation…";
+"Не получилось — откройте, чтобы посмотреть" = "Didn't work — open it to see why";
+"Скрыть" = "Dismiss";
+"Открыть разговор" = "Open conversation";

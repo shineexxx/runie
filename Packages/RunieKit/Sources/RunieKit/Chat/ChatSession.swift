@@ -60,6 +60,16 @@ public final class ChatSession {
     public private(set) var runningInBackground: Set<UUID> = []
     /// В фоновом разговоре Руни ждёт разрешения — человеку надо туда вернуться.
     @ObservationIgnored public var onBackgroundAttention: ((UUID) -> Void)?
+    /// Фоновый разговор закончил ход: номер, название, начало ответа, неудача ли.
+    @ObservationIgnored public var onBackgroundFinished: ((BackgroundResult) -> Void)?
+
+    /// Чем закончился разговор, доработавший в фоне.
+    public struct BackgroundResult: Sendable {
+        public let conversationID: UUID
+        public let title: String
+        public let reply: String?
+        public let failed: Bool
+    }
 
     // MARK: Модель
 
@@ -190,11 +200,16 @@ public final class ChatSession {
     }
 
     private func connect() throws {
-        let rules = disabledSkills.sorted().map { "Skill(\($0))" }
-            + disabledMCPServers.sorted().map(MCPServerInfo.denyRule(forServer:))
-        let handle = try backend.connect(resuming: timeline.sessionID, disallowedTools: rules)
+        let handle = try makeConnection(resuming: timeline.sessionID)
         connection = handle.connection
         consume(handle.stream, conversation: conversationID)
+    }
+
+    /// Поднимает процесс агента с нашими настройками: навыки, серверы, модель.
+    private func makeConnection(resuming sessionID: String?) throws -> AgentConnectionHandle {
+        let rules = disabledSkills.sorted().map { "Skill(\($0))" }
+            + disabledMCPServers.sorted().map(MCPServerInfo.denyRule(forServer:))
+        let handle = try backend.connect(resuming: sessionID, disallowedTools: rules)
         let requestID = UUID().uuidString
         initializeRequestID = requestID
         if let hostTools {
@@ -204,6 +219,42 @@ public final class ChatSession {
         }
         if let selectedModel {
             try handle.connection.send(.setModel(selectedModel), requestID: UUID().uuidString)
+        }
+        return handle
+    }
+
+    /// Быстрый запрос: новый разговор, который сразу работает в фоне. Человек
+    /// остаётся там, где был; ответ сохранится в историю. Возвращает номер разговора.
+    @discardableResult
+    public func sendInBackground(_ text: String) -> UUID? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let id = UUID()
+        let createdAt = Date()
+        var timeline = ChatTimeline()
+        timeline.appendUserMessage(trimmed, attachments: [])
+        do {
+            let handle = try makeConnection(resuming: nil)
+            let stream = handle.stream
+            let pump = Task { [weak self] in
+                for await item in stream {
+                    guard let self else { return }
+                    self.route(item, conversation: id)
+                }
+            }
+            let run = BackgroundRun(
+                conversationID: id, createdAt: createdAt, timeline: timeline,
+                connection: handle.connection, pump: pump, standingGrants: []
+            )
+            backgroundRuns[id] = run
+            runningInBackground.insert(id)
+            persist(timeline, id: id, createdAt: createdAt)
+            try handle.connection.send(UserMessage(expandMessage?(trimmed) ?? trimmed))
+            return id
+        } catch {
+            if let run = backgroundRuns[id] { finish(run) }
+            diagnostics.append("background: \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -396,6 +447,13 @@ public final class ChatSession {
             case .turnCompleted, .turnFailed:
                 persist(run.timeline, id: run.conversationID, createdAt: run.createdAt)
                 finish(run)
+                let turn = ChatTurn.split(run.timeline.items).last
+                onBackgroundFinished?(BackgroundResult(
+                    conversationID: run.conversationID,
+                    title: ConversationRecord.title(for: run.timeline.items),
+                    reply: turn?.reply,
+                    failed: turn?.failure != nil
+                ))
             case .sessionStarted:
                 persist(run.timeline, id: run.conversationID, createdAt: run.createdAt)
             default:

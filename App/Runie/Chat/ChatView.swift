@@ -118,6 +118,27 @@ struct ChatView: View {
                             .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
                     }
 
+                    // Разговоры, доработавшие в фоне: клик — открыть, крестик — скрыть.
+                    ForEach(layout.notices.prefix(3)) { notice in
+                        BackgroundNoticeCard(
+                            notice: notice,
+                            onOpen: { openConversation(notice.id) },
+                            onDismiss: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                                    layout.notices.removeAll { $0.id == notice.id }
+                                }
+                            }
+                        )
+                        .frame(maxWidth: .infinity, alignment: frameAlignment)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: orbCornerAnchor)))
+                    }
+
+                    if layout.isQuickAskOpen {
+                        QuickAskField(session: session, layout: layout)
+                            .frame(maxWidth: .infinity, alignment: frameAlignment)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+
                     // Набирается «/…» — свои команды прямо над полем.
                     let commandMatches = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands)
                     if !commandMatches.isEmpty {
@@ -237,6 +258,16 @@ struct ChatView: View {
 
     private var horizontalAlignment: HorizontalAlignment {
         layout.orbSide == .trailing ? .trailing : .leading
+    }
+
+    /// Открыть разговор из карточки «ответ готов».
+    private func openConversation(_ id: UUID) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+            layout.notices.removeAll { $0.id == id }
+        }
+        guard id != session.conversationID,
+              let record = session.store?.list().first(where: { $0.id == id }) else { return }
+        session.open(record)
     }
 
     private var frameAlignment: Alignment {
@@ -900,11 +931,13 @@ private struct InputRow: View {
             if layout.orbSide == .trailing {
                 ConversationsButton(session: session, onDone: onRefocus)
                     .frame(height: ChatPanelController.inputHeight)
+                QuickAskButton(layout: layout).frame(height: ChatPanelController.inputHeight)
                 expandButton.frame(height: ChatPanelController.inputHeight)
             }
             inputPill
             if layout.orbSide == .leading {
                 expandButton.frame(height: ChatPanelController.inputHeight)
+                QuickAskButton(layout: layout).frame(height: ChatPanelController.inputHeight)
                 ConversationsButton(session: session, onDone: onRefocus)
                     .frame(height: ChatPanelController.inputHeight)
             }

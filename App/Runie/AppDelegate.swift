@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import RunieKit
 
 @MainActor
@@ -147,7 +148,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             mainWindow.showConversation(session.conversationID)
         }
         chat.onHide = { [weak self] in
-            self?.button.reattach()
+            guard let self else { return }
+            button.reattach()
+            // Непрочитанные карточки возвращаются к орбу.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                guard let self, !chat.isVisible else { return }
+                notices.show(near: button.panel.frame)
+            }
         }
         greetOnLaunch()
         watchTurns()
@@ -158,6 +165,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         GlobalShortcuts.shared.start()
         // Фоновый разговор ждёт решения человека — даём знать звуком.
         session.onBackgroundAttention = { _ in RunieSounds.shared.play(.attention) }
+        // Разговор доработал в фоне — карточка «ответ готов»: в чате или у орба.
+        notices = NoticePanelController(layout: chat.layout)
+        notices.onOpen = { [weak self] id in self?.openFinished(id) }
+        session.onBackgroundFinished = { [weak self] result in self?.backgroundFinished(result) }
+        chat.onShow = { [weak self] in self?.notices.hide() }
         // Клавиша Spotlight (F4) — Руни вместо Spotlight, если человек так выбрал.
         SpotlightKey.shared.onPress = { [weak self] in
             self?.runShortcut(.toggleChat)
@@ -408,6 +420,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             openChat()
         }
+    }
+
+    private var notices: NoticePanelController!
+
+    private func backgroundFinished(_ result: ChatSession.BackgroundResult) {
+        let layout = chat.layout
+        layout.notices.removeAll { $0.id == result.conversationID }
+        // Этот разговор и так на экране — карточка не нужна.
+        guard result.conversationID != session.conversationID else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            layout.notices.insert(BackgroundNotice(result), at: 0)
+            if layout.notices.count > 3 { layout.notices.removeLast(layout.notices.count - 3) }
+        }
+        RunieSounds.shared.play(result.failed ? .error : .reply)
+        if !chat.isVisible { notices.show(near: button.panel.frame) }
+    }
+
+    /// Клик по карточке у орба: открыть тот разговор в чате.
+    private func openFinished(_ id: UUID) {
+        chat.layout.notices.removeAll { $0.id == id }
+        notices.hide()
+        if id != session.conversationID, let record = session.store?.list().first(where: { $0.id == id }) {
+            session.open(record)
+        }
+        if !chat.isVisible { openChat() }
     }
 
     private func runShortcut(_ action: GlobalShortcuts.Action) {

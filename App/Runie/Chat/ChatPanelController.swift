@@ -28,6 +28,12 @@ final class ChatLayout {
     /// Каким звуком реплика приходит.
     var announcementCue: RunieSounds.Cue = .greeting
 
+    /// Поле быстрого вопроса открыто, и что в нём набрано.
+    var isQuickAskOpen = false
+    var quickDraft = ""
+    /// Разговоры, доработавшие в фоне: карточки «ответ готов».
+    var notices: [BackgroundNotice] = []
+
     /// Картинки и файлы к ещё не отправленному сообщению.
     var attachments: [Attachment] = []
 
@@ -99,6 +105,8 @@ final class ChatPanelController {
 
     /// Чат начал закрываться — откуда бы ни пришла команда: орб, Esc, крестик.
     var onHide: (() -> Void)?
+    /// Чат появился на экране.
+    var onShow: (() -> Void)?
 
     init(
         session: ChatSession,
@@ -275,6 +283,7 @@ final class ChatPanelController {
         }
         layout.markOpened()
         if focus { layout.requestFocus() }
+        onShow?()
         // С репликой звучит она сама, когда придёт; здесь — обычное открытие.
         if layout.announcement == nil { RunieSounds.shared.play(.open) }
 
