@@ -969,40 +969,28 @@ private struct InputRow: View {
             if layout.orbSide == .leading { sendButton.frame(height: Self.row) }
             if layout.orbSide == .trailing { attachButtons.frame(height: Self.row) }
 
-            TextField(placeholder, text: $layout.draft, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.system(size: 14))
-                // Пять строк: с переносами по Shift+Enter в трёх уже тесно.
-                .lineLimit(1...5)
-                .focused($isFocused)
-                .onSubmit(onSubmitDraft)
-                // Shift+Enter — перенос строки, обычный Enter отправляет.
-                // Перенос вставляем в место курсора, а не в конец: человек мог
-                // вернуться в середину написанного.
-                .onKeyPress(.return, phases: .down) { press in
-                    guard press.modifiers.contains(.shift) else { return .ignored }
-                    if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
-                        editor.insertText("\n", replacementRange: editor.selectedRange())
-                    } else {
-                        layout.draft += "\n"
-                    }
-                    return .handled
-                }
+            // До пяти строк растёт, дальше прокручивается — и колесом мыши тоже.
+            GrowingTextEditor(
+                text: $layout.draft,
+                placeholder: placeholder,
+                isFocused: $isFocused,
+                onSubmit: onSubmitDraft,
                 // Tab на «/…» подставляет первую подходящую команду.
-                .onKeyPress(.tab) {
+                onTab: {
                     guard let first = QuickCommand.matching(layout.draft, in: QuickCommandsModel.shared.commands).first
-                    else { return .ignored }
+                    else { return false }
                     layout.draft = "/\(first.command) "
-                    return .handled
-                }
+                    return true
+                },
                 // ↑ в пустом поле — последнее сообщение, чтобы поправить и отправить заново.
-                .onKeyPress(.upArrow) {
+                onUpArrow: {
                     guard layout.draft.isEmpty, layout.attachments.isEmpty, !session.isBusy,
-                          let last = session.lastUserMessage else { return .ignored }
+                          let last = session.lastUserMessage else { return false }
                     layout.draft = last.text
                     layout.attachments = last.attachments
-                    return .handled
+                    return true
                 }
+            )
                 .padding(.horizontal, 4)
                 // В одну строку — по центру ряда кнопок, длиннее — растёт вверх.
                 .frame(maxWidth: .infinity, minHeight: Self.row, alignment: .leading)

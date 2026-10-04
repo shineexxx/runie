@@ -123,25 +123,26 @@ struct ConversationDetail: View {
             HStack(alignment: .bottom, spacing: 10) {
                 AttachmentButtons(onPickFiles: pickFiles, onCapture: capture, onCaptureScreen: captureScreen, onPaste: paste)
                     .padding(.bottom, 5)
-                TextField(placeholder, text: $draft, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 14))
-                    .lineLimit(1...8)
-                    .focused($isFocused)
-                    .onSubmit(send)
-                    .onKeyPress(.tab) {
+                GrowingTextEditor(
+                    text: $draft,
+                    placeholder: placeholder,
+                    maxLines: 8,
+                    isFocused: $isFocused,
+                    onSubmit: send,
+                    onTab: {
                         guard let first = QuickCommand.matching(draft, in: QuickCommandsModel.shared.commands).first
-                        else { return .ignored }
+                        else { return false }
                         draft = "/\(first.command) "
-                        return .handled
-                    }
+                        return true
+                    },
                     // ↑ в пустом поле — последнее сообщение этого разговора.
-                    .onKeyPress(.upArrow) {
+                    onUpArrow: {
                         guard draft.isEmpty, attachments.isEmpty, !session.isBusy,
-                              let text = lastUserText else { return .ignored }
+                              let text = lastUserText else { return false }
                         draft = text
-                        return .handled
+                        return true
                     }
+                )
                     .padding(.vertical, 8)
 
                 ModelMenu(session: session, settings: settings, compact: false)
