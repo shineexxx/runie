@@ -317,6 +317,22 @@ public final class ChatSession {
         }
     }
 
+    /// Сжимает разговор, как `/compact` в Claude Code: агент пересказывает его себе
+    /// коротко и продолжает с освободившимся контекстом. В ленте — пометка, не команда.
+    public func compact() {
+        guard !isBusy, timeline.sessionID != nil else { return }
+        timeline.beginCompaction()
+        persist()
+        do {
+            if connection == nil { try connect() }
+            try connection?.send(UserMessage("/compact"))
+        } catch {
+            connection?.stop()
+            connection = nil
+            timeline.recordLocalFailure(error.localizedDescription)
+        }
+    }
+
     /// Останавливает текущую работу агента.
     public func stop() {
         connection?.stop()

@@ -311,4 +311,36 @@ struct ChatSessionTests {
         #expect(session.runningInBackground.isEmpty)
         #expect(session.store?.list().contains { $0.id == id } == true)
     }
+
+    @Test("после хода известно, сколько контекста занято")
+    func contextUsageAfterTurn() async throws {
+        let backend = FakeBackend()
+        let session = ChatSession(backend: backend)
+        session.send("прочитай todo")
+        let connection = try #require(backend.connections.first)
+        for event in try FixtureLoader.events("tool-use") {
+            connection.continuation.yield(.event(event))
+        }
+        #expect(await eventually { !session.isBusy })
+        let context = try #require(session.timeline.context)
+        #expect(context.window == 1_000_000)
+        #expect(context.used > 0 && context.used < context.window)
+    }
+
+    @Test("сжатие: в ленте пометка, агенту уходит /compact")
+    func compactSendsCommandQuietly() async throws {
+        let backend = FakeBackend()
+        let session = ChatSession(backend: backend)
+        session.send("прочитай todo")
+        let connection = try #require(backend.connections.first)
+        for event in try FixtureLoader.events("tool-use") {
+            connection.continuation.yield(.event(event))
+        }
+        #expect(await eventually { !session.isBusy })
+
+        session.compact()
+        #expect(session.isBusy)
+        #expect(connection.sent.last == "/compact")
+        #expect(!session.timeline.items.contains { if case .user(let item) = $0 { item.text == "/compact" } else { false } })
+    }
 }

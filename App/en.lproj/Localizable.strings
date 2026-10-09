@@ -892,3 +892,14 @@
 "Двойной ⇧" = "Double ⇧";
 "Сочетание для быстрого вопроса" = "Quick question shortcut";
 "Сочетание" = "Shortcut";
+"Контекст" = "Context";
+"Контекст: станет известно после первого ответа" = "Context: known after the first reply";
+"Контекст: %@ из %@" = "Context: %@ of %@";
+"Сжать разговор" = "Compact conversation";
+"Руни коротко перескажет себе разговор и продолжит с освободившимся местом" = "Runie summarizes the conversation for itself and continues with the freed-up space";
+"Сжимаю…" = "Compacting…";
+"Станет известно после ответа Руни" = "Known after Runie's next reply";
+"≈ %@ до автосжатия" = "≈ %@ until auto-compact";
+"%@ млн" = "%@M";
+"%@ тыс." = "%@k";
+

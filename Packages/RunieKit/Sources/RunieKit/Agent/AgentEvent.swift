@@ -320,6 +320,30 @@ public struct TurnSummary: Sendable, Equatable {
     public let costUSD: Double?
     public let turnCount: Int?
     public let permissionDenialCount: Int
+    /// Сколько контекста занято после хода. `nil` — CLI не сообщил.
+    public var context: ContextUsage? = nil
+}
+
+/// Заполненность контекстного окна модели.
+public struct ContextUsage: Sendable, Equatable, Codable {
+    /// Токенов в контексте сейчас: вход, кэш и последний ответ.
+    public let used: Int
+    /// Размер окна модели.
+    public let window: Int
+
+    public init(used: Int, window: Int) {
+        self.used = used
+        self.window = window
+    }
+
+    public var fraction: Double { window > 0 ? min(Double(used) / Double(window), 1) : 0 }
+
+    /// Сколько примерно осталось до автосжатия. Claude Code сжимает разговор,
+    /// когда в окне остаётся место только под ответ и небольшой запас; точный
+    /// порог он не сообщает — берём резерв в 33 тысячи токенов.
+    public var untilAutoCompact: Int { max(window - Self.autoCompactReserve - used, 0) }
+
+    public static let autoCompactReserve = 33_000
 }
 
 public struct TurnFailure: Sendable, Equatable {

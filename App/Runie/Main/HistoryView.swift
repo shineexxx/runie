@@ -145,6 +145,11 @@ struct ConversationDetail: View {
                 )
                     .padding(.vertical, 8)
 
+                // Контекст — только у разговора, который сейчас в работе.
+                if isLive {
+                    ContextMeter(session: session)
+                        .padding(.bottom, 8)
+                }
                 ModelMenu(session: session, settings: settings, compact: false)
                     .padding(.bottom, 5)
                 sendButton

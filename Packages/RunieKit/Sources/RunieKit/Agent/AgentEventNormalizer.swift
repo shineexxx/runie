@@ -275,6 +275,22 @@ public struct AgentEventNormalizer: Sendable {
 
     // MARK: - result
 
+    /// Заполненность контекста по итогу хода.
+    ///
+    /// Общий `usage` складывает все обращения к модели за ход — это расход, а не
+    /// размер контекста. Размер — у последнего обращения: всё, что модель видела,
+    /// плюс её ответ. Окно — из `modelUsage` основной модели.
+    static func contextUsage(_ payload: JSONValue) -> ContextUsage? {
+        let windows = (payload["modelUsage"]?.objectValue ?? [:]).values.compactMap { $0["contextWindow"]?.intValue }
+        guard let window = windows.max(), window > 0 else { return nil }
+        let last = payload["usage"]?["iterations"]?.arrayValue?.last ?? payload["usage"]
+        guard let last else { return nil }
+        let used = ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens"]
+            .compactMap { last[$0]?.intValue }
+            .reduce(0, +)
+        return used > 0 ? ContextUsage(used: used, window: window) : nil
+    }
+
     private func normalizeResult(_ event: RawAgentEvent) -> AgentEvent {
         let payload = event.payload
         let subtype = event.subtype ?? ""
@@ -286,7 +302,8 @@ public struct AgentEventNormalizer: Sendable {
                 durationMilliseconds: payload["duration_ms"]?.intValue,
                 costUSD: payload["total_cost_usd"]?.doubleValue,
                 turnCount: payload["num_turns"]?.intValue,
-                permissionDenialCount: payload["permission_denials"]?.arrayValue?.count ?? 0
+                permissionDenialCount: payload["permission_denials"]?.arrayValue?.count ?? 0,
+                context: Self.contextUsage(payload)
             ))
         }
 

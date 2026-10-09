@@ -21,6 +21,10 @@ public struct ChatTimeline: Sendable, Equatable {
     public private(set) var items: [TimelineItem] = []
     public private(set) var activity: Activity = .idle
     public private(set) var usage: SubscriptionUsage?
+    /// Сколько контекста занято после последнего хода.
+    public private(set) var context: ContextUsage?
+    /// Идёт сжатие разговора по просьбе человека.
+    public private(set) var isCompacting = false
     public private(set) var sessionID: String?
     /// Вопросы о разрешении, на которые ещё не ответили, в порядке прихода.
     public private(set) var pendingPermissions: [PermissionRequest] = []
@@ -58,6 +62,13 @@ public struct ChatTimeline: Sendable, Equatable {
 
     public mutating func appendUserMessage(_ text: String, attachments: [Attachment] = [], id: UUID = UUID()) {
         items.append(.user(UserItem(id: id, text: text, attachments: attachments.isEmpty ? nil : attachments)))
+        activity = .waiting
+    }
+
+    /// Человек попросил сжать разговор: в ленте — пометка, а не команда.
+    public mutating func beginCompaction() {
+        items.append(.notice(NoticeItem(kind: .info, text: t("Сжимаю разговор, чтобы освободить место…"))))
+        isCompacting = true
         activity = .waiting
     }
 
@@ -138,12 +149,21 @@ public struct ChatTimeline: Sendable, Equatable {
         case .subscriptionUsage(let usage):
             self.usage = usage
 
-        case .turnCompleted:
+        case .turnCompleted(let summary):
             interruptRunningActions()
             resetStreaming()
             activity = .idle
+            if isCompacting {
+                isCompacting = false
+                items.append(.notice(NoticeItem(kind: .info, text: t("Разговор сжат — главное Руни помнит"))))
+                // Сколько занято после сжатия, станет известно со следующим ходом.
+                context = nil
+            } else if let used = summary.context {
+                context = used
+            }
 
         case .turnFailed(let failure):
+            isCompacting = false
             items.append(.notice(NoticeItem(
                 kind: .error,
                 text: failure.message ?? t("Не получилось: \(failure.reason)")
