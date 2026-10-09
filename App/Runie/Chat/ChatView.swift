@@ -1000,7 +1000,6 @@ private struct InputRow: View {
                 .frame(maxWidth: .infinity, minHeight: Self.row, alignment: .leading)
                 .layoutPriority(1)
 
-            ContextMeter(session: session).frame(height: Self.row)
             ModelMenu(session: session, settings: settings).frame(height: Self.row)
             if layout.orbSide == .leading { attachButtons.frame(height: Self.row) }
             if layout.orbSide == .trailing { sendButton.frame(height: Self.row) }
@@ -1161,6 +1160,8 @@ private struct ChipsRow: View {
                 }
             } else {
                 row {
+                    // Рядом с «новым разговором»: заполнился контекст — тут же и сжать.
+                    ContextMeter(session: session, style: .chip)
                     if let usage = session.timeline.usage {
                         UsageChip(usage: usage)
                     }

@@ -5,7 +5,16 @@ import SwiftUI
 /// кнопкой «Сжать разговор».
 struct ContextMeter: View {
     let session: ChatSession
-    var size: CGFloat = 16
+
+    enum Style {
+        /// Голое кольцо — в поле ввода окна Runie.
+        case plain
+        /// Круглая стеклянная кнопка — в ряду под полем чата, рядом с «новым разговором».
+        case chip
+    }
+
+    var style: Style = .plain
+    private let size: CGFloat = 16
 
     @State private var isShowingPanel = false
 
@@ -23,10 +32,11 @@ struct ContextMeter: View {
                     .animation(.easeOut(duration: 0.4), value: context?.fraction)
             }
             .frame(width: size, height: size)
-            .frame(width: 26, height: 26)
+            .frame(width: style == .chip ? 32 : 26, height: style == .chip ? 32 : 26)
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
+        .modifier(ChipSurface(isOn: style == .chip))
         .help(helpText)
         .accessibilityLabel("Контекст")
         .accessibilityValue(context.map { "\(Int(($0.fraction * 100).rounded())) %" } ?? "")
@@ -108,5 +118,18 @@ struct ContextPanel: View {
             return String(localized: "\(thousands) тыс.")
         }
         return "\(count)"
+    }
+}
+
+/// Стеклянный круг, как у кнопки «новый разговор» рядом.
+private struct ChipSurface: ViewModifier {
+    let isOn: Bool
+
+    func body(content: Content) -> some View {
+        if isOn {
+            content.readableSurface(Circle(), interactive: true)
+        } else {
+            content
+        }
     }
 }
