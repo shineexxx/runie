@@ -902,4 +902,7 @@
 "≈ %@ до автосжатия" = "≈ %@ until auto-compact";
 "%@ млн" = "%@M";
 "%@ тыс." = "%@k";
+"Открывать при входе в систему" = "Open at login";
+"Руни запускается сам, как только вы вошли в Mac." = "Runie starts on its own as soon as you log in to your Mac.";
+"macOS ждёт подтверждения в «Объектах входа»." = "macOS is waiting for approval in Login Items.";
 

@@ -14,6 +14,7 @@ struct GeneralView: View {
         return String(localized: "Последняя проверка: ") + date.formatted(.dateTime.day().month().hour().minute().locale(.runie))
     }
 
+    private let launchAtLogin = LaunchAtLogin.shared
     @AppStorage(EdgeButtonController.followsFocusKey) private var followsFocus = true
 
     var body: some View {
@@ -21,6 +22,29 @@ struct GeneralView: View {
             Section("Руни") {
                 LabeledContent("Версия", value: Runie.version)
                 LabeledContent("Как вызвать", value: String(localized: "Нажмите на орб у края экрана"))
+                Toggle(isOn: Binding(get: { launchAtLogin.isEnabled }, set: { launchAtLogin.set($0) })) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Открывать при входе в систему")
+                        Text("Руни запускается сам, как только вы вошли в Mac.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                // Выключить можно и в Системных настройках — сверяемся при каждом показе.
+                .onAppear { launchAtLogin.refresh() }
+                if launchAtLogin.needsApproval {
+                    HStack {
+                        Text("macOS ждёт подтверждения в «Объектах входа».")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.orange)
+                        Spacer()
+                        Button("Открыть настройки") { launchAtLogin.openLoginItemsSettings() }
+                    }
+                }
+                if let failure = launchAtLogin.failure {
+                    Text(failure).font(.system(size: 11)).foregroundStyle(.orange)
+                }
                 Toggle(isOn: $followsFocus) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Переезжать на активный монитор")
