@@ -71,6 +71,17 @@ struct GeneralView: View {
                 }
                 .pickerStyle(.menu)
             }
+            Section("Браузер") {
+                Toggle(isOn: Binding(get: { settings.chromeIntegration }, set: { settings.chromeIntegration = $0 })) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Claude in Chrome")
+                        Text("Руни работает в вашем Chrome через расширение Claude: открывает вкладки, читает и заполняет страницы. Действия в браузере спрашивают разрешение по вашим правилам.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
             Section("Сочетания клавиш") {
                 ShortcutRows()
             }

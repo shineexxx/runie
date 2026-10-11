@@ -56,6 +56,18 @@ final class AppSettings {
     }
     var onAnswerLanguageChange: ((AnswerLanguage) -> Void)?
 
+    /// Claude in Chrome: Руни может работать в настоящем Chrome через расширение.
+    nonisolated static let chromeKey = "chrome.integration"
+
+    var chromeIntegration: Bool = UserDefaults.standard.object(forKey: AppSettings.chromeKey) as? Bool ?? true {
+        didSet {
+            guard chromeIntegration != oldValue else { return }
+            UserDefaults.standard.set(chromeIntegration, forKey: Self.chromeKey)
+            onChromeIntegrationChange?()
+        }
+    }
+    @ObservationIgnored var onChromeIntegrationChange: (() -> Void)?
+
     var selectedModel: String? {
         didSet { UserDefaults.standard.set(selectedModel, forKey: Key.model) }
     }

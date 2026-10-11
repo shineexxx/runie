@@ -44,6 +44,9 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
     public var strictMCPConfig: Bool
     /// Отдавать текст ответа кусками по мере написания, а не целым блоком.
     public var includePartialMessages: Bool
+    /// Claude in Chrome: инструменты `mcp__claude-in-chrome__*` работают в настоящем
+    /// Chrome человека через расширение. Сам CLI по умолчанию держит их выключенными.
+    public var chrome = false
     public var additionalArguments: [String]
 
     public init(
@@ -116,6 +119,9 @@ public struct ClaudeCodeArguments: Sendable, Equatable {
         }
         if strictMCPConfig {
             arguments.append("--strict-mcp-config")
+        }
+        if chrome {
+            arguments.append("--chrome")
         }
 
         return arguments + additionalArguments

@@ -104,4 +104,25 @@ struct UserMessageTests {
         let value = try JSONValue.decode(line.dropLast())
         #expect(value.path("message", "content", 0, "text")?.stringValue == "первая\nвторая")
     }
+
+    @Test("Claude in Chrome включается флагом --chrome, по умолчанию его нет")
+    func chromeFlag() {
+        var arguments = ClaudeCodeArguments()
+        #expect(!arguments.build().contains("--chrome"))
+        arguments.chrome = true
+        #expect(arguments.build().contains("--chrome"))
+    }
+
+    @Test("инструменты Claude in Chrome раскладываются по группам разрешений")
+    func chromePermissions() {
+        func categories(_ tool: String) -> Set<PermissionCategory> {
+            PermissionClassifier.categories(toolName: "mcp__claude-in-chrome__" + tool, input: .object([:]))
+        }
+        #expect(categories("get_page_text") == [.browserRead])
+        #expect(categories("tabs_context_mcp") == [.browserRead])
+        #expect(categories("navigate") == [.browserControl])
+        #expect(categories("computer") == [.browserControl])
+        #expect(categories("javascript_tool") == [.browserControl, .pageScript])
+        #expect(categories("file_upload") == [.browserControl, .sharing])
+    }
 }

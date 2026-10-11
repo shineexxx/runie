@@ -905,4 +905,6 @@
 "Открывать при входе в систему" = "Open at login";
 "Руни запускается сам, как только вы вошли в Mac." = "Runie starts on its own as soon as you log in to your Mac.";
 "macOS ждёт подтверждения в «Объектах входа»." = "macOS is waiting for approval in Login Items.";
+"Браузер" = "Browser";
+"Руни работает в вашем Chrome через расширение Claude: открывает вкладки, читает и заполняет страницы. Действия в браузере спрашивают разрешение по вашим правилам." = "Runie works in your Chrome through the Claude extension: opens tabs, reads and fills in pages. Browser actions ask for permission according to your rules.";
 

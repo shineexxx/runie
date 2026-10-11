@@ -184,6 +184,25 @@ public enum PermissionClassifier {
         categories(toolName: request.toolName, input: request.input)
     }
 
+    static let chromePrefix = "mcp__claude-in-chrome__"
+
+    /// Claude in Chrome — настоящий Chrome человека, со всеми его входами в аккаунты.
+    /// Читать — «Просмотр браузера»; действовать — «Управление браузером»; свой код
+    /// на странице и выгрузка файлов наружу — ещё и отдельные группы.
+    static func chromeCategories(_ tool: String) -> Set<PermissionCategory> {
+        switch tool {
+        case "get_page_text", "read_page", "find", "tabs_context_mcp", "tabs_context",
+             "list_connected_browsers", "read_console_messages", "read_network_requests", "shortcuts_list":
+            return [.browserRead]
+        case "javascript_tool":
+            return [.browserControl, .pageScript]
+        case "file_upload", "upload_image":
+            return [.browserControl, .sharing]
+        default:
+            return [.browserControl]
+        }
+    }
+
     public static func categories(toolName: String, input: JSONValue) -> Set<PermissionCategory> {
         switch toolName {
         case "Read": return [.readFiles]
@@ -221,6 +240,9 @@ public enum PermissionClassifier {
         case "mcp__runie__create_event", "mcp__runie__create_reminder", "mcp__runie__complete_reminder":
             return [.calendarEdit]
         default:
+            if toolName.hasPrefix(Self.chromePrefix) {
+                return chromeCategories(String(toolName.dropFirst(Self.chromePrefix.count)))
+            }
             if toolName.hasPrefix("mcp__runie__") { return [.otherCommands] }
             return toolName.hasPrefix("mcp__") ? [.services] : [.otherCommands]
         }
