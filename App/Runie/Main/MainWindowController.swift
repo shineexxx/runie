@@ -53,6 +53,11 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         show(.history)
     }
 
+    /// Переключить раздел в уже открытом окне — как клик по вкладке.
+    func select(_ section: Section) {
+        navigation.section = section
+    }
+
     func show(_ section: Section? = nil) {
         if let section { navigation.section = section }
         session.prepare()
@@ -116,8 +121,17 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 @Observable
 final class MainNavigation {
     var section: MainWindowController.Section = .history {
-        didSet { if section.isSettings { lastSettingsTab = section } }
+        didSet {
+            if section.isSettings, lastSettingsTab != section { lastSettingsTab = section }
+            // Меняем, только когда правда сменилось: от этого флага зависит всё окно с
+            // боковой панелью, и любая запись заставила бы его пересобираться при
+            // каждом клике по вкладке настроек.
+            if isInSettings != section.isSettings { isInSettings = section.isSettings }
+        }
     }
+    /// Открыты настройки, а не история. Окно и боковая панель смотрят на него, а не
+    /// на `section`: переключение вкладок внутри настроек их не касается.
+    private(set) var isInSettings = false
     /// Настройки открываются на той вкладке, где их закрыли.
     var lastSettingsTab: MainWindowController.Section = .permissions
     /// Какой разговор выделить в истории.

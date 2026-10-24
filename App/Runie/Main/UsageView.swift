@@ -27,7 +27,7 @@ struct UsageView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .background(BrandGlowBackground())
+        // Фон — общий у всех вкладок, в SettingsView: не пересоздаётся при переключении.
         
     }
 }

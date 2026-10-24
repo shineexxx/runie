@@ -19,7 +19,7 @@ struct MainWindowView: View {
             sidebar
                 .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         } detail: {
-            if navigation.section.isSettings {
+            if navigation.isInSettings {
                 SettingsView(navigation: navigation, session: session, settings: settings)
             } else if let record = records.first(where: { $0.id == navigation.selectedConversation }) {
                 ConversationDetail(
@@ -61,7 +61,7 @@ struct MainWindowView: View {
 
     private var sidebar: some View {
         List(selection: Binding(
-            get: { navigation.section.isSettings ? nil : navigation.selectedConversation },
+            get: { navigation.isInSettings ? nil : navigation.selectedConversation },
             set: { id in
                 guard let id else { return }
                 navigation.selectedConversation = id
@@ -103,8 +103,8 @@ struct MainWindowView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
                 Divider()
-                SettingsButton(isSelected: navigation.section.isSettings) {
-                    if !navigation.section.isSettings {
+                SettingsButton(isSelected: navigation.isInSettings) {
+                    if !navigation.isInSettings {
                         navigation.section = navigation.lastSettingsTab
                     }
                 }
@@ -209,16 +209,34 @@ private struct SettingsView: View {
     let session: ChatSession
     let settings: AppSettings
 
+    /// Вкладки, которые уже открывали. Они остаются собранными и при повторном
+    /// переходе только показываются: строить форму заново стоило до секунды.
+    @State private var visited: [MainWindowController.Section] = []
+
     var body: some View {
-        Group {
-            switch navigation.section {
-            case .usage: UsageView(usage: session.timeline.usage)
-            case .servers: ExtensionsView(session: session, settings: settings, part: .servers)
-            case .skills: ExtensionsView(session: session, settings: settings, part: .skills)
-            case .general: GeneralView(settings: settings)
-            default: PermissionsSettingsView(settings: settings)
+        ZStack {
+            ForEach(visited, id: \.self) { section in
+                let isCurrent = section == navigation.section
+                tab(section)
+                    .opacity(isCurrent ? 1 : 0)
+                    .allowsHitTesting(isCurrent)
+                    .accessibilityHidden(!isCurrent)
             }
         }
+        .onAppear { visit(navigation.section) }
+        .onChange(of: navigation.section) { _, section in
+            visit(section)
+            // Собранная вкладка не появляется заново — освежаем то, что она
+            // раньше освежала при появлении.
+            switch section {
+            case .servers, .skills: session.refreshExtensions()
+            case .general: LaunchAtLogin.shared.refresh()
+            default: break
+            }
+        }
+        // Один фон на все вкладки: размытие на всё окно дорогое, и пересоздавать его
+        // при каждом клике по вкладке незачем.
+        .background(BrandGlowBackground())
         .navigationTitle("Настройки")
         // Вкладки — над содержимым, а не в панели инструментов: там пять вкладок
         // не помещаются в узком окне и прячутся за «>>».
@@ -242,6 +260,24 @@ private struct SettingsView: View {
             // Фон обязателен: у настроек он прозрачный, и прокручиваемый текст
             // иначе просвечивает прямо сквозь вкладки.
             .background(.bar)
+        }
+    }
+}
+
+private extension SettingsView {
+    func visit(_ section: MainWindowController.Section) {
+        guard section.isSettings, !visited.contains(section) else { return }
+        visited.append(section)
+    }
+
+    @ViewBuilder
+    func tab(_ section: MainWindowController.Section) -> some View {
+        switch section {
+        case .usage: UsageView(usage: session.timeline.usage)
+        case .servers: ExtensionsView(session: session, settings: settings, part: .servers)
+        case .skills: ExtensionsView(session: session, settings: settings, part: .skills)
+        case .general: GeneralView(settings: settings)
+        default: PermissionsSettingsView(settings: settings)
         }
     }
 }

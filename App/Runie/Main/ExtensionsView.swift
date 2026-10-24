@@ -11,6 +11,10 @@ struct ExtensionsView: View {
     let part: Part
 
     @State private var query = ""
+    /// Навыков бывает больше сотни, а форма строит все строки сразу — вкладка
+    /// открывалась почти секунду. Сначала показываем часть, остальное по кнопке.
+    @State private var showsAllSkills = false
+    private static let skillsPreview = 30
     @State private var showsAddServer = false
     @State private var pendingRemoval: MCPServerInfo?
     @State private var removalError: String?
@@ -28,7 +32,7 @@ struct ExtensionsView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .background(BrandGlowBackground())
+        // Фон — общий у всех вкладок, в SettingsView: не пересоздаётся при переключении.
         .onAppear { session.refreshExtensions() }
         // Серверы поднимаются не сразу: пока кто-то «подключается», переспрашиваем.
         .task {
@@ -192,7 +196,10 @@ struct ExtensionsView: View {
                 Text("Навыков пока нет. Навыки лежат в папке ~/.claude/skills.")
                     .foregroundStyle(.secondary)
             }
-            ForEach(skills) { skill in
+            let found = skills
+            let shown = showsAllSkills || !query.trimmingCharacters(in: .whitespaces).isEmpty
+                ? found : Array(found.prefix(Self.skillsPreview))
+            ForEach(shown) { skill in
                 SkillRow(
                     skill: skill,
                     isEnabled: Binding(
@@ -202,6 +209,11 @@ struct ExtensionsView: View {
                         }
                     )
                 )
+            }
+            if shown.count < found.count {
+                Button(String(localized: "Показать все — ещё \(found.count - shown.count)")) {
+                    showsAllSkills = true
+                }
             }
         } header: {
             Text(String(localized: "Навыки · \(session.skillInfos.count)"))

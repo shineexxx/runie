@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import QuartzCore
 import RunieKit
 
 @MainActor
@@ -415,6 +416,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         #endif
+        // `-RunieProfileSettings YES` — сам листает вкладки настроек, чтобы снять
+        // профиль: что тормозит при переключении. Время каждого шага — в журнал.
+        if UserDefaults.standard.bool(forKey: "RunieProfileSettings") {
+            let sections: [MainWindowController.Section] = [.permissions, .servers, .skills, .usage, .general,
+                                                            .permissions, .servers, .skills, .usage, .general]
+            for (step, section) in sections.enumerated() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3 + Double(step) * 1.5) { [weak self] in
+                    let start = CACurrentMediaTime()
+                    if step == 0 { self?.mainWindow.show(section) } else { self?.mainWindow.select(section) }
+                    // Следующий оборот цикла — после того как SwiftUI собрал и нарисовал вкладку.
+                    let shown = CACurrentMediaTime()
+                    DispatchQueue.main.async {
+                        let total = Int((CACurrentMediaTime() - start) * 1000)
+                        let call = Int((shown - start) * 1000)
+                        let line = "\(section.rawValue) show=\(call)ms total=\(total)ms\n"
+                        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: "runie-profile.txt")
+                        if let handle = try? FileHandle(forWritingTo: url) {
+                            handle.seekToEndOfFile()
+                            handle.write(Data(line.utf8))
+                            try? handle.close()
+                        } else {
+                            try? line.write(to: url, atomically: true, encoding: .utf8)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Орб открывает и закрывает чат. Прицепленный к краю сначала отходит от кромки,
