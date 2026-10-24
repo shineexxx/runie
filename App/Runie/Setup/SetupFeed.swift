@@ -80,12 +80,31 @@ struct SetupFeed: View {
                             .truncationMode(.middle)
                     }
                 }
+            case .needsCodex:
+                SetupBubble(text: String(localized: "Я работаю через Codex, но его нет на этом Mac. Поставьте его в Терминале — дальше я продолжу сам."))
+                SetupCard {
+                    Text(SetupModel.codexInstallCommand)
+                        .font(.system(size: 12, design: .monospaced))
+                        .textSelection(.enabled)
+                    HStack {
+                        Button("Вернуться к Claude Code") { setup.useClaude() }
+                            .buttonStyle(SetupButtonStyle(primary: false))
+                        Spacer()
+                        Button("Скопировать команду") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(SetupModel.codexInstallCommand, forType: .string)
+                        }
+                        .buttonStyle(SetupButtonStyle(primary: true))
+                    }
+                }
             case .needsLogin:
-                SetupBubble(text: String(localized: "Привет! Я Руни. Чтобы начать, войдите в аккаунт Claude — подойдёт подписка Pro или Max."))
+                SetupBubble(text: setup.isCodex
+                    ? String(localized: "Привет! Я Руни и работаю через Codex. Чтобы начать, войдите в аккаунт ChatGPT.")
+                    : String(localized: "Привет! Я Руни. Чтобы начать, войдите в аккаунт Claude — подойдёт подписка Pro или Max."))
                 SetupCard {
                     HStack {
                         Spacer()
-                        Button("Войти в Claude", action: setup.login)
+                        Button(setup.isCodex ? "Войти в ChatGPT" : "Войти в Claude", action: setup.login)
                             .buttonStyle(SetupButtonStyle(primary: true))
                     }
                 }

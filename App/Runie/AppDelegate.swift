@@ -68,6 +68,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             session.replaceBackend(Self.makeBackend())
             suggestions.resetCache()
         }
+        // Сменили агента: другие модели, другой процесс, заново проверить установку и вход.
+        settings.onAgentEngineChange = { [weak self] in
+            guard let self else { return }
+            settings.selectedModel = nil
+            settings.cachedModels = []
+            session.restoreModels([], selected: nil)
+            session.replaceBackend(Self.makeBackend())
+            setup.engineChanged()
+        }
         // Chrome включили или выключили — нужен процесс агента с другим флагом.
         settings.onChromeIntegrationChange = { [weak self] in
             guard let self else { return }
@@ -687,6 +696,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private static func makeBackend() -> any AgentBackend {
+        if AppSettings.storedEngine == .codex {
+            return makeCodexBackend()
+        }
         do {
             let executable = try ClaudeCodeLocator().locate()
             // Агент работает от домашней папки: пользователь просит про свои файлы,
@@ -770,13 +782,29 @@ web_elements и web_snapshot. Для страниц, куда человек в�
 Ничего не покупай, не оплачивай, не отправляй и не вводи пароли без явной просьбы.
 """
 
+extension AppDelegate {
+    /// Codex вместо Claude Code: тот же промпт Руни, его память и его инструменты.
+    fileprivate static func makeCodexBackend() -> any AgentBackend {
+        guard let executable = try? ClaudeCodeLocator.codex().locate() else { return UnavailableBackend() }
+        var backend = CodexBackend(executable: executable, workingDirectory: FileManager.default.homeDirectoryForCurrentUser)
+        backend.developerInstructions = runiePrompt + "\n" + AnswerLanguage.current.promptLine
+        backend.hostToolServer = RunieTools.name
+        let plugin = RunieExtensions.plugin
+        backend.extraEnvironment = { SecretStore.environment(for: plugin) }
+        backend.promptSupplement = { RunieMemory.store.promptSection() }
+        return backend
+    }
+}
+
 /// Бэкенд на случай, когда Claude Code не установлен. Приложение при этом
 /// запускается нормально и объясняет, что делать, при первой же попытке написать.
 struct UnavailableBackend: AgentBackend {
 
     struct NotInstalled: LocalizedError {
         var errorDescription: String? {
-            "Claude Code не найден. Установите его и выполните в терминале `claude login`, затем перезапустите Runie."
+            AppSettings.storedEngine == .codex
+                ? String(localized: "Codex не найден. Установите его (`npm install -g @openai/codex`) и войдите командой `codex login`.")
+                : String(localized: "Claude Code не найден. Установите его и выполните в терминале `claude login`, затем перезапустите Runie.")
         }
     }
 

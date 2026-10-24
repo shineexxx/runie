@@ -222,6 +222,12 @@ public final class AgentRuntime: @unchecked Sendable {
         try write(try response.ndjsonLine())
     }
 
+    /// Произвольная строка в stdin — для агентов со своим протоколом (Codex).
+    /// Перевод строки добавляет вызывающий.
+    public func sendLine(_ line: Data) throws {
+        try write(line)
+    }
+
     private func write(_ line: Data) throws {
         try queue.sync {
             guard let handle = stdinHandle, process?.isRunning == true else {

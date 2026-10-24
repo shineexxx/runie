@@ -55,6 +55,24 @@ struct GeneralView: View {
                     }
                 }
             }
+            Section("Агент") {
+                Picker(selection: Binding(get: { settings.agentEngine }, set: { settings.agentEngine = $0 })) {
+                    ForEach(AppSettings.AgentEngine.allCases, id: \.self) { engine in
+                        Text(engine.title).tag(engine)
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Руни работает через")
+                        Text(settings.agentEngine == .codex
+                            ? "Codex от OpenAI, вход через аккаунт ChatGPT. Память, указатель, календарь и остальные инструменты Руни работают и с ним; навыки и серверы Claude Code — нет."
+                            : "Claude Code от Anthropic, вход через подписку Claude. Можно переключиться на Codex от OpenAI.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
             Section("Язык") {
                 Picker(selection: Binding(get: { settings.answerLanguage }, set: { settings.answerLanguage = $0 })) {
                     Text("Как в системе").tag(AnswerLanguage.system)

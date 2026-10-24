@@ -22,6 +22,15 @@ struct ExtensionsView: View {
 
     var body: some View {
         Form {
+            if settings.agentEngine == .codex {
+                Section {
+                    Label("Сейчас Руни работает через Codex. Эти серверы и навыки — для Claude Code; свои MCP-серверы Codex берёт из ~/.codex/config.toml.",
+                          systemImage: "info.circle")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             switch part {
             case .servers: serversSection
             case .skills:

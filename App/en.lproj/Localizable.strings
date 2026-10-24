@@ -881,7 +881,6 @@
 "Клавиша Spotlight открывает Руни" = "The Spotlight key opens Runie";
 "Лупа на F4 вызывает чат вместо Spotlight. ⌘Space по-прежнему открывает Spotlight." = "The magnifier key on F4 opens the chat instead of Spotlight. ⌘Space still opens Spotlight.";
 "Перехватывать клавишу Руни может только с Универсальным доступом." = "Runie can only take over the key with Accessibility access.";
-"Руни работает…" = "Runie is working…";
 "Быстрый вопрос — ответ придёт в новый разговор, а вы останетесь здесь" = "Quick question — the answer goes to a new conversation while you stay here";
 "Быстрый вопрос" = "Quick question";
 "Быстрый вопрос в новом разговоре…" = "Quick question in a new conversation…";
@@ -908,3 +907,14 @@
 "Браузер" = "Browser";
 "Руни работает в вашем Chrome через расширение Claude: открывает вкладки, читает и заполняет страницы. Действия в браузере спрашивают разрешение по вашим правилам." = "Runie works in your Chrome through the Claude extension: opens tabs, reads and fills in pages. Browser actions ask for permission according to your rules.";
 "Показать все — ещё %lld" = "Show all — %lld more";
+"Агент" = "Agent";
+"Руни работает через" = "Runie runs on";
+"Codex от OpenAI, вход через аккаунт ChatGPT. Память, указатель, календарь и остальные инструменты Руни работают и с ним; навыки и серверы Claude Code — нет." = "Codex by OpenAI, signed in with your ChatGPT account. Memory, the index, Calendar and Runie's other tools work with it; Claude Code skills and servers don't.";
+"Claude Code от Anthropic, вход через подписку Claude. Можно переключиться на Codex от OpenAI." = "Claude Code by Anthropic, signed in with your Claude subscription. You can switch to Codex by OpenAI.";
+"Сейчас Руни работает через Codex. Эти серверы и навыки — для Claude Code; свои MCP-серверы Codex берёт из ~/.codex/config.toml." = "Runie is running on Codex now. These servers and skills are for Claude Code; Codex takes its MCP servers from ~/.codex/config.toml.";
+"Я работаю через Codex, но его нет на этом Mac. Поставьте его в Терминале — дальше я продолжу сам." = "I run on Codex, but it isn't on this Mac. Install it in Terminal and I'll take it from there.";
+"Вернуться к Claude Code" = "Back to Claude Code";
+"Привет! Я Руни и работаю через Codex. Чтобы начать, войдите в аккаунт ChatGPT." = "Hi! I'm Runie and I run on Codex. To start, sign in with your ChatGPT account.";
+"Войти в ChatGPT" = "Sign in to ChatGPT";
+"Codex не найден. Установите его (`npm install -g @openai/codex`) и войдите командой `codex login`." = "Codex was not found. Install it (`npm install -g @openai/codex`) and sign in with `codex login`.";
+

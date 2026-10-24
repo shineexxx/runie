@@ -27,13 +27,40 @@ public struct ClaudeCodeLocator: Sendable {
 
     private let homeDirectory: URL
     private let pathVariable: String?
+    /// Что ищем: `claude` или другой агентский CLI с теми же привычками установки.
+    private let executableName: String
+    private let knownPaths: [String]
 
     public init(
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
         pathVariable: String? = ProcessInfo.processInfo.environment["PATH"]
     ) {
+        self.init(name: "claude", wellKnownPaths: Self.wellKnownPaths, homeDirectory: homeDirectory, pathVariable: pathVariable)
+    }
+
+    public init(
+        name: String,
+        wellKnownPaths: [String],
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
+        pathVariable: String? = ProcessInfo.processInfo.environment["PATH"]
+    ) {
+        self.executableName = name
+        self.knownPaths = wellKnownPaths
         self.homeDirectory = homeDirectory
         self.pathVariable = pathVariable
+    }
+
+    /// Codex от OpenAI: ставится через npm, Homebrew или собственным установщиком.
+    public static func codex() -> ClaudeCodeLocator {
+        ClaudeCodeLocator(name: "codex", wellKnownPaths: [
+            "~/.local/bin/codex",
+            "/opt/homebrew/bin/codex",
+            "/usr/local/bin/codex",
+            "~/.npm-global/bin/codex",
+            "~/.bun/bin/codex",
+            "~/.volta/bin/codex",
+            "/usr/bin/codex"
+        ])
     }
 
     /// Все кандидаты в порядке проверки: сначала известные места, затем записи из `PATH`.
@@ -48,12 +75,12 @@ public struct ClaudeCodeLocator: Sendable {
             }
         }
 
-        for path in Self.wellKnownPaths {
+        for path in knownPaths {
             append(expand(path))
         }
 
         for directory in (pathVariable ?? "").split(separator: ":") where !directory.isEmpty {
-            append(expand(String(directory)).appendingPathComponent("claude"))
+            append(expand(String(directory)).appendingPathComponent(executableName))
         }
 
         return result

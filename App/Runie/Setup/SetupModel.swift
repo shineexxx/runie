@@ -12,6 +12,8 @@ final class SetupModel {
     enum Stage: Equatable {
         case checking
         case needsClaude
+        /// Выбран Codex, а его нет на Mac: ставится одной командой в Терминале.
+        case needsCodex
         case installing
         case needsLogin
         case loggingIn
@@ -58,7 +60,7 @@ final class SetupModel {
             UserDefaults.standard.set(true, forKey: Self.trustKey)
         }
         // Всё было в порядке в прошлый раз — чат открывается сразу, проверка идёт в фоне.
-        if UserDefaults.standard.bool(forKey: Self.trustKey), (try? ClaudeCodeLocator().locate()) != nil {
+        if UserDefaults.standard.bool(forKey: Self.trustKey), (try? Self.locator.locate()) != nil {
             stage = Self.settled
         }
         #if DEBUG
@@ -94,19 +96,44 @@ final class SetupModel {
         Task { await evaluate() }
     }
 
+    /// Где искать агента — того, что выбран в настройках.
+    private static var locator: ClaudeCodeLocator {
+        AppSettings.storedEngine == .codex ? .codex() : ClaudeCodeLocator()
+    }
+
+    var isCodex: Bool { AppSettings.storedEngine == .codex }
+
+    /// «Вернуться к Claude Code» из знакомства, когда Codex не установлен.
+    func useClaude() {
+        settings.agentEngine = .claude
+    }
+
+    /// Сменили агента в настройках — найти его и проверить вход заново.
+    func engineChanged() {
+        executable = nil
+        finishLogin()
+        check(force: true)
+    }
+
     private func evaluate() async {
         guard !isForced else { return }
-        let found = try? ClaudeCodeLocator().locate()
+        let found = try? Self.locator.locate()
         if let found, executable == nil {
             executable = found
             onClaudeFound?(found)
         }
         guard let found else {
+            if isCodex {
+                transition(to: .needsCodex)
+                return
+            }
             // Установка идёт — не сбивать экран с ходом установки.
             transition(to: installProcess == nil ? .needsClaude : .installing)
             return
         }
-        let loggedIn = await Self.isLoggedIn(executable: found)
+        let loggedIn = isCodex
+            ? await Self.isCodexLoggedIn(executable: found)
+            : await Self.isLoggedIn(executable: found)
         if !loggedIn {
             // Вход идёт — ждём его, а не показываем кнопку заново.
             transition(to: stage == .loggingIn ? .loggingIn : .needsLogin)
@@ -134,7 +161,7 @@ final class SetupModel {
             if next != .ready, next != .offerMemory { onNeedsAttention?() }
         }
         // Пока ждём установку или вход, проверяем сами — человеку ничего нажимать не нужно.
-        let waiting = [.needsClaude, .needsLogin, .loggingIn].contains(next)
+        let waiting = [.needsClaude, .needsCodex, .needsLogin, .loggingIn].contains(next)
         if waiting, poll == nil {
             poll = Task { [weak self] in
                 while !Task.isCancelled {
@@ -148,6 +175,23 @@ final class SetupModel {
             poll = nil
         }
     }
+
+    /// `codex login status` завершается без ошибки, только если вход выполнен.
+    nonisolated private static func isCodexLoggedIn(executable: URL) async -> Bool {
+        let process = Process()
+        process.executableURL = executable
+        process.arguments = ["login", "status"]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        return await withCheckedContinuation { continuation in
+            process.terminationHandler = { process in
+                continuation.resume(returning: process.terminationStatus == 0)
+            }
+            do { try process.run() } catch { continuation.resume(returning: true) }
+        }
+    }
+
+    static let codexInstallCommand = "npm install -g @openai/codex"
 
     /// `claude auth status` печатает JSON с `loggedIn`. Если ответ не разобрать
     /// (старая версия CLI), считаем, что вход есть: лучше ошибка при первом сообщении,
@@ -243,7 +287,8 @@ final class SetupModel {
         guard let executable, loginProcess == nil else { return }
         let process = Process()
         process.executableURL = executable
-        process.arguments = ["auth", "login"]
+        // У Codex вход — `codex login`: он тоже сам открывает страницу в браузере.
+        process.arguments = isCodex ? ["login"] : ["auth", "login"]
         process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
         let output = Pipe()
         process.standardOutput = output

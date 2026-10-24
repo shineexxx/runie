@@ -56,6 +56,35 @@ final class AppSettings {
     }
     var onAnswerLanguageChange: ((AnswerLanguage) -> Void)?
 
+    /// На чём работает Руни: Claude Code или Codex от OpenAI.
+    enum AgentEngine: String, CaseIterable, Sendable {
+        case claude
+        case codex
+
+        var title: String {
+            switch self {
+            case .claude: "Claude Code"
+            case .codex: "Codex"
+            }
+        }
+    }
+
+    nonisolated static let engineKey = "agent.engine"
+
+    /// Выбранный агент — для мест, где настроек под рукой нет (сборка бэкенда).
+    nonisolated static var storedEngine: AgentEngine {
+        UserDefaults.standard.string(forKey: engineKey).flatMap(AgentEngine.init(rawValue:)) ?? .claude
+    }
+
+    var agentEngine: AgentEngine = AppSettings.storedEngine {
+        didSet {
+            guard agentEngine != oldValue else { return }
+            UserDefaults.standard.set(agentEngine.rawValue, forKey: Self.engineKey)
+            onAgentEngineChange?()
+        }
+    }
+    @ObservationIgnored var onAgentEngineChange: (() -> Void)?
+
     /// Claude in Chrome: Руни может работать в настоящем Chrome через расширение.
     nonisolated static let chromeKey = "chrome.integration"
 
