@@ -74,4 +74,25 @@ struct AttachmentTests {
         #expect(item.text == "Посмотри эти файлы.")
         #expect(item.attachments == attachments)
     }
+
+    @Test("скобки в имени файла не обрывают путь")
+    func parenthesesInFileName() {
+        let text = """
+        Литература: [Подготовка к сочинению (Обломов).docx](/Users/me/Учеба/Подготовка к сочинению (Обломов).docx)
+        Алгебра: [Алгебра — ДЗ к 10.11 (№5, 6) решение.pdf](<~/Учеба/Алгебра — ДЗ к 10.11 (№5, 6) решение.pdf>)
+        """
+        let files = MessageSegment.parse(text).compactMap { segment -> String? in
+            if case .file(let path, _) = segment { path } else { nil }
+        }
+        #expect(files == [
+            "/Users/me/Учеба/Подготовка к сочинению (Обломов).docx",
+            ("~/Учеба/Алгебра — ДЗ к 10.11 (№5, 6) решение.pdf" as NSString).expandingTildeInPath
+        ])
+        // Хвостов имени в тексте больше нет.
+        let leftovers = MessageSegment.parse(text).compactMap { segment -> String? in
+            if case .text(let line) = segment { line } else { nil }
+        }.joined()
+        #expect(!leftovers.contains(".docx)"))
+        #expect(!leftovers.contains("решение.pdf"))
+    }
 }

@@ -84,15 +84,47 @@ public enum MessageSegment: Sendable, Equatable {
     }
 
     /// `[подпись](цель)` начиная с `[`.
+    ///
+    /// Цель заканчивается на парной скобке, а не на первой: в именах файлов скобки
+    /// обычное дело — «Сочинение (Обломов).docx». Раньше путь обрывался на «(Обломов»,
+    /// файл значился «не найден», а хвост имени вываливался текстом. Поддерживается
+    /// и запись из CommonMark `[подпись](<путь с пробелами и скобками>)`.
     private static func link(in text: String, at start: String.Index) -> (label: String, target: String, end: String.Index)? {
         guard text[start] == "[", let close = text[start...].firstIndex(of: "]") else { return nil }
         let open = text.index(after: close)
-        guard open < text.endIndex, text[open] == "(",
-              let end = text[open...].firstIndex(of: ")") else { return nil }
+        guard open < text.endIndex, text[open] == "(" else { return nil }
         let label = String(text[text.index(after: start)..<close])
-        let target = String(text[text.index(after: open)..<end]).trimmingCharacters(in: .whitespaces)
-        guard !label.contains("\n"), !target.isEmpty, !target.contains("\n") else { return nil }
-        return (label, target, text.index(after: end))
+        guard !label.contains("\n") else { return nil }
+
+        var cursor = text.index(after: open)
+        // `(<…>)`: всё внутри угловых скобок — цель как есть.
+        if cursor < text.endIndex, text[cursor] == "<",
+           let angle = text[cursor...].firstIndex(of: ">") {
+            let after = text.index(after: angle)
+            if after < text.endIndex, text[after] == ")" {
+                let target = String(text[text.index(after: cursor)..<angle])
+                guard !target.isEmpty, !target.contains("\n") else { return nil }
+                return (label, target, text.index(after: after))
+            }
+        }
+
+        var depth = 0
+        while cursor < text.endIndex {
+            let character = text[cursor]
+            if character == "\n" { return nil }
+            if character == "(" {
+                depth += 1
+            } else if character == ")" {
+                if depth == 0 {
+                    let target = String(text[text.index(after: open)..<cursor]).trimmingCharacters(in: .whitespaces)
+                    guard !target.isEmpty else { return nil }
+                    return (label, target, text.index(after: cursor))
+                }
+                depth -= 1
+            }
+            cursor = text.index(after: cursor)
+        }
+        return nil
     }
 
     private static func isLocalPath(_ target: String) -> Bool {
